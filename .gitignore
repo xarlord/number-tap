@@ -1,0 +1,33 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Kotlin
+*.class
+
+# Android Studio
+.navigation/
+captures/
+output.json
+
+# Google Services (if added later)
+google-services.json
+
+# Keystore (never commit)
+*.jks
+*.keystore
+
+# Build outputs
+/app/build
+/app/release
