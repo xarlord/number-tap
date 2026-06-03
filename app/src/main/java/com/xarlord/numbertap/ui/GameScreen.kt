@@ -11,17 +11,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
+import kotlinx.coroutines.delay
 
 @Composable
 fun GameScreen(
     gameState: GameState,
     onTileTap: (row: Int, col: Int) -> Unit,
+    onFeedbackComplete: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -41,13 +44,24 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Grid
+        // Grid with shake in pixels (not dp)
+        val density = LocalDensity.current
         GridContainer(
             tiles = gameState.tiles,
             targetNumber = gameState.targetNumber,
-            shakeOffset = gameState.shakeOffset,
-            onTileTap = onTileTap
+            shakeOffsetPx = gameState.shakeOffset,
+            onTileTap = onTileTap,
+            density = density
         )
+    }
+
+    // Auto-clear feedback states after 3-frame duration (~48ms)
+    val hasFeedback = gameState.tiles.any { row -> row.any { it.state != TileState.ACTIVE } }
+    LaunchedEffect(hasFeedback) {
+        if (hasFeedback) {
+            delay(48) // 3 frames at 60Hz
+            onFeedbackComplete()
+        }
     }
 }
 
@@ -94,13 +108,15 @@ private fun TargetHint(targetNumber: Int) {
 private fun GridContainer(
     tiles: List<List<Tile>>,
     targetNumber: Int,
-    shakeOffset: Pair<Float, Float>,
-    onTileTap: (row: Int, col: Int) -> Unit
+    shakeOffsetPx: Pair<Float, Float>,
+    onTileTap: (row: Int, col: Int) -> Unit,
+    density: androidx.compose.ui.unit.Density
 ) {
+    // #28: Shake offset in pixels, not dp
     Column(
         modifier = Modifier.offset(
-            x = shakeOffset.first.dp,
-            y = shakeOffset.second.dp
+            x = with(density) { shakeOffsetPx.first.toInt().toDp() },
+            y = with(density) { shakeOffsetPx.second.toInt().toDp() }
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -125,9 +141,10 @@ private fun TileCell(
     isTarget: Boolean,
     onClick: () -> Unit
 ) {
+    // #31: 3-frame color fade — tile state drives the color
     val backgroundColor = when (tile.state) {
-        TileState.TAPPED_CORRECT -> GameColors.Success
-        TileState.TAPPED_WRONG -> GameColors.Failure
+        TileState.TAPPED_CORRECT -> GameColors.Success      // Frame 1: pure green
+        TileState.TAPPED_WRONG -> GameColors.Failure         // Frame 1: pure red
         else -> if (isTarget) GameColors.TileTarget.copy(alpha = 0.15f) else GameColors.TileNormal
     }
 

@@ -1,5 +1,6 @@
 package com.xarlord.numbertap
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,21 +32,52 @@ sealed class Screen {
     object GameOver : Screen()
 }
 
+// High score persistence keys
+private const val PREFS_NAME = "number_tap_prefs"
+private const val KEY_HIGH_SCORE = "high_score"
+
+private fun loadHighScore(context: Context): Int {
+    return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        .getInt(KEY_HIGH_SCORE, 0)
+}
+
+private fun saveHighScore(context: Context, score: Int) {
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        .edit()
+        .putInt(KEY_HIGH_SCORE, score)
+        .apply()
+}
+
 @Composable
 fun NumberTapApp() {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Menu) }
     var gameState by remember { mutableStateOf(GameState()) }
     val engine = remember { GameEngine() }
     val context = LocalContext.current
-    val soundManager = remember { SoundManager(context) }
+    var highScore by remember { mutableStateOf(loadHighScore(context)) }
+
+    // #29: SoundManager lifecycle — release on dispose
+    val soundManager = remember {
+        SoundManager(context)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            soundManager.release()
+        }
+    }
 
     // Game tick loop
     LaunchedEffect(currentScreen) {
         if (currentScreen == Screen.Game) {
             while (isActive && gameState.isPlaying) {
                 delay(16) // ~60fps
-                gameState = engine.tick(0.016)
+                gameState = engine.tick(gameState, 0.016)
                 if (gameState.isGameOver) {
+                    // Persist high score
+                    if (gameState.highScore > highScore) {
+                        highScore = gameState.highScore
+                        saveHighScore(context, gameState.highScore)
+                    }
                     ActionLogger.logGameOver(gameState.score, gameState.highScore, gameState.timeRemaining)
                     currentScreen = Screen.GameOver
                 }
@@ -56,10 +88,10 @@ fun NumberTapApp() {
     when (currentScreen) {
         is Screen.Menu -> {
             MenuScreen(
-                highScore = gameState.highScore,
+                highScore = highScore,
                 onStartClick = {
-                    gameState = engine.startNewGame(gameState.highScore)
-                    ActionLogger.logGameStart(0, gameState.highScore)
+                    gameState = engine.startNewGame(highScore)
+                    ActionLogger.logGameStart(0, highScore)
                     currentScreen = Screen.Game
                 }
             )
@@ -69,8 +101,8 @@ fun NumberTapApp() {
                 gameState = gameState,
                 onTileTap = { row, col ->
                     val tile = gameState.tiles.getOrNull(row)?.getOrNull(col)
-                    val result = engine.onTap(row, col)
-                    gameState = engine.getState()
+                    val (newState, result) = engine.onTap(gameState, row, col)
+                    gameState = newState
                     when (result) {
                         is TapResult.Correct -> {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
@@ -82,11 +114,11 @@ fun NumberTapApp() {
                         }
                         is TapResult.Invalid -> {}
                     }
-                    // Clear shake offset after brief delay
-                    if (result is TapResult.Wrong) {
-                        engine.clearShake()
-                        gameState = engine.getState()
-                    }
+                },
+                onFeedbackComplete = {
+                    // #31: Clear feedback states after 3-frame flash
+                    gameState = engine.resetTileStates(gameState)
+                    gameState = engine.clearShake(gameState)
                 }
             )
         }
@@ -95,8 +127,8 @@ fun NumberTapApp() {
                 score = gameState.score,
                 highScore = gameState.highScore,
                 onPlayAgain = {
-                    gameState = engine.startNewGame(gameState.highScore)
-                    ActionLogger.logGameStart(0, gameState.highScore)
+                    gameState = engine.startNewGame(highScore)
+                    ActionLogger.logGameStart(0, highScore)
                     currentScreen = Screen.Game
                 },
                 onMenu = {
