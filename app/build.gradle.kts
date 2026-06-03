@@ -60,8 +60,6 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime.compose)
-    implementation(libs.lifecycle.viewmodel.compose)
-    implementation(libs.navigation.compose)
 
     // Compose
     implementation(platform(libs.compose.bom))
@@ -81,4 +79,14 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+}
+
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(90)
+            }
+        }
+    }
 }

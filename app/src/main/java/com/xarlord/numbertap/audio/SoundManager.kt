@@ -3,10 +3,6 @@ package com.xarlord.numbertap.audio
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
-import android.media.AudioFormat
-import android.media.AudioTrack
-import android.media.AudioManager
-import com.xarlord.numbertap.data.GameState
 import java.io.ByteArrayOutputStream
 
 /**

@@ -26,6 +26,7 @@ class DifficultyConfigTest {
     fun `tier for score 16 returns 4x4 medium`() {
         val tier = DifficultyConfig.tierForScore(16)
         assertEquals(4, tier.gridRows)
+        assertEquals(4, tier.gridCols)
         assertEquals(32, tier.maxSpawnedValue)
         assertEquals(0.7, tier.timeGainSeconds, 0.01)
         assertEquals(2.0, tier.timePenaltySeconds, 0.01)
@@ -54,6 +55,29 @@ class DifficultyConfigTest {
         assertEquals(5, tier.gridRows)
         assertEquals(0.5, tier.timeGainSeconds, 0.01)
     }
+
+    @Test
+    fun `tier boundaries are consistent`() {
+        val easy = DifficultyConfig.tierForScore(0)
+        val medium = DifficultyConfig.tierForScore(16)
+        val hard = DifficultyConfig.tierForScore(41)
+
+        // Time gain decreases as difficulty increases
+        assertTrue(easy.timeGainSeconds > medium.timeGainSeconds)
+        assertTrue(medium.timeGainSeconds > hard.timeGainSeconds)
+
+        // Time penalty increases as difficulty increases
+        assertTrue(easy.timePenaltySeconds < medium.timePenaltySeconds)
+        assertTrue(medium.timePenaltySeconds < hard.timePenaltySeconds)
+    }
+
+    @Test
+    fun `all tiers have square grids`() {
+        for (score in listOf(0, 15, 16, 40, 41, 100)) {
+            val tier = DifficultyConfig.tierForScore(score)
+            assertEquals("Grid should be square at score $score", tier.gridRows, tier.gridCols)
+        }
+    }
 }
 
 class TileTest {
@@ -62,7 +86,6 @@ class TileTest {
     fun `tile default state is ACTIVE`() {
         val tile = Tile(id = 0, currentValue = 5)
         assertEquals(TileState.ACTIVE, tile.state)
-        assertFalse(tile.isTarget)
     }
 
     @Test
@@ -72,6 +95,42 @@ class TileTest {
         assertEquals(3, copy.id)
         assertEquals(99, copy.currentValue)
         assertEquals(TileState.TAPPED_CORRECT, copy.state)
+    }
+
+    @Test
+    fun `tile state transitions`() {
+        val tile = Tile(id = 0, currentValue = 1)
+        assertEquals(TileState.ACTIVE, tile.state)
+
+        val correct = tile.copy(state = TileState.TAPPED_CORRECT)
+        assertEquals(TileState.TAPPED_CORRECT, correct.state)
+
+        val wrong = tile.copy(state = TileState.TAPPED_WRONG)
+        assertEquals(TileState.TAPPED_WRONG, wrong.state)
+
+        val reset = wrong.copy(state = TileState.ACTIVE)
+        assertEquals(TileState.ACTIVE, reset.state)
+    }
+
+    @Test
+    fun `tile equality works`() {
+        val t1 = Tile(id = 0, currentValue = 5)
+        val t2 = Tile(id = 0, currentValue = 5)
+        assertEquals(t1, t2)
+    }
+
+    @Test
+    fun `tile inequality by value`() {
+        val t1 = Tile(id = 0, currentValue = 5)
+        val t2 = Tile(id = 0, currentValue = 6)
+        assertNotEquals(t1, t2)
+    }
+
+    @Test
+    fun `tile inequality by state`() {
+        val t1 = Tile(id = 0, currentValue = 5, state = TileState.ACTIVE)
+        val t2 = Tile(id = 0, currentValue = 5, state = TileState.TAPPED_CORRECT)
+        assertNotEquals(t1, t2)
     }
 }
 
@@ -85,6 +144,11 @@ class GameStateTest {
         assertEquals(1, state.targetNumber)
         assertEquals(0, state.score)
         assertEquals(30.0, state.timeRemaining, 0.01)
+        assertEquals(0, state.highScore)
+        assertEquals(4, state.gridSize)
+        assertEquals(0, state.comboCount)
+        assertEquals(0L, state.lastCorrectTapTime)
+        assertEquals(Pair(0f, 0f), state.shakeOffset)
     }
 
     @Test
@@ -95,13 +159,41 @@ class GameStateTest {
         assertEquals(16.2, updated.timeRemaining, 0.01)
         assertEquals(10, state.score) // original unchanged
     }
+
+    @Test
+    fun `game state with tiles`() {
+        val tiles = listOf(
+            listOf(Tile(id = 0, currentValue = 1), Tile(id = 1, currentValue = 2)),
+            listOf(Tile(id = 2, currentValue = 3), Tile(id = 3, currentValue = 4))
+        )
+        val state = GameState(tiles = tiles)
+        assertEquals(2, state.tiles.size)
+        assertEquals(2, state.tiles[0].size)
+        assertEquals(1, state.tiles[0][0].currentValue)
+    }
+
+    @Test
+    fun `shake offset can be set and cleared`() {
+        val state = GameState(shakeOffset = Pair(5f, -3f))
+        assertEquals(Pair(5f, -3f), state.shakeOffset)
+        val cleared = state.copy(shakeOffset = Pair(0f, 0f))
+        assertEquals(Pair(0f, 0f), cleared.shakeOffset)
+    }
+
+    @Test
+    fun `game over state`() {
+        val state = GameState(isPlaying = false, isGameOver = true, score = 42)
+        assertFalse(state.isPlaying)
+        assertTrue(state.isGameOver)
+        assertEquals(42, state.score)
+    }
 }
 
 class GameActionTest {
 
     @Test
     fun `action type enum has all expected values`() {
-        val types = ActionType.values()
+        val types = ActionType.entries
         assertEquals(5, types.size)
         assertTrue(types.contains(ActionType.TAP_CORRECT))
         assertTrue(types.contains(ActionType.TAP_WRONG))
@@ -118,5 +210,68 @@ class GameActionTest {
         assertEquals(-1, action.tileValue)
         assertEquals(0, action.score)
         assertEquals(0.0, action.timeRemaining, 0.01)
+    }
+
+    @Test
+    fun `game action full construction`() {
+        val action = GameAction(
+            timestamp = 2000L,
+            type = ActionType.TAP_WRONG,
+            tileRow = 2,
+            tileCol = 3,
+            tileValue = 7,
+            targetValue = 5,
+            score = 10,
+            timeRemaining = 12.5
+        )
+        assertEquals(2000L, action.timestamp)
+        assertEquals(ActionType.TAP_WRONG, action.type)
+        assertEquals(2, action.tileRow)
+        assertEquals(3, action.tileCol)
+        assertEquals(7, action.tileValue)
+        assertEquals(5, action.targetValue)
+        assertEquals(10, action.score)
+        assertEquals(12.5, action.timeRemaining, 0.01)
+    }
+}
+
+class DifficultyTierTest {
+
+    @Test
+    fun `difficulty tier construction`() {
+        val tier = DifficultyTier(6, 6, 36, 0.3, 4.0)
+        assertEquals(6, tier.gridRows)
+        assertEquals(6, tier.gridCols)
+        assertEquals(36, tier.maxSpawnedValue)
+        assertEquals(0.3, tier.timeGainSeconds, 0.01)
+        assertEquals(4.0, tier.timePenaltySeconds, 0.01)
+    }
+
+    @Test
+    fun `difficulty tier copy`() {
+        val tier = DifficultyTier(4, 4, 16, 1.0, 1.5)
+        val modified = tier.copy(gridRows = 5, gridCols = 5)
+        assertEquals(5, modified.gridRows)
+        assertEquals(5, modified.gridCols)
+        assertEquals(4, tier.gridRows) // original unchanged
+    }
+}
+
+class TileStateTest {
+
+    @Test
+    fun `tile state enum values`() {
+        val states = TileState.entries
+        assertEquals(3, states.size)
+        assertEquals(TileState.ACTIVE, states[0])
+        assertEquals(TileState.TAPPED_CORRECT, states[1])
+        assertEquals(TileState.TAPPED_WRONG, states[2])
+    }
+
+    @Test
+    fun `tile state valueOf`() {
+        assertEquals(TileState.ACTIVE, TileState.valueOf("ACTIVE"))
+        assertEquals(TileState.TAPPED_CORRECT, TileState.valueOf("TAPPED_CORRECT"))
+        assertEquals(TileState.TAPPED_WRONG, TileState.valueOf("TAPPED_WRONG"))
     }
 }

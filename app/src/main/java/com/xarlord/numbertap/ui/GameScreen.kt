@@ -1,12 +1,26 @@
 package com.xarlord.numbertap.ui
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +58,7 @@ fun GameScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Grid with shake in pixels (not dp)
+        // Grid with shake in pixels
         val density = LocalDensity.current
         GridContainer(
             tiles = gameState.tiles,
@@ -55,11 +69,11 @@ fun GameScreen(
         )
     }
 
-    // Auto-clear feedback states after 3-frame duration (~48ms)
+    // #38/#43: Delay feedback clear so user sees the flash (100ms = ~6 frames)
     val hasFeedback = gameState.tiles.any { row -> row.any { it.state != TileState.ACTIVE } }
     LaunchedEffect(hasFeedback) {
         if (hasFeedback) {
-            delay(48) // 3 frames at 60Hz
+            delay(100) // Visible shake + color flash
             onFeedbackComplete()
         }
     }
@@ -112,7 +126,6 @@ private fun GridContainer(
     onTileTap: (row: Int, col: Int) -> Unit,
     density: androidx.compose.ui.unit.Density
 ) {
-    // #28: Shake offset in pixels, not dp
     Column(
         modifier = Modifier.offset(
             x = with(density) { shakeOffsetPx.first.toInt().toDp() },
@@ -135,17 +148,38 @@ private fun GridContainer(
     }
 }
 
+/**
+ * #43/#44: Proper 3-frame color fade implementation per GDD Section 4.1.
+ * Frame 1 (Impact): Pure green/red → Frame 2 (Fade): Muted green/red → Frame 3 (Settle): Normal
+ * The frame transitions are driven by a timed state machine.
+ */
 @Composable
 private fun TileCell(
     tile: Tile,
     isTarget: Boolean,
     onClick: () -> Unit
 ) {
-    // #31: 3-frame color fade — tile state drives the color
-    val backgroundColor = when (tile.state) {
-        TileState.TAPPED_CORRECT -> GameColors.Success      // Frame 1: pure green
-        TileState.TAPPED_WRONG -> GameColors.Failure         // Frame 1: pure red
-        else -> if (isTarget) GameColors.TileTarget.copy(alpha = 0.15f) else GameColors.TileNormal
+    // 3-frame color fade state machine
+    var fadeFrame by remember(tile.id) { mutableStateOf(if (tile.state != TileState.ACTIVE) 0 else -1) }
+
+    // Track state changes to trigger fade
+    LaunchedEffect(tile.state) {
+        if (tile.state != TileState.ACTIVE) {
+            fadeFrame = 0 // Start at impact frame
+            delay(32)     // ~2 frames at 60Hz
+            fadeFrame = 1 // Fade frame
+            delay(32)
+            fadeFrame = 2 // Settle frame (resets to normal via onFeedbackComplete)
+        }
+    }
+
+    val backgroundColor = when {
+        tile.state == TileState.TAPPED_CORRECT && fadeFrame == 0 -> GameColors.Success       // Frame 1: #22C55E
+        tile.state == TileState.TAPPED_CORRECT && fadeFrame == 1 -> GameColors.SuccessFade    // Frame 2: #1E5E3A
+        tile.state == TileState.TAPPED_WRONG && fadeFrame == 0 -> GameColors.Failure          // Frame 1: #EF4444
+        tile.state == TileState.TAPPED_WRONG && fadeFrame == 1 -> GameColors.FailureFade      // Frame 2: #6B2121
+        isTarget -> GameColors.TileTarget.copy(alpha = 0.15f)
+        else -> GameColors.TileNormal                                                           // Frame 3: #2A3447
     }
 
     Box(
