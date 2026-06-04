@@ -59,7 +59,6 @@ dependencies {
     // AndroidX
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
-    implementation(libs.lifecycle.runtime.compose)
 
     // Compose
     implementation(platform(libs.compose.bom))
@@ -72,9 +71,6 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.turbine)
-    testImplementation(libs.coroutines.test)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))

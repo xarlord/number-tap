@@ -66,7 +66,8 @@ class GameEngine {
 
         // Check for grid transition
         val newTier = DifficultyConfig.tierForScore(newScore)
-        val finalTiles = if (newTier.gridRows != tier.gridRows) {
+        val didTransition = newTier.gridRows != tier.gridRows
+        val finalTiles = if (didTransition) {
             regenerateForNewGrid(newTier, newTarget)
         } else {
             newTiles
@@ -76,7 +77,7 @@ class GameEngine {
         val timeSinceLastTap = if (state.lastCorrectTapTime > 0) currentTime - state.lastCorrectTapTime else Long.MAX_VALUE
         val newCombo = if (timeSinceLastTap < 500) state.comboCount + 1 else 1
 
-        return Pair(state.copy(
+        val newState = state.copy(
             tiles = finalTiles,
             targetNumber = newTarget,
             score = newScore,
@@ -85,7 +86,14 @@ class GameEngine {
             gridSize = newTier.gridRows,
             comboCount = newCombo,
             lastCorrectTapTime = currentTime
-        ), TapResult.Correct(newCombo))
+        )
+
+        // #55: Log grid transitions
+        if (didTransition) {
+            ActionLogger.logGridTransition(newScore, newTier.gridRows)
+        }
+
+        return Pair(newState, TapResult.Correct(newCombo))
     }
 
     private fun handleWrongTap(state: GameState, row: Int, col: Int, tile: Tile, tier: DifficultyTier): Pair<GameState, TapResult.Wrong> {
@@ -168,8 +176,9 @@ class GameEngine {
     }
 }
 
+// #59: data object for Kotlin 1.9+ singleton sealed class branches
 sealed class TapResult {
     data class Correct(val combo: Int) : TapResult()
-    object Wrong : TapResult()
-    object Invalid : TapResult()
+    data object Wrong : TapResult()
+    data object Invalid : TapResult()
 }

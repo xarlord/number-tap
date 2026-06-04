@@ -9,7 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.xarlord.numbertap.ui.GameColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,7 +58,7 @@ fun MenuScreen(
             onClick = onStartClick,
             colors = ButtonDefaults.buttonColors(
                 containerColor = GameColors.TileTarget,
-                contentColor = Color(0xFF121824)
+                contentColor = GameColors.Background
             ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.size(width = 180.dp, height = 56.dp)
