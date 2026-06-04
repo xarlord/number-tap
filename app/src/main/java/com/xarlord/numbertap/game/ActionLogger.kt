@@ -17,6 +17,7 @@ object ActionLogger {
             put("target", action.targetValue)
             put("score", action.score)
             put("time", action.timeRemaining)
+            if (action.extra.isNotEmpty()) put("extra", action.extra)
         }
         Log.d(TAG, json.toString())
     }
@@ -56,7 +57,79 @@ object ActionLogger {
         log(GameAction(
             timestamp = System.currentTimeMillis(),
             type = ActionType.GRID_TRANSITION,
+            score = score,
+            extra = "newGrid=$newSize"
+        ))
+    }
+
+    fun logTutorialStart() {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.TUTORIAL_START,
+            extra = "firstTime=true"
+        ))
+    }
+
+    fun logTutorialComplete(score: Int) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.TUTORIAL_COMPLETE,
+            score = score,
+            extra = "transitionedToGame=true"
+        ))
+    }
+
+    fun logPause(score: Int, time: Double) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.PAUSE,
+            score = score,
+            timeRemaining = time
+        ))
+    }
+
+    fun logResume(score: Int, time: Double) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.RESUME,
+            score = score,
+            timeRemaining = time
+        ))
+    }
+
+    fun logRevive(score: Int, time: Double) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.REVIVE,
+            score = score,
+            timeRemaining = time,
+            extra = "bonusTime=5.0"
+        ))
+    }
+
+    fun logScoreMilestone(score: Int, label: String) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.SCORE_MILESTONE,
+            score = score,
+            extra = "label=$label"
+        ))
+    }
+
+    fun logShare(score: Int) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.SHARE,
             score = score
+        ))
+    }
+
+    fun logTierAnnouncement(score: Int, tier: String) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.TIER_ANNOUNCEMENT,
+            score = score,
+            extra = "tier=$tier"
         ))
     }
 }

@@ -2,6 +2,7 @@ package com.xarlord.numbertap.game
 
 import com.xarlord.numbertap.data.DifficultyConfig
 import com.xarlord.numbertap.data.DifficultyTier
+import com.xarlord.numbertap.data.FloatingText
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
@@ -13,25 +14,39 @@ import kotlin.random.Random
  */
 class GameEngine {
 
-    fun startNewGame(highScore: Int, gridSize: Int = 4): GameState {
+    private var floatingTextCounter = 0
+
+    fun startNewGame(highScore: Int, gridSize: Int = 4, isTutorial: Boolean = false): GameState {
         val tier = DifficultyConfig.tierForScore(0)
-        val tiles = generateGrid(tier.gridRows, tier.gridCols, tier.maxSpawnedValue)
+        val tiles = if (isTutorial) {
+            generateTutorialGrid()
+        } else {
+            generateGrid(tier.gridRows, tier.gridCols, tier.maxSpawnedValue)
+        }
         return GameState(
             tiles = tiles,
             targetNumber = 1,
             score = 0,
-            timeRemaining = 30.0,
+            timeRemaining = if (isTutorial) 999.0 else 30.0,
             highScore = highScore,
             isPlaying = true,
             isGameOver = false,
-            gridSize = tier.gridRows,
+            isPaused = false,
+            gridSize = if (isTutorial) 3 else tier.gridRows,
             comboCount = 0,
-            lastCorrectTapTime = 0L
+            lastCorrectTapTime = 0L,
+            isTutorial = isTutorial,
+            tutorialStep = if (isTutorial) 0 else -1
         )
     }
 
+    fun startTutorial(highScore: Int): GameState {
+        return startNewGame(highScore, isTutorial = true)
+    }
+
     fun onTap(state: GameState, row: Int, col: Int, currentTime: Long = System.currentTimeMillis()): Pair<GameState, TapResult> {
-        if (!state.isPlaying || row < 0 || row >= state.tiles.size || col < 0 || col >= state.tiles[row].size) {
+        if (!state.isPlaying || state.isPaused) return Pair(state, TapResult.Invalid)
+        if (row < 0 || row >= state.tiles.size || col < 0 || col >= state.tiles[row].size) {
             return Pair(state, TapResult.Invalid)
         }
         val tile = state.tiles[row][col]
@@ -46,13 +61,14 @@ class GameEngine {
 
     private fun handleCorrectTap(state: GameState, row: Int, col: Int, tile: Tile, tier: DifficultyTier, currentTime: Long): Pair<GameState, TapResult.Correct> {
         val newScore = state.score + 1
-        val newTimeRemaining = state.timeRemaining + tier.timeGainSeconds
+        val timeGain = if (state.isTutorial) 0.0 else tier.timeGainSeconds
+        val newTimeRemaining = state.timeRemaining + timeGain
         val newTarget = state.targetNumber + 1
 
         // GDD: tile replacement value = currentValue + gridSize
-        val replacementValue = tile.currentValue + (tier.gridRows * tier.gridCols)
+        val gridSizeTotal = if (state.isTutorial) 9 else (tier.gridRows * tier.gridCols)
+        val replacementValue = tile.currentValue + gridSizeTotal
 
-        // Update tile — briefly show TAPPED_CORRECT, then replace value and reset state
         val newTiles = state.tiles.map { rowList ->
             rowList.map { t ->
                 if (t.id == tile.id) t.copy(
@@ -66,7 +82,7 @@ class GameEngine {
 
         // Check for grid transition
         val newTier = DifficultyConfig.tierForScore(newScore)
-        val didTransition = newTier.gridRows != tier.gridRows
+        val didTransition = newTier.gridRows != tier.gridRows && !state.isTutorial
         val finalTiles = if (didTransition) {
             regenerateForNewGrid(newTier, newTarget)
         } else {
@@ -77,29 +93,66 @@ class GameEngine {
         val timeSinceLastTap = if (state.lastCorrectTapTime > 0) currentTime - state.lastCorrectTapTime else Long.MAX_VALUE
         val newCombo = if (timeSinceLastTap < 500) state.comboCount + 1 else 1
 
+        // Tier announcement
+        val tierAnnouncement = when {
+            newScore == 16 && !state.isTutorial -> "ROUND 2!"
+            newScore == 41 && !state.isTutorial -> "HARD MODE!"
+            newScore == 5 && !state.isTutorial -> "NICE!"
+            newScore == 10 && !state.isTutorial -> "GREAT!"
+            newScore == 25 && !state.isTutorial -> "AMAZING!"
+            newScore == 50 && !state.isTutorial -> "LEGENDARY!"
+            else -> null
+        }
+
+        // Floating text for time gain
+        val floatingText = if (!state.isTutorial && timeGain > 0) {
+            FloatingText(
+                id = floatingTextCounter++,
+                text = "+${timeGain}s",
+                x = col.toFloat(),
+                y = row.toFloat(),
+                colorHex = 0xFF22C55E,
+                createdAt = currentTime
+            )
+        } else null
+
+        val wasNewHighScore = newScore > state.highScore
+
         val newState = state.copy(
             tiles = finalTiles,
             targetNumber = newTarget,
             score = newScore,
             timeRemaining = newTimeRemaining,
             highScore = maxOf(state.highScore, newScore),
-            gridSize = newTier.gridRows,
+            gridSize = if (state.isTutorial) 3 else newTier.gridRows,
             comboCount = newCombo,
-            lastCorrectTapTime = currentTime
+            lastCorrectTapTime = currentTime,
+            tierAnnouncement = tierAnnouncement,
+            floatingTexts = if (floatingText != null) state.floatingTexts + floatingText else state.floatingTexts,
+            isNewHighScore = wasNewHighScore
         )
 
-        // #55: Log grid transitions
+        // Tutorial step advance
+        if (state.isTutorial && newScore >= 5) {
+            ActionLogger.logTutorialComplete(newScore)
+            return Pair(newState.copy(isTutorial = false, timeRemaining = 30.0), TapResult.Correct(newCombo))
+        }
+
         if (didTransition) {
             ActionLogger.logGridTransition(newScore, newTier.gridRows)
+        }
+
+        if (tierAnnouncement != null && newScore % 5 == 0) {
+            ActionLogger.logScoreMilestone(newScore, tierAnnouncement)
         }
 
         return Pair(newState, TapResult.Correct(newCombo))
     }
 
     private fun handleWrongTap(state: GameState, row: Int, col: Int, tile: Tile, tier: DifficultyTier): Pair<GameState, TapResult.Wrong> {
-        val newTime = maxOf(0.0, state.timeRemaining - tier.timePenaltySeconds)
+        val penalty = if (state.isTutorial) 0.0 else tier.timePenaltySeconds
+        val newTime = maxOf(0.0, state.timeRemaining - penalty)
 
-        // Set TAPPED_WRONG state on the wrong tile for red flash feedback
         val newTiles = state.tiles.map { rowList ->
             rowList.map { t ->
                 if (t.id == tile.id) t.copy(state = TileState.TAPPED_WRONG)
@@ -112,10 +165,11 @@ class GameEngine {
             tiles = newTiles,
             timeRemaining = newTime,
             comboCount = 0,
-            shakeOffset = Pair(
+            shakeOffset = if (state.isTutorial) Pair(0f, 0f) else Pair(
                 Random.nextFloat() * 12 - 6,
                 Random.nextFloat() * 12 - 6
-            )
+            ),
+            tierAnnouncement = null
         ), TapResult.Wrong)
     }
 
@@ -132,13 +186,63 @@ class GameEngine {
         return state.copy(tiles = resetTiles)
     }
 
+    fun clearExpiredFloatingTexts(state: GameState, currentTime: Long): GameState {
+        val active = state.floatingTexts.filter { currentTime - it.createdAt < 800 }
+        return state.copy(floatingTexts = active)
+    }
+
+    fun clearTierAnnouncement(state: GameState): GameState {
+        return state.copy(tierAnnouncement = null)
+    }
+
     fun tick(state: GameState, deltaSeconds: Double): GameState {
-        if (!state.isPlaying) return state
+        if (!state.isPlaying || state.isPaused) return state
         val newTime = state.timeRemaining - deltaSeconds
         return if (newTime <= 0) {
             state.copy(timeRemaining = 0.0, isPlaying = false, isGameOver = true)
         } else {
             state.copy(timeRemaining = newTime)
+        }
+    }
+
+    fun pause(state: GameState): GameState {
+        if (!state.isPlaying || state.isGameOver) return state
+        ActionLogger.logPause(state.score, state.timeRemaining)
+        return state.copy(isPaused = true)
+    }
+
+    fun resume(state: GameState): GameState {
+        if (!state.isPaused) return state
+        ActionLogger.logResume(state.score, state.timeRemaining)
+        return state.copy(isPaused = false)
+    }
+
+    fun revive(state: GameState): GameState {
+        if (state.isPlaying || !state.isGameOver) return state
+        ActionLogger.logRevive(state.score, state.timeRemaining)
+        return state.copy(
+            timeRemaining = 5.0,
+            isPlaying = true,
+            isGameOver = false,
+            isPaused = false
+        )
+    }
+
+    fun isReviveEligible(state: GameState): Boolean {
+        if (!state.isGameOver || state.highScore == 0) return false
+        val threshold = state.highScore * 0.9
+        return state.score >= threshold
+    }
+
+    private fun generateTutorialGrid(): List<List<Tile>> {
+        // 3x3 grid with numbers 1-5 for tutorial (rest filled with higher numbers)
+        val values = mutableListOf(1, 2, 3, 4, 5, 10, 15, 20, 25)
+        val shuffled = fisherYatesShuffle(values)
+        var idx = 0
+        return (0 until 3).map { r ->
+            (0 until 3).map { c ->
+                Tile(id = r * 3 + c, currentValue = shuffled[idx++])
+            }
         }
     }
 
@@ -176,7 +280,6 @@ class GameEngine {
     }
 }
 
-// #59: data object for Kotlin 1.9+ singleton sealed class branches
 sealed class TapResult {
     data class Correct(val combo: Int) : TapResult()
     data object Wrong : TapResult()

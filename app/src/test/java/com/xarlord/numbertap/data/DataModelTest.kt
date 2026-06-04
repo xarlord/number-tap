@@ -194,12 +194,21 @@ class GameActionTest {
     @Test
     fun `action type enum has all expected values`() {
         val types = ActionType.entries
-        assertEquals(5, types.size)
+        assertEquals(14, types.size)
         assertTrue(types.contains(ActionType.TAP_CORRECT))
         assertTrue(types.contains(ActionType.TAP_WRONG))
         assertTrue(types.contains(ActionType.GAME_START))
         assertTrue(types.contains(ActionType.GAME_OVER))
         assertTrue(types.contains(ActionType.GRID_TRANSITION))
+        assertTrue(types.contains(ActionType.TUTORIAL_START))
+        assertTrue(types.contains(ActionType.TUTORIAL_STEP))
+        assertTrue(types.contains(ActionType.TUTORIAL_COMPLETE))
+        assertTrue(types.contains(ActionType.PAUSE))
+        assertTrue(types.contains(ActionType.RESUME))
+        assertTrue(types.contains(ActionType.REVIVE))
+        assertTrue(types.contains(ActionType.TIER_ANNOUNCEMENT))
+        assertTrue(types.contains(ActionType.SHARE))
+        assertTrue(types.contains(ActionType.SCORE_MILESTONE))
     }
 
     @Test

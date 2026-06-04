@@ -5,13 +5,14 @@ data class DifficultyTier(
     val gridCols: Int,
     val maxSpawnedValue: Int,
     val timeGainSeconds: Double,
-    val timePenaltySeconds: Double
+    val timePenaltySeconds: Double,
+    val label: String = ""
 )
 
 object DifficultyConfig {
     fun tierForScore(score: Int): DifficultyTier = when {
-        score <= 15 -> DifficultyTier(4, 4, 16, 1.0, 1.5)
-        score <= 40 -> DifficultyTier(4, 4, 32, 0.7, 2.0)
-        else -> DifficultyTier(5, 5, 50, 0.5, 3.0)
+        score <= 15 -> DifficultyTier(4, 4, 16, 1.0, 1.5, "EASY")
+        score <= 40 -> DifficultyTier(4, 4, 32, 0.7, 2.0, "MEDIUM")
+        else -> DifficultyTier(5, 5, 50, 0.5, 3.0, "HARD")
     }
 }
