@@ -14,9 +14,7 @@ import kotlin.random.Random
  */
 class GameEngine {
 
-    private var floatingTextCounter = 0
-
-    fun startNewGame(highScore: Int, gridSize: Int = 4, isTutorial: Boolean = false): GameState {
+    fun startNewGame(highScore: Int, isTutorial: Boolean = false): GameState {
         val tier = DifficultyConfig.tierForScore(0)
         val tiles = if (isTutorial) {
             generateTutorialGrid()
@@ -107,7 +105,7 @@ class GameEngine {
         // Floating text for time gain
         val floatingText = if (!state.isTutorial && timeGain > 0) {
             FloatingText(
-                id = floatingTextCounter++,
+                id = state.nextFloatingTextId,
                 text = "+${timeGain}s",
                 x = col.toFloat(),
                 y = row.toFloat(),
@@ -129,7 +127,8 @@ class GameEngine {
             lastCorrectTapTime = currentTime,
             tierAnnouncement = tierAnnouncement,
             floatingTexts = if (floatingText != null) state.floatingTexts + floatingText else state.floatingTexts,
-            isNewHighScore = wasNewHighScore
+            isNewHighScore = wasNewHighScore,
+            nextFloatingTextId = if (floatingText != null) state.nextFloatingTextId + 1 else state.nextFloatingTextId
         )
 
         // Tutorial step advance
@@ -248,8 +247,7 @@ class GameEngine {
 
     private fun generateGrid(rows: Int, cols: Int, maxValue: Int): List<List<Tile>> {
         val size = rows * cols
-        val values = (1..minOf(maxValue, size)).toMutableList()
-        while (values.size < size) values.add(values.size + 1)
+        val values = (1..size).toMutableList()
         val shuffled = fisherYatesShuffle(values)
         var idx = 0
         return (0 until rows).map { r ->

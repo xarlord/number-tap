@@ -17,7 +17,8 @@ data class GameState(
     val tutorialStep: Int = 0,
     val tierAnnouncement: String? = null,
     val floatingTexts: List<FloatingText> = emptyList(),
-    val isNewHighScore: Boolean = false
+    val isNewHighScore: Boolean = false,
+    val nextFloatingTextId: Int = 0
 )
 
 data class FloatingText(

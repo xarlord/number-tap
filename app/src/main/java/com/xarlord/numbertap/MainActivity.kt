@@ -64,6 +64,8 @@ fun NumberTapApp() {
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) { onDispose { soundManager.release() } }
 
+    var tierAnnouncementTime by remember { mutableLongStateOf(0L) }
+
     // Single LaunchedEffect for tick + feedback
     LaunchedEffect(currentScreen) {
         if (currentScreen == Screen.Game) {
@@ -79,21 +81,27 @@ fun NumberTapApp() {
                     delay(60)
                     gameState = engine.resetTileStates(gameState)
                     gameState = engine.clearShake(gameState)
+                    // Reset tick timer after feedback delay to prevent time drift
+                    lastTickTime = System.currentTimeMillis()
                 }
 
                 // Clear expired floating texts
                 gameState = engine.clearExpiredFloatingTexts(gameState, now)
 
-                // Clear tier announcement after 1.5s
-                if (gameState.tierAnnouncement != null) {
-                    delay(1500)
+                // Clear tier announcement after 1.5s (non-blocking)
+                if (gameState.tierAnnouncement != null && tierAnnouncementTime == 0L) {
+                    tierAnnouncementTime = now
+                }
+                if (tierAnnouncementTime > 0 && now - tierAnnouncementTime >= 1500) {
                     gameState = engine.clearTierAnnouncement(gameState)
+                    tierAnnouncementTime = 0L
                 }
 
                 // Game tick
                 if (gameState.isPlaying && !gameState.isPaused) {
-                    val delta = (now - lastTickTime) / 1000.0
-                    lastTickTime = now
+                    val tickNow = System.currentTimeMillis()
+                    val delta = (tickNow - lastTickTime) / 1000.0
+                    lastTickTime = tickNow
                     gameState = engine.tick(gameState, delta)
 
                     // Countdown tick sound at <5 seconds
@@ -105,6 +113,7 @@ fun NumberTapApp() {
 
                     // Game over
                     if (gameState.isGameOver) {
+                        tierAnnouncementTime = 0L
                         if (gameState.highScore > highScore) {
                             highScore = gameState.highScore
                             saveHighScore(context, gameState.highScore)
@@ -116,7 +125,7 @@ fun NumberTapApp() {
                         currentScreen = Screen.GameOver
                     }
                 } else {
-                    lastTickTime = now
+                    lastTickTime = System.currentTimeMillis()
                 }
             }
         }

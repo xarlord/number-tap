@@ -1,6 +1,5 @@
 package com.xarlord.numbertap.ui
 
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,13 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -296,8 +293,6 @@ private fun TileCell(
         }
     }
 
-    val baseColor = GameColors.tileColorForValue(tile.currentValue).copy(alpha = 0.15f)
-
     val bg = when {
         tile.state == TileState.TAPPED_CORRECT && fadeFrame == 0 -> GameColors.Success
         tile.state == TileState.TAPPED_CORRECT && fadeFrame == 1 -> GameColors.SuccessFade
@@ -337,8 +332,32 @@ private fun TileCell(
 
 @Composable
 private fun FloatingTextOverlay(floatingTexts: List<FloatingText>, gridSize: Int) {
-    // Floating texts are handled by game tick cleanup — this is a placeholder
-    // that could be extended with animations
+    if (floatingTexts.isEmpty()) return
+
+    val tileSizeDp = if (gridSize <= 4) 80.dp else 68.dp
+    val spacingDp = 6.dp
+    val tileSizePx = with(LocalDensity.current) { tileSizeDp.toPx() }
+    val spacingPx = with(LocalDensity.current) { spacingDp.toPx() }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        floatingTexts.forEach { ft ->
+            val x = ft.x * (tileSizePx + spacingPx) + tileSizePx / 2f
+            val y = ft.y * (tileSizePx + spacingPx)
+
+            drawContext.canvas.nativeCanvas.drawText(
+                ft.text,
+                x,
+                y,
+                android.graphics.Paint().apply {
+                    setColor(ft.colorHex.toInt())
+                    textSize = 36f
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    isAntiAlias = true
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -364,7 +383,8 @@ private fun TierAnnouncementOverlay(text: String) {
             },
             fontSize = 40.sp,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.scale(scale)
         )
     }
 }
