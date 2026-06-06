@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeConfig
 import kotlin.random.Random
 
@@ -124,7 +125,7 @@ fun GameOverScreen(
 }
 
 @Composable
-private fun ConfettiAnimation(colors: com.xarlord.numbertap.data.ThemeColors) {
+private fun ConfettiAnimation(colors: ThemeColors) {
     val inf = rememberInfiniteTransition(label = "cf")
     val phase by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "cf")
     val particles = remember { (0..25).map { Triple(Random.nextFloat(), Random.nextFloat(), Random.nextInt(0, 4)) } }

@@ -43,7 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeConfig
+import com.xarlord.numbertap.data.ThemeStyle
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -179,8 +181,8 @@ fun MenuScreen(
 @Composable
 private fun ThemedLogo(
     theme: GameTheme,
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle,
+    colors: ThemeColors,
+    style: ThemeStyle,
     size: androidx.compose.ui.unit.Dp
 ) {
     val cornerRadius = style.tileCornerRadius

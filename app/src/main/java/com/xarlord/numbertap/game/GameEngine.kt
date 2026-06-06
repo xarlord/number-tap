@@ -4,8 +4,10 @@ import com.xarlord.numbertap.data.DifficultyConfig
 import com.xarlord.numbertap.data.DifficultyTier
 import com.xarlord.numbertap.data.FloatingText
 import com.xarlord.numbertap.data.GameState
+import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 /**
@@ -14,9 +16,9 @@ import kotlin.random.Random
  */
 class GameEngine {
 
-    private var floatingTextCounter = 0
+    private val floatingTextCounter = AtomicInteger(0)
 
-    fun startNewGame(highScore: Int, isTutorial: Boolean = false, currentTheme: com.xarlord.numbertap.data.GameTheme = com.xarlord.numbertap.data.GameTheme.DEFAULT): GameState {
+    fun startNewGame(highScore: Int, isTutorial: Boolean = false, currentTheme: GameTheme = GameTheme.DEFAULT): GameState {
         val tier = DifficultyConfig.tierForScore(0)
         val tiles = if (isTutorial) {
             generateTutorialGrid()
@@ -108,7 +110,7 @@ class GameEngine {
         // Floating text for time gain
         val floatingText = if (!state.isTutorial && timeGain > 0) {
             FloatingText(
-                id = floatingTextCounter++,
+                id = floatingTextCounter.getAndIncrement(),
                 text = "+${timeGain}s",
                 x = col.toFloat(),
                 y = row.toFloat(),

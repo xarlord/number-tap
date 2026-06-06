@@ -56,9 +56,11 @@ import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.R
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.ThemeColors
+import com.xarlord.numbertap.data.ThemeConfig
+import com.xarlord.numbertap.data.ThemeStyle
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
-import com.xarlord.numbertap.data.ThemeConfig
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -196,8 +198,8 @@ fun GameScreen(
 @Composable
 private fun TopBar(
     state: GameState,
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle,
+    colors: ThemeColors,
+    style: ThemeStyle,
     onPauseClick: () -> Unit,
     urgentPulse: Float
 ) {
@@ -235,7 +237,7 @@ private fun TopBar(
 }
 
 @Composable
-private fun TimerBar(timeRemaining: Double, maxTime: Double, colors: com.xarlord.numbertap.data.ThemeColors) {
+private fun TimerBar(timeRemaining: Double, maxTime: Double, colors: ThemeColors) {
     val fraction = (timeRemaining / maxTime).coerceIn(0.0, 1.0).toFloat()
     val barColor = when {
         timeRemaining < 5 -> colors.timerUrgent
@@ -253,8 +255,8 @@ private fun TimerBar(timeRemaining: Double, maxTime: Double, colors: com.xarlord
 @Composable
 private fun TargetHint(
     targetNumber: Int,
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle,
+    colors: ThemeColors,
+    style: ThemeStyle,
     pulseAlpha: Float,
     isTutorial: Boolean
 ) {
@@ -297,8 +299,8 @@ private fun GridContainer(
     onTileTap: (row: Int, col: Int) -> Unit,
     isTutorial: Boolean,
     theme: GameTheme,
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle
+    colors: ThemeColors,
+    style: ThemeStyle
 ) {
     val tileSize = if (isTutorial) 88.dp else if (tiles.size <= 4) 78.dp else 64.dp
 
@@ -333,8 +335,8 @@ private fun ThemedTile(
     isTutorial: Boolean,
     tileSize: androidx.compose.ui.unit.Dp,
     theme: GameTheme,
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle,
+    colors: ThemeColors,
+    style: ThemeStyle,
     onClick: () -> Unit
 ) {
     var fadeFrame by remember(tile.id) { mutableIntStateOf(if (tile.state != TileState.ACTIVE) 0 else -1) }
@@ -408,8 +410,8 @@ private fun ThemedTile(
 @Composable
 private fun BottomPanel(
     state: GameState,
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle
+    colors: ThemeColors,
+    style: ThemeStyle
 ) {
     val tier = when {
         state.score <= 15 -> "EASY"
@@ -502,8 +504,8 @@ private fun BottomPanel(
 private fun StatLabel(
     label: String,
     value: String,
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle
+    colors: ThemeColors,
+    style: ThemeStyle
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, color = colors.textSecondary, fontSize = 9.sp, fontFamily = style.bodyFontFamily)
@@ -530,8 +532,8 @@ private fun ScanlineOverlay() {
 
 @Composable
 private fun PauseOverlay(
-    colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle,
+    colors: ThemeColors,
+    style: ThemeStyle,
     onResume: () -> Unit
 ) {
     Box(
