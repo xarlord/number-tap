@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import com.xarlord.numbertap.data.GameState
+import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.TileState
 import com.xarlord.numbertap.game.ActionLogger
 import com.xarlord.numbertap.game.GameEngine
@@ -35,12 +36,22 @@ sealed class Screen {
 private const val PREFS_NAME = "number_tap_prefs"
 private const val KEY_HIGH_SCORE = "high_score"
 private const val KEY_HAS_PLAYED = "has_played"
+private const val KEY_THEME = "selected_theme"
 
 private fun loadHighScore(context: Context) =
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getInt(KEY_HIGH_SCORE, 0)
 
 private fun saveHighScore(context: Context, score: Int) {
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putInt(KEY_HIGH_SCORE, score).apply()
+}
+
+private fun loadTheme(context: Context): GameTheme {
+    val name = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_THEME, GameTheme.DEFAULT.name)
+    return try { GameTheme.valueOf(name ?: GameTheme.DEFAULT.name) } catch (_: Exception) { GameTheme.DEFAULT }
+}
+
+private fun saveTheme(context: Context, theme: GameTheme) {
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(KEY_THEME, theme.name).apply()
 }
 
 private fun hasPlayedBefore(context: Context): Boolean =
@@ -57,63 +68,47 @@ fun NumberTapApp() {
     val engine = remember { GameEngine() }
     val context = LocalContext.current
     var highScore by remember { mutableStateOf(loadHighScore(context)) }
-    var isTutorialMode by remember { mutableStateOf(false) }
+    var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
     var lastTickTime by remember { mutableLongStateOf(0L) }
     var lastCountdownTickSecond by remember { mutableIntStateOf(-1) }
 
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) { onDispose { soundManager.release() } }
 
-    var tierAnnouncementTime by remember { mutableLongStateOf(0L) }
-
-    // Single LaunchedEffect for tick + feedback
+    // Game loop
     LaunchedEffect(currentScreen) {
         if (currentScreen == Screen.Game) {
             lastTickTime = System.currentTimeMillis()
             while (isActive) {
                 delay(16)
-
                 val now = System.currentTimeMillis()
 
-                // Feedback duration: 60ms shake + flash
                 val hasFeedback = gameState.tiles.any { row -> row.any { it.state != TileState.ACTIVE } }
                 if (hasFeedback) {
                     delay(60)
                     gameState = engine.resetTileStates(gameState)
                     gameState = engine.clearShake(gameState)
-                    // Reset tick timer after feedback delay to prevent time drift
-                    lastTickTime = System.currentTimeMillis()
                 }
 
-                // Clear expired floating texts
                 gameState = engine.clearExpiredFloatingTexts(gameState, now)
 
-                // Clear tier announcement after 1.5s (non-blocking)
-                if (gameState.tierAnnouncement != null && tierAnnouncementTime == 0L) {
-                    tierAnnouncementTime = now
-                }
-                if (tierAnnouncementTime > 0 && now - tierAnnouncementTime >= 1500) {
+                if (gameState.tierAnnouncement != null) {
+                    delay(1500)
                     gameState = engine.clearTierAnnouncement(gameState)
-                    tierAnnouncementTime = 0L
                 }
 
-                // Game tick
                 if (gameState.isPlaying && !gameState.isPaused) {
-                    val tickNow = System.currentTimeMillis()
-                    val delta = (tickNow - lastTickTime) / 1000.0
-                    lastTickTime = tickNow
+                    val delta = (now - lastTickTime) / 1000.0
+                    lastTickTime = now
                     gameState = engine.tick(gameState, delta)
 
-                    // Countdown tick sound at <5 seconds
                     val currentSecond = gameState.timeRemaining.toInt()
                     if (gameState.timeRemaining < 5.0 && gameState.timeRemaining > 0.0 && currentSecond != lastCountdownTickSecond) {
                         lastCountdownTickSecond = currentSecond
                         soundManager.playCountdownTick()
                     }
 
-                    // Game over
                     if (gameState.isGameOver) {
-                        tierAnnouncementTime = 0L
                         if (gameState.highScore > highScore) {
                             highScore = gameState.highScore
                             saveHighScore(context, gameState.highScore)
@@ -125,7 +120,7 @@ fun NumberTapApp() {
                         currentScreen = Screen.GameOver
                     }
                 } else {
-                    lastTickTime = System.currentTimeMillis()
+                    lastTickTime = now
                 }
             }
         }
@@ -134,18 +129,21 @@ fun NumberTapApp() {
     when (currentScreen) {
         is Screen.Menu -> MenuScreen(
             highScore = highScore,
+            currentTheme = selectedTheme,
             onStartClick = {
-                gameState = engine.startNewGame(highScore)
-                isTutorialMode = false
+                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
                 ActionLogger.logGameStart(0, highScore)
                 soundManager.startBGMusic()
                 currentScreen = Screen.Game
             },
             onTutorialClick = {
                 gameState = engine.startTutorial(highScore)
-                isTutorialMode = true
                 ActionLogger.logTutorialStart()
                 currentScreen = Screen.Game
+            },
+            onThemeChange = { theme ->
+                selectedTheme = theme
+                saveTheme(context, theme)
             }
         )
 
@@ -159,17 +157,11 @@ fun NumberTapApp() {
                     is TapResult.Correct -> {
                         ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
                         soundManager.playSuccess(result.combo)
-                        // Milestone sounds
-                        if (gameState.score % 10 == 0 && gameState.score > 0) {
-                            soundManager.playMilestone()
-                        }
+                        if (gameState.score % 10 == 0 && gameState.score > 0) soundManager.playMilestone()
                     }
                     is TapResult.Wrong -> {
                         ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
                         soundManager.playFailure()
-                        if (result.previousCombo > 2) {
-                            soundManager.playComboBreak()
-                        }
                     }
                     is TapResult.Invalid -> {}
                 }
@@ -189,9 +181,9 @@ fun NumberTapApp() {
             highScore = gameState.highScore,
             isNewHighScore = gameState.isNewHighScore,
             isReviveEligible = engine.isReviveEligible(gameState),
+            currentTheme = selectedTheme,
             onPlayAgain = {
-                gameState = engine.startNewGame(highScore)
-                isTutorialMode = false
+                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
                 ActionLogger.logGameStart(0, highScore)
                 soundManager.startBGMusic()
                 currentScreen = Screen.Game
@@ -217,10 +209,10 @@ fun NumberTapApp() {
 private fun shareScore(context: Context, score: Int, highScore: Int) {
     val text = """
         Number Tap - The Ordered Grid
-        
+
         Score: $score
         Personal Best: $highScore
-        
+
         Can you beat my score?
     """.trimIndent()
 

@@ -1,5 +1,6 @@
 package com.xarlord.numbertap.ui
 
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -7,18 +8,21 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,23 +37,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.R
-import com.xarlord.numbertap.data.FloatingText
 import com.xarlord.numbertap.data.GameState
+import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
+import com.xarlord.numbertap.data.ThemeConfig
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -60,180 +69,222 @@ fun GameScreen(
     onPauseClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val theme = gameState.currentTheme
+    val colors = ThemeConfig.colorsFor(theme)
+    val style = ThemeConfig.styleFor(theme)
+
     val infiniteTransition = rememberInfiniteTransition(label = "game")
     val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse),
-        label = "pulse"
+        initialValue = 0.6f, targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "pulse"
     )
     val urgentPulse by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(tween(300), RepeatMode.Reverse),
-        label = "urgent"
+        initialValue = 0.3f, targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(tween(300), RepeatMode.Reverse), label = "urgent"
     )
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Main content
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(GameColors.Background)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(colors.background)
         ) {
-            // Top bar: Score | Pause | Timer
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "SCORE: %04d".format(gameState.score),
-                    color = GameColors.TextPrimary,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            // === TOP: Stats Bar (fixed height) ===
+            TopBar(gameState, colors, style, onPauseClick, urgentPulse)
 
-                // Pause button
-                IconButton(onClick = onPauseClick, modifier = Modifier.size(40.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_pause),
-                        contentDescription = "Pause",
-                        tint = GameColors.TextSecondary
+            // Timer bar
+            TimerBar(gameState.timeRemaining, 30.0, colors)
+
+            // === CENTER: Game Grid (takes remaining space) ===
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Target hint
+                    TargetHint(
+                        targetNumber = gameState.targetNumber,
+                        colors = colors,
+                        style = style,
+                        pulseAlpha = if (gameState.isTutorial) pulseAlpha else 1f,
+                        isTutorial = gameState.isTutorial
+                    )
+
+                    if (gameState.comboCount > 1) {
+                        Text(
+                            "x${gameState.comboCount} COMBO!",
+                            color = colors.comboGlow.copy(alpha = pulseAlpha),
+                            fontSize = (16 + gameState.comboCount * 2).coerceAtMost(28).sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = style.headerFontFamily
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Grid
+                    GridContainer(
+                        tiles = gameState.tiles,
+                        targetNumber = gameState.targetNumber,
+                        shakeOffsetPx = gameState.shakeOffset,
+                        onTileTap = onTileTap,
+                        isTutorial = gameState.isTutorial,
+                        theme = theme,
+                        colors = colors,
+                        style = style
                     )
                 }
 
-                Text(
-                    "TIME: %.1fs".format(gameState.timeRemaining),
-                    color = when {
-                        gameState.timeRemaining < 5 -> GameColors.TimerUrgent.copy(alpha = urgentPulse)
-                        gameState.timeRemaining < 10 -> GameColors.TimerWarning
-                        else -> GameColors.TextPrimary
-                    },
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                // Tier announcement overlay
+                gameState.tierAnnouncement?.let { ann ->
+                    Text(
+                        ann,
+                        color = when (ann) {
+                            "ROUND 2!" -> colors.timerWarning
+                            "HARD MODE!" -> colors.timerUrgent
+                            else -> colors.tileTarget
+                        },
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = style.headerFontFamily,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                // Tutorial overlay
+                if (gameState.isTutorial) {
+                    Text(
+                        when {
+                            gameState.score < 2 -> "Tap the numbers in order!"
+                            gameState.score < 4 -> "Keep going!"
+                            else -> "Almost there!"
+                        },
+                        color = colors.textSecondary,
+                        fontSize = 14.sp,
+                        fontFamily = style.bodyFontFamily,
+                        modifier = Modifier.offset(y = (-120).dp)
+                    )
+                }
             }
 
-            // Timer bar
-            TimerBar(timeRemaining = gameState.timeRemaining, maxTime = 30.0)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Combo indicator
-            if (gameState.comboCount > 1) {
-                Text(
-                    "x${gameState.comboCount} COMBO!",
-                    color = GameColors.ComboGlow.copy(alpha = pulseAlpha),
-                    fontSize = (18 + gameState.comboCount * 2).coerceAtMost(32).sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-            } else {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // Target hint
-            TargetHint(
-                targetNumber = gameState.targetNumber,
-                pulseAlpha = if (gameState.isTutorial) pulseAlpha else 1f,
-                isTutorial = gameState.isTutorial
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Grid
-            Box {
-                GridContainer(
-                    tiles = gameState.tiles,
-                    targetNumber = gameState.targetNumber,
-                    shakeOffsetPx = gameState.shakeOffset,
-                    onTileTap = onTileTap,
-                    isTutorial = gameState.isTutorial
-                )
-
-                // Floating texts
-                FloatingTextOverlay(
-                    floatingTexts = gameState.floatingTexts,
-                    gridSize = gameState.gridSize
-                )
-            }
+            // === BOTTOM: Stats Panel (fixed height) ===
+            BottomPanel(gameState, colors, style)
         }
 
-        // Tier announcement overlay
-        gameState.tierAnnouncement?.let { announcement ->
-            TierAnnouncementOverlay(text = announcement)
-        }
-
-        // Tutorial overlay
-        if (gameState.isTutorial) {
-            TutorialOverlay(step = gameState.score)
+        // Scanline overlay for Terminal theme
+        if (style.showScanlines) {
+            ScanlineOverlay()
         }
 
         // Pause overlay
         if (gameState.isPaused) {
-            PauseOverlay(onResume = onPauseClick)
+            PauseOverlay(colors, style, onResume = onPauseClick)
         }
 
-        // Low time vignette
+        // Urgency vignette
         if (gameState.timeRemaining < 5 && gameState.isPlaying && !gameState.isPaused) {
-            UrgencyVignette(urgentPulse)
+            UrgencyVignette(colors.vignetteColor, urgentPulse)
         }
     }
 }
 
 @Composable
-private fun TimerBar(timeRemaining: Double, maxTime: Double) {
-    val fraction = (timeRemaining / maxTime).coerceIn(0.0, 1.0).toFloat()
-    val barColor = when {
-        timeRemaining < 5 -> GameColors.TimerUrgent
-        timeRemaining < 10 -> GameColors.TimerWarning
-        else -> GameColors.TimerSafe
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(6.dp)
-            .clip(RoundedCornerShape(3.dp))
-            .background(GameColors.TileNormal)
+private fun TopBar(
+    state: GameState,
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle,
+    onPauseClick: () -> Unit,
+    urgentPulse: Float
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(fraction)
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(barColor)
+        Text(
+            "SCORE: %04d".format(state.score),
+            color = colors.textPrimary,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = style.headerFontFamily
+        )
+        IconButton(onClick = onPauseClick, modifier = Modifier.size(36.dp)) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_pause),
+                contentDescription = "Pause",
+                tint = colors.textSecondary
+            )
+        }
+        Text(
+            "TIME: %.1fs".format(state.timeRemaining),
+            color = when {
+                state.timeRemaining < 5 -> colors.timerUrgent.copy(alpha = urgentPulse)
+                state.timeRemaining < 10 -> colors.timerWarning
+                else -> colors.textPrimary
+            },
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = style.headerFontFamily
         )
     }
 }
 
 @Composable
-private fun TargetHint(targetNumber: Int, pulseAlpha: Float, isTutorial: Boolean) {
-    val scale = if (isTutorial) pulseAlpha else 1f
+private fun TimerBar(timeRemaining: Double, maxTime: Double, colors: com.xarlord.numbertap.data.ThemeColors) {
+    val fraction = (timeRemaining / maxTime).coerceIn(0.0, 1.0).toFloat()
+    val barColor = when {
+        timeRemaining < 5 -> colors.timerUrgent
+        timeRemaining < 10 -> colors.timerWarning
+        else -> colors.timerSafe
+    }
+    Box(
+        modifier = Modifier.fillMaxWidth().height(4.dp)
+            .background(colors.timerBarBg)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth(fraction).height(4.dp).background(barColor))
+    }
+}
+
+@Composable
+private fun TargetHint(
+    targetNumber: Int,
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle,
+    pulseAlpha: Float,
+    isTutorial: Boolean
+) {
+    val cornerRadius = style.tileCornerRadius
+    val bgColor = colors.tileTarget.copy(alpha = if (isTutorial) pulseAlpha else 1f)
+    val shape = RoundedCornerShape(cornerRadius.dp)
+
     Box(
         modifier = Modifier
-            .size(80.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(GameColors.TileTarget.copy(alpha = scale)),
+            .size(72.dp)
+            .clip(shape)
+            .background(bgColor)
+            .then(if (style.showTileBorder) Modifier.border(2.dp, colors.tileTarget, shape) else Modifier),
         contentAlignment = Alignment.Center
     ) {
         Text(
             targetNumber.toString(),
-            color = GameColors.Background,
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Bold
+            color = colors.textTarget,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = style.tileFontFamily
         )
     }
     if (isTutorial) {
-        Spacer(modifier = Modifier.height(4.dp))
         Text(
             "TAP $targetNumber!",
-            color = GameColors.TileTarget,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
+            color = colors.tileTarget,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = style.bodyFontFamily
         )
     }
 }
@@ -244,10 +295,12 @@ private fun GridContainer(
     targetNumber: Int,
     shakeOffsetPx: Pair<Float, Float>,
     onTileTap: (row: Int, col: Int) -> Unit,
-    isTutorial: Boolean
+    isTutorial: Boolean,
+    theme: GameTheme,
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle
 ) {
-    val tileSize = if (isTutorial) 90.dp else if (tiles.size <= 4) 80.dp else 68.dp
-    val fontSize = if (isTutorial) 28.sp else if (tiles.size <= 4) 24.sp else 20.sp
+    val tileSize = if (isTutorial) 88.dp else if (tiles.size <= 4) 78.dp else 64.dp
 
     Column(
         modifier = Modifier.offset { IntOffset(shakeOffsetPx.first.toInt(), shakeOffsetPx.second.toInt()) },
@@ -257,12 +310,14 @@ private fun GridContainer(
         tiles.forEachIndexed { row, rowTiles ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 rowTiles.forEachIndexed { col, tile ->
-                    TileCell(
+                    ThemedTile(
                         tile = tile,
                         isTarget = tile.currentValue == targetNumber,
                         isTutorial = isTutorial,
                         tileSize = tileSize,
-                        fontSize = fontSize,
+                        theme = theme,
+                        colors = colors,
+                        style = style,
                         onClick = { onTileTap(row, col) }
                     )
                 }
@@ -272,201 +327,235 @@ private fun GridContainer(
 }
 
 @Composable
-private fun TileCell(
+private fun ThemedTile(
     tile: Tile,
     isTarget: Boolean,
     isTutorial: Boolean,
     tileSize: androidx.compose.ui.unit.Dp,
-    fontSize: androidx.compose.ui.unit.TextUnit,
+    theme: GameTheme,
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle,
     onClick: () -> Unit
 ) {
     var fadeFrame by remember(tile.id) { mutableIntStateOf(if (tile.state != TileState.ACTIVE) 0 else -1) }
-    var bounceScale by remember(tile.id) { mutableStateOf(1f) }
 
     LaunchedEffect(tile.state) {
         if (tile.state != TileState.ACTIVE) {
-            bounceScale = 0.9f
             fadeFrame = 0; delay(20)
             fadeFrame = 1; delay(20)
             fadeFrame = 2
-            bounceScale = 1f
         }
     }
 
     val bg = when {
-        tile.state == TileState.TAPPED_CORRECT && fadeFrame == 0 -> GameColors.Success
-        tile.state == TileState.TAPPED_CORRECT && fadeFrame == 1 -> GameColors.SuccessFade
-        tile.state == TileState.TAPPED_WRONG && fadeFrame == 0 -> GameColors.Failure
-        tile.state == TileState.TAPPED_WRONG && fadeFrame == 1 -> GameColors.FailureFade
-        isTarget && isTutorial -> GameColors.TileTarget.copy(alpha = 0.3f)
-        isTarget -> GameColors.TileTarget.copy(alpha = 0.15f)
-        else -> GameColors.TileNormal
+        tile.state == TileState.TAPPED_CORRECT && fadeFrame == 0 -> colors.success
+        tile.state == TileState.TAPPED_CORRECT && fadeFrame == 1 -> colors.successFade
+        tile.state == TileState.TAPPED_WRONG && fadeFrame == 0 -> colors.failure
+        tile.state == TileState.TAPPED_WRONG && fadeFrame == 1 -> colors.failureFade
+        isTarget && isTutorial -> colors.tileTarget.copy(alpha = 0.3f)
+        isTarget -> colors.tileTargetGlow.copy(alpha = 0.12f)
+        else -> colors.tileBackground
     }
+
+    val cornerRadius = style.tileCornerRadius
+    val shape = RoundedCornerShape(cornerRadius.dp)
+    val borderModifier = if (style.showTileBorder) {
+        val borderColor = when {
+            isTarget -> colors.tileTarget
+            tile.state == TileState.TAPPED_WRONG -> colors.failure
+            else -> colors.panelBorder
+        }
+        Modifier.border(1.dp, borderColor, shape)
+    } else Modifier
 
     Box(
         modifier = Modifier
             .size(tileSize)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(shape)
             .background(bg)
+            .then(borderModifier)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        // Value range color indicator at top
-        if (tile.state == TileState.ACTIVE) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .background(GameColors.tileColorForValue(tile.currentValue))
-                    .align(Alignment.TopCenter)
-            )
+        // ASCII-style corner decoration for Terminal/Matrix
+        if (theme == GameTheme.TERMINAL || theme == GameTheme.MATRIX) {
+            val cornerChar = style.tileCornerChar
+            if (cornerChar.isNotEmpty() && tile.state == TileState.ACTIVE) {
+                Text(
+                    cornerChar,
+                    color = colors.textSecondary.copy(alpha = 0.3f),
+                    fontSize = 8.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.offset(x = (-tileSize.value * 0.38).dp, y = (-tileSize.value * 0.38).dp)
+                )
+            }
         }
+
         Text(
             tile.currentValue.toString(),
-            color = GameColors.TextPrimary,
-            fontSize = fontSize,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-private fun FloatingTextOverlay(floatingTexts: List<FloatingText>, gridSize: Int) {
-    if (floatingTexts.isEmpty()) return
-
-    val tileSizeDp = if (gridSize <= 4) 80.dp else 68.dp
-    val spacingDp = 6.dp
-    val tileSizePx = with(LocalDensity.current) { tileSizeDp.toPx() }
-    val spacingPx = with(LocalDensity.current) { spacingDp.toPx() }
-
-    // Reuse Paint instance to avoid per-frame allocations and GC pressure
-    val textPaint = remember {
-        android.graphics.Paint().apply {
-            textSize = 36f
-            textAlign = android.graphics.Paint.Align.CENTER
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            isAntiAlias = true
-        }
-    }
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        floatingTexts.forEach { ft ->
-            val x = ft.x * (tileSizePx + spacingPx) + tileSizePx / 2f
-            val y = ft.y * (tileSizePx + spacingPx)
-
-            textPaint.color = ft.colorHex.toInt()
-            drawContext.canvas.nativeCanvas.drawText(
-                ft.text,
-                x,
-                y,
-                textPaint
-            )
-        }
-    }
-}
-
-@Composable
-private fun TierAnnouncementOverlay(text: String) {
-    val infiniteTransition = rememberInfiniteTransition(label = "tier")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(tween(300), RepeatMode.Reverse),
-        label = "tierScale"
-    )
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text,
-            color = when (text) {
-                "ROUND 2!" -> GameColors.TierMedium
-                "HARD MODE!" -> GameColors.TierHard
-                else -> GameColors.TileTarget
+            color = when {
+                tile.state == TileState.TAPPED_WRONG -> colors.failure
+                isTarget -> if (tile.state == TileState.ACTIVE) colors.tileTarget else colors.textPrimary
+                else -> colors.textPrimary
             },
-            fontSize = 40.sp,
+            fontSize = style.tileFontSize,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.scale(scale)
+            fontFamily = style.tileFontFamily
         )
     }
 }
 
 @Composable
-private fun TutorialOverlay(step: Int) {
-    Box(
+private fun BottomPanel(
+    state: GameState,
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle
+) {
+    val tier = when {
+        state.score <= 15 -> "EASY"
+        state.score <= 40 -> "MEDIUM"
+        else -> "HARD"
+    }
+    val nextTierAt = when {
+        state.score <= 15 -> 16
+        state.score <= 40 -> 41
+        else -> null
+    }
+    val tierProgress = if (nextTierAt != null) {
+        when {
+            state.score <= 15 -> state.score.toFloat() / 15
+            state.score <= 40 -> (state.score - 15).toFloat() / 25
+            else -> 1f
+        }
+    } else 1f
+
+    Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 60.dp),
-        contentAlignment = Alignment.TopCenter
+            .fillMaxWidth()
+            .background(colors.panelBackground)
+            .border(width = 1.dp, color = colors.panelBorder.copy(alpha = 0.3f), shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp))
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
-        Text(
-            when {
-                step < 2 -> "Tap the numbers in order!"
-                step < 4 -> "Keep going!"
-                else -> "Almost there!"
-            },
-            color = GameColors.TextSecondary,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center
-        )
+        // Tier progress bar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                tier,
+                color = when (tier) {
+                    "EASY" -> colors.timerSafe
+                    "MEDIUM" -> colors.timerWarning
+                    else -> colors.timerUrgent
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = style.bodyFontFamily
+            )
+            if (nextTierAt != null) {
+                // Progress bar
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .padding(horizontal = 8.dp)
+                        .background(colors.timerBarBg)
+                        .clip(RoundedCornerShape(2.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(tierProgress.coerceIn(0f, 1f))
+                            .height(4.dp)
+                            .background(colors.textSecondary.copy(alpha = 0.5f))
+                    )
+                }
+                Text(
+                    "$nextTierAt",
+                    color = colors.textSecondary,
+                    fontSize = 10.sp,
+                    fontFamily = style.bodyFontFamily
+                )
+            } else {
+                Text("MAX", color = colors.timerUrgent, fontSize = 10.sp, fontFamily = style.bodyFontFamily)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Stats row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val accPct = if (state.totalTaps > 0) (state.correctTaps * 100 / state.totalTaps) else 0
+            val avgMs = state.avgTapTimeMs
+            StatLabel("ACC", "${accPct}%", colors, style)
+            StatLabel("AVG", if (avgMs > 0) "${(avgMs / 1000).toInt()}s" else "—", colors, style)
+            StatLabel("BEST", "x${state.maxCombo}", colors, style)
+            StatLabel("TAPS", "${state.totalTaps}", colors, style)
+        }
     }
 }
 
 @Composable
-private fun PauseOverlay(onResume: () -> Unit) {
+private fun StatLabel(
+    label: String,
+    value: String,
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, color = colors.textSecondary, fontSize = 9.sp, fontFamily = style.bodyFontFamily)
+        Text(value, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.tileFontFamily)
+    }
+}
+
+@Composable
+private fun ScanlineOverlay() {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val lineHeight = 3.dp.toPx()
+        val gap = 2.dp.toPx()
+        var y = 0f
+        while (y < size.height) {
+            drawRect(
+                color = Color.Black.copy(alpha = 0.08f),
+                topLeft = Offset(0f, y),
+                size = Size(size.width, lineHeight)
+            )
+            y += lineHeight + gap
+        }
+    }
+}
+
+@Composable
+private fun PauseOverlay(
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle,
+    onResume: () -> Unit
+) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GameColors.PauseOverlay)
-            .clickable(onClick = onResume),
+        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)).clickable(onClick = onResume),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("PAUSED", color = GameColors.TextPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+            Text("PAUSED", color = colors.textPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("TAP TO RESUME", color = GameColors.TextSecondary, fontSize = 18.sp)
+            Text("TAP TO RESUME", color = colors.textSecondary, fontSize = 16.sp, fontFamily = style.bodyFontFamily)
         }
     }
 }
 
 @Composable
-private fun UrgencyVignette(pulse: Float) {
+private fun UrgencyVignette(vignetteColor: Color, pulse: Float) {
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val width = size.width
-        val height = size.height
-        val vignetteWidth = width * 0.3f * pulse
-        val vignetteHeight = height * 0.3f * pulse
-
-        drawRect(
-            brush = Brush.horizontalGradient(
-                colors = listOf(Color.Red.copy(alpha = 0.3f * pulse), Color.Transparent),
-                startX = 0f,
-                endX = vignetteWidth
-            )
-        )
-        drawRect(
-            brush = Brush.horizontalGradient(
-                colors = listOf(Color.Transparent, Color.Red.copy(alpha = 0.3f * pulse)),
-                startX = width - vignetteWidth,
-                endX = width
-            )
-        )
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(Color.Red.copy(alpha = 0.3f * pulse), Color.Transparent),
-                startY = 0f,
-                endY = vignetteHeight
-            )
-        )
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(Color.Transparent, Color.Red.copy(alpha = 0.3f * pulse)),
-                startY = height - vignetteHeight,
-                endY = height
-            )
-        )
+        val w = size.width
+        val h = size.height
+        val vw = w * 0.25f * pulse
+        val vh = h * 0.25f * pulse
+        drawRect(Brush.horizontalGradient(listOf(vignetteColor.copy(alpha = 0.25f * pulse), Color.Transparent), 0f, vw))
+        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, vignetteColor.copy(alpha = 0.25f * pulse)), w - vw, w))
+        drawRect(Brush.verticalGradient(listOf(vignetteColor.copy(alpha = 0.25f * pulse), Color.Transparent), 0f, vh))
+        drawRect(Brush.verticalGradient(listOf(Color.Transparent, vignetteColor.copy(alpha = 0.25f * pulse)), h - vh, h))
     }
 }

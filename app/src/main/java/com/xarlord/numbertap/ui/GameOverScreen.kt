@@ -3,12 +3,12 @@ package com.xarlord.numbertap.ui
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,11 +31,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.ThemeConfig
 import kotlin.random.Random
 
 @Composable
@@ -44,12 +46,17 @@ fun GameOverScreen(
     highScore: Int,
     isNewHighScore: Boolean,
     isReviveEligible: Boolean,
+    currentTheme: GameTheme,
     onPlayAgain: () -> Unit,
     onMenu: () -> Unit,
     onShare: () -> Unit = {},
     onRevive: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val colors = ThemeConfig.colorsFor(currentTheme)
+    val style = ThemeConfig.styleFor(currentTheme)
+    val shape = RoundedCornerShape(style.tileCornerRadius.dp)
+
     // Animated score counter
     var displayScore by remember { mutableStateOf(0) }
     LaunchedEffect(score) {
@@ -65,107 +72,51 @@ fun GameOverScreen(
     val isNewBest = isNewHighScore && score > 0
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Confetti for new high score
-        if (isNewBest) {
-            ConfettiAnimation()
-        }
+        if (isNewBest) ConfettiAnimation(colors)
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(GameColors.Background),
+            modifier = Modifier.fillMaxSize().background(colors.background),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "GAME OVER",
-                color = GameColors.Failure,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text("GAME OVER", color = colors.failure, fontSize = 32.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
+            Text("$displayScore", color = colors.textPrimary, fontSize = 52.sp, fontWeight = FontWeight.Bold, fontFamily = style.tileFontFamily)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text("BEST: $highScore", color = colors.tileTarget, fontSize = 20.sp, fontFamily = style.bodyFontFamily)
 
-            // Animated score
-            Text(
-                text = "$displayScore",
-                color = GameColors.TextPrimary,
-                fontSize = 56.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "BEST: $highScore",
-                color = GameColors.TileTarget,
-                fontSize = 24.sp
-            )
-
-            // New best celebration
             if (isNewBest) {
-                Spacer(modifier = Modifier.height(12.dp))
-                val infiniteTransition = rememberInfiniteTransition(label = "newbest")
-                val glowAlpha by infiniteTransition.animateFloat(
-                    initialValue = 0.6f,
-                    targetValue = 1.0f,
-                    animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse),
-                    label = "glow"
-                )
-                Text(
-                    text = "NEW BEST!",
-                    color = GameColors.ReviveGold.copy(alpha = glowAlpha),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                )
+                Spacer(modifier = Modifier.height(10.dp))
+                val inf = rememberInfiniteTransition(label = "nb")
+                val glow by inf.animateFloat(0.6f, 1.0f, infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "g")
+                Text("NEW BEST!", color = colors.tileTarget.copy(alpha = glow), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            // Revive button (if eligible)
             if (isReviveEligible) {
-                ReviveButton(onClick = onRevive)
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            Button(
-                onClick = onPlayAgain,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GameColors.TileTarget,
-                    contentColor = GameColors.Background
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.size(width = 220.dp, height = 56.dp)
-            ) {
-                Text("PLAY AGAIN", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Share + Menu row
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val inf = rememberInfiniteTransition(label = "rv")
+                val rvGlow by inf.animateFloat(0.7f, 1.0f, infiniteRepeatable(tween(400), RepeatMode.Reverse), label = "rv")
                 Button(
-                    onClick = onShare,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GameColors.TileNormal,
-                        contentColor = GameColors.TextPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(width = 104.dp, height = 48.dp)
-                ) {
-                    Text("SHARE", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    onClick = onRevive,
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.tileTarget.copy(alpha = rvGlow), contentColor = colors.textTarget),
+                    shape = shape,
+                    modifier = Modifier.size(width = 260.dp, height = 48.dp)
+                ) { Text("+5 SECONDS  (Watch Ad)", fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily) }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            Button(onClick = onPlayAgain, colors = ButtonDefaults.buttonColors(containerColor = colors.tileTarget, contentColor = colors.textTarget), shape = shape, modifier = Modifier.size(width = 220.dp, height = 52.dp)) {
+                Text("PLAY AGAIN", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = onShare, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape, modifier = Modifier.size(width = 104.dp, height = 44.dp)) {
+                    Text("SHARE", fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
                 }
-                Button(
-                    onClick = onMenu,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GameColors.TileNormal,
-                        contentColor = GameColors.TextPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(width = 104.dp, height = 48.dp)
-                ) {
-                    Text("MENU", fontSize = 14.sp)
+                Button(onClick = onMenu, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape, modifier = Modifier.size(width = 104.dp, height = 44.dp)) {
+                    Text("MENU", fontSize = 13.sp, fontFamily = style.bodyFontFamily)
                 }
             }
         }
@@ -173,69 +124,17 @@ fun GameOverScreen(
 }
 
 @Composable
-private fun ReviveButton(onClick: () -> Unit) {
-    val infiniteTransition = rememberInfiniteTransition(label = "revive")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.7f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(tween(400), RepeatMode.Reverse),
-        label = "reviveGlow"
-    )
-
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = GameColors.ReviveGold.copy(alpha = glowAlpha),
-            contentColor = GameColors.Background
-        ),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.size(width = 260.dp, height = 52.dp)
-    ) {
-        Text("+5 SECONDS  (Watch Ad)", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun ConfettiAnimation() {
-    val infiniteTransition = rememberInfiniteTransition(label = "confetti")
-    val phase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(3000, easing = LinearEasing)),
-        label = "confettiPhase"
-    )
-
-    val particles = remember {
-        (0..30).map {
-            Triple(
-                Random.nextFloat(), // x
-                Random.nextFloat(), // speed
-                Random.nextInt(0, 5) // color index
-            )
-        }
-    }
-
-    val colors = listOf(
-        GameColors.TileTarget,
-        GameColors.Success,
-        GameColors.ComboGlow,
-        Color(0xFF93C5FD),
-        Color(0xFFF472B6)
-    )
+private fun ConfettiAnimation(colors: com.xarlord.numbertap.data.ThemeColors) {
+    val inf = rememberInfiniteTransition(label = "cf")
+    val phase by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "cf")
+    val particles = remember { (0..25).map { Triple(Random.nextFloat(), Random.nextFloat(), Random.nextInt(0, 4)) } }
+    val particleColors = listOf(colors.tileTarget, colors.success, colors.comboGlow, colors.failure)
 
     Canvas(modifier = Modifier.fillMaxSize()) {
-        particles.forEach { (baseX, speed, colorIdx) ->
-            val x = baseX * size.width
+        particles.forEach { (bx, speed, ci) ->
+            val x = bx * size.width
             val y = ((phase * speed * 3) % 1.2f) * size.height
-            val rotation = phase * 360 * speed
-            val size_ = 6f + speed * 4f
-
-            drawRect(
-                color = colors[colorIdx],
-                topLeft = Offset(x, y),
-                size = androidx.compose.ui.geometry.Size(size_, size_),
-                alpha = 0.7f
-            )
+            drawRect(particleColors[ci], topLeft = Offset(x, y), size = Size(5f + speed * 4f, 5f + speed * 4f), alpha = 0.7f)
         }
     }
 }

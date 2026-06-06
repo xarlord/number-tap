@@ -14,7 +14,9 @@ import kotlin.random.Random
  */
 class GameEngine {
 
-    fun startNewGame(highScore: Int, isTutorial: Boolean = false): GameState {
+    private var floatingTextCounter = 0
+
+    fun startNewGame(highScore: Int, isTutorial: Boolean = false, currentTheme: com.xarlord.numbertap.data.GameTheme = com.xarlord.numbertap.data.GameTheme.DEFAULT): GameState {
         val tier = DifficultyConfig.tierForScore(0)
         val tiles = if (isTutorial) {
             generateTutorialGrid()
@@ -34,7 +36,8 @@ class GameEngine {
             comboCount = 0,
             lastCorrectTapTime = 0L,
             isTutorial = isTutorial,
-            tutorialStep = if (isTutorial) 0 else -1
+            tutorialStep = if (isTutorial) 0 else -1,
+            currentTheme = currentTheme
         )
     }
 
@@ -105,7 +108,7 @@ class GameEngine {
         // Floating text for time gain
         val floatingText = if (!state.isTutorial && timeGain > 0) {
             FloatingText(
-                id = state.nextFloatingTextId,
+                id = floatingTextCounter++,
                 text = "+${timeGain}s",
                 x = col.toFloat(),
                 y = row.toFloat(),
@@ -124,11 +127,14 @@ class GameEngine {
             highScore = maxOf(state.highScore, newScore),
             gridSize = if (state.isTutorial) 3 else newTier.gridRows,
             comboCount = newCombo,
+            maxCombo = maxOf(state.maxCombo, newCombo),
             lastCorrectTapTime = currentTime,
             tierAnnouncement = tierAnnouncement,
             floatingTexts = if (floatingText != null) state.floatingTexts + floatingText else state.floatingTexts,
             isNewHighScore = wasNewHighScore,
-            nextFloatingTextId = if (floatingText != null) state.nextFloatingTextId + 1 else state.nextFloatingTextId
+            totalTaps = state.totalTaps + 1,
+            correctTaps = state.correctTaps + 1,
+            totalTapTimeNs = if (state.lastCorrectTapTime > 0) state.totalTapTimeNs + (currentTime - state.lastCorrectTapTime) * 1_000_000 else state.totalTapTimeNs
         )
 
         // Tutorial step advance
@@ -168,8 +174,10 @@ class GameEngine {
                 Random.nextFloat() * 12 - 6,
                 Random.nextFloat() * 12 - 6
             ),
-            tierAnnouncement = null
-        ), TapResult.Wrong(previousCombo = state.comboCount))
+            tierAnnouncement = null,
+            totalTaps = state.totalTaps + 1,
+            wrongTaps = state.wrongTaps + 1
+        ), TapResult.Wrong)
     }
 
     fun clearShake(state: GameState): GameState {
@@ -280,6 +288,6 @@ class GameEngine {
 
 sealed class TapResult {
     data class Correct(val combo: Int) : TapResult()
-    data class Wrong(val previousCombo: Int) : TapResult()
+    data object Wrong : TapResult()
     data object Invalid : TapResult()
 }

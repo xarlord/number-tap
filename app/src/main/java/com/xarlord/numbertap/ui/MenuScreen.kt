@@ -8,15 +8,19 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,159 +30,146 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.ThemeConfig
 import kotlin.math.sin
 import kotlin.random.Random
 
 @Composable
 fun MenuScreen(
     highScore: Int,
+    currentTheme: GameTheme,
     onStartClick: () -> Unit,
     onTutorialClick: () -> Unit = {},
+    onThemeChange: (GameTheme) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val colors = ThemeConfig.colorsFor(currentTheme)
+    val style = ThemeConfig.styleFor(currentTheme)
+
     val infiniteTransition = rememberInfiniteTransition(label = "menu")
     val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
-        label = "pulse"
-    )
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 0.6f,
-        animationSpec = infiniteRepeatable(tween(1500), RepeatMode.Reverse),
-        label = "glow"
+        initialValue = 0.97f, targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "pulse"
     )
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Animated floating numbers background
-        FloatingNumbersBackground()
-
-        // Main content
+        // Themed background
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(GameColors.Background.copy(alpha = 0.85f)),
+                .background(colors.background),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Custom logo — stylized grid icon
-            val logoPaint = remember {
-                android.graphics.Paint().apply {
-                    color = android.graphics.Color.WHITE
-                    textAlign = android.graphics.Paint.Align.CENTER
-                    typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    isAntiAlias = true
-                }
-            }
-            Canvas(modifier = Modifier.size(80.dp)) {
-                val tileSize = size.width / 3
-                logoPaint.textSize = tileSize * 0.4f
-                for (row in 0..2) {
-                    for (col in 0..2) {
-                        val idx = row * 3 + col
-                        val tileColor = when {
-                            idx == 4 -> GameColors.TileTarget // Center tile highlighted
-                            else -> GameColors.TileNormal
-                        }
-                        drawRoundRect(
-                            color = tileColor,
-                            topLeft = Offset(col * tileSize + 3f, row * tileSize + 3f),
-                            size = androidx.compose.ui.geometry.Size(tileSize - 6f, tileSize - 6f),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
-                        )
-                        if (idx < 3) {
-                            drawContext.canvas.nativeCanvas.drawText(
-                                "${idx + 1}",
-                                col * tileSize + tileSize / 2,
-                                row * tileSize + tileSize * 0.65f,
-                                logoPaint
-                            )
-                        }
-                    }
-                }
-            }
+            // Logo — themed grid icon
+            ThemedLogo(currentTheme, colors, style, 72.dp)
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "NUMBER TAP",
-                color = GameColors.TextPrimary,
-                fontSize = 40.sp,
+                "NUMBER TAP",
+                color = colors.textPrimary,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = style.headerFontFamily,
                 letterSpacing = 2.sp
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "The Ordered Grid",
-                color = GameColors.TextSecondary,
-                fontSize = 16.sp,
-                letterSpacing = 4.sp
+                "The Ordered Grid",
+                color = colors.textSecondary,
+                fontSize = 14.sp,
+                fontFamily = style.bodyFontFamily,
+                letterSpacing = 3.sp
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             if (highScore > 0) {
-                // High score with glow effect
-                Box(
-                    modifier = Modifier
-                        .drawBehind {
-                            drawCircle(
-                                color = GameColors.TileTarget.copy(alpha = glowAlpha),
-                                radius = size.width * 0.6f
-                            )
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "BEST: $highScore",
-                        color = GameColors.TileTarget,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "BEST: $highScore",
+                    color = colors.tileTarget,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = style.tileFontFamily
+                )
+                Spacer(modifier = Modifier.height(20.dp))
             }
 
-            // START button with pulse
+            // START button
             Button(
                 onClick = onStartClick,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = GameColors.TileTarget,
-                    contentColor = GameColors.Background
+                    containerColor = colors.tileTarget,
+                    contentColor = colors.textTarget
                 ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .size(width = 200.dp, height = 60.dp)
-                    .offset(y = (pulseScale * 2 - 2).dp)
+                shape = RoundedCornerShape(style.tileCornerRadius.dp),
+                modifier = Modifier.size(width = 200.dp, height = 56.dp)
             ) {
-                Text("START", fontSize = 24.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("START", fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily, letterSpacing = 2.sp)
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Tutorial button
             if (highScore == 0) {
                 Button(
                     onClick = onTutorialClick,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GameColors.TileNormal,
-                        contentColor = GameColors.TextPrimary
+                        containerColor = colors.tileBackground,
+                        contentColor = colors.textPrimary
                     ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(width = 200.dp, height = 48.dp)
+                    shape = RoundedCornerShape(style.tileCornerRadius.dp),
+                    modifier = Modifier.size(width = 200.dp, height = 44.dp)
                 ) {
-                    Text("HOW TO PLAY", fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text("HOW TO PLAY", fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // Theme selector
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("STYLE", color = colors.textSecondary, fontSize = 10.sp, fontFamily = style.bodyFontFamily, letterSpacing = 2.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                GameTheme.entries.forEach { theme ->
+                    val tc = ThemeConfig.colorsFor(theme)
+                    val isSelected = theme == currentTheme
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(tc.background)
+                            .then(
+                                if (isSelected) Modifier.border(2.dp, tc.tileTarget, RoundedCornerShape(8.dp))
+                                else Modifier.border(1.dp, tc.panelBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            )
+                            .clickable { onThemeChange(theme) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            theme.displayName.take(1),
+                            color = tc.textPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
             }
         }
@@ -186,49 +177,67 @@ fun MenuScreen(
 }
 
 @Composable
-private fun FloatingNumbersBackground() {
-    val infiniteTransition = rememberInfiniteTransition(label = "float")
-    val phase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(20000, easing = LinearEasing)),
-        label = "phase"
-    )
+private fun ThemedLogo(
+    theme: GameTheme,
+    colors: com.xarlord.numbertap.data.ThemeColors,
+    style: com.xarlord.numbertap.data.ThemeStyle,
+    size: androidx.compose.ui.unit.Dp
+) {
+    val cornerRadius = style.tileCornerRadius
 
-    // Generate stable random positions
-    val particles = remember {
-        (0..20).map { i ->
-            Random.nextFloat() to Random.nextFloat() // (x, y) in 0..1
-        }
-    }
+    Canvas(modifier = Modifier.size(size)) {
+        val tileSize = this.size.width / 3
+        for (row in 0..2) {
+            for (col in 0..2) {
+                val idx = row * 3 + col
+                val bgColor = when {
+                    idx == 4 -> colors.tileTarget
+                    else -> colors.tileBackground
+                }
+                val x = col * tileSize + 2f
+                val y = row * tileSize + 2f
+                val s = tileSize - 4f
 
-    // Reuse Paint instance to avoid per-frame allocations
-    val bgPaint = remember {
-        android.graphics.Paint().apply {
-            color = android.graphics.Color.WHITE
-            textAlign = android.graphics.Paint.Align.CENTER
-            isAntiAlias = true
-        }
-    }
+                if (cornerRadius > 0) {
+                    drawRoundRect(
+                        color = bgColor,
+                        topLeft = Offset(x, y),
+                        size = Size(s, s),
+                        cornerRadius = CornerRadius(cornerRadius * density, cornerRadius * density)
+                    )
+                } else {
+                    drawRect(bgColor, topLeft = Offset(x, y), size = Size(s, s))
+                    // Terminal/Matrix: draw border
+                    if (style.showTileBorder) {
+                        drawRect(
+                            colors.panelBorder,
+                            topLeft = Offset(x, y),
+                            size = Size(s, s),
+                            style = Stroke(width = 1.5f * density)
+                        )
+                    }
+                }
 
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val width = size.width
-        val height = size.height
-
-        particles.forEachIndexed { idx, (baseX, baseY) ->
-            val number = (idx % 9) + 1
-            val x = baseX * width
-            val y = (baseY * height + phase * 0.5f * (idx % 3 + 1)) % height
-            val alpha = 0.06f + 0.04f * sin(Math.toRadians((phase + idx * 30.0).toDouble())).toFloat()
-
-            bgPaint.alpha = (alpha * 255).toInt().coerceIn(0, 255)
-            bgPaint.textSize = 28f + idx % 3 * 8f
-            drawContext.canvas.nativeCanvas.drawText(
-                "$number",
-                x,
-                y,
-                bgPaint
-            )
+                if (idx < 3) {
+                    drawContext.canvas.nativeCanvas.drawText(
+                        "${idx + 1}",
+                        x + s / 2,
+                        y + s * 0.65f,
+                        android.graphics.Paint().apply {
+                            val c = if (idx == 4) colors.textTarget else colors.textPrimary
+                            val argb = (c.alpha * 255).toInt() shl 24 or
+                                       (c.red * 255).toInt() shl 16 or
+                                       (c.green * 255).toInt() shl 8 or
+                                       (c.blue * 255).toInt()
+                            setColor(argb)
+                            textSize = s * 0.4f
+                            textAlign = android.graphics.Paint.Align.CENTER
+                            typeface = if (style.tileFontFamily == FontFamily.Monospace) android.graphics.Typeface.MONOSPACE else android.graphics.Typeface.DEFAULT_BOLD
+                            isAntiAlias = true
+                        }
+                    )
+                }
+            }
         }
     }
 }
