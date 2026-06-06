@@ -10,7 +10,6 @@ class DifficultyConfigTest {
         val tier = DifficultyConfig.tierForScore(0)
         assertEquals(4, tier.gridRows)
         assertEquals(4, tier.gridCols)
-        assertEquals(16, tier.maxSpawnedValue)
         assertEquals(1.0, tier.timeGainSeconds, 0.01)
         assertEquals(1.5, tier.timePenaltySeconds, 0.01)
     }
@@ -27,7 +26,6 @@ class DifficultyConfigTest {
         val tier = DifficultyConfig.tierForScore(16)
         assertEquals(4, tier.gridRows)
         assertEquals(4, tier.gridCols)
-        assertEquals(32, tier.maxSpawnedValue)
         assertEquals(0.7, tier.timeGainSeconds, 0.01)
         assertEquals(2.0, tier.timePenaltySeconds, 0.01)
     }
@@ -44,7 +42,6 @@ class DifficultyConfigTest {
         val tier = DifficultyConfig.tierForScore(41)
         assertEquals(5, tier.gridRows)
         assertEquals(5, tier.gridCols)
-        assertEquals(50, tier.maxSpawnedValue)
         assertEquals(0.5, tier.timeGainSeconds, 0.01)
         assertEquals(3.0, tier.timePenaltySeconds, 0.01)
     }
@@ -194,7 +191,7 @@ class GameActionTest {
     @Test
     fun `action type enum has all expected values`() {
         val types = ActionType.entries
-        assertEquals(14, types.size)
+        assertEquals(15, types.size)
         assertTrue(types.contains(ActionType.TAP_CORRECT))
         assertTrue(types.contains(ActionType.TAP_WRONG))
         assertTrue(types.contains(ActionType.GAME_START))
@@ -209,6 +206,7 @@ class GameActionTest {
         assertTrue(types.contains(ActionType.TIER_ANNOUNCEMENT))
         assertTrue(types.contains(ActionType.SHARE))
         assertTrue(types.contains(ActionType.SCORE_MILESTONE))
+        assertTrue(types.contains(ActionType.ERROR))
     }
 
     @Test
@@ -248,17 +246,16 @@ class DifficultyTierTest {
 
     @Test
     fun `difficulty tier construction`() {
-        val tier = DifficultyTier(6, 6, 36, 0.3, 4.0)
+        val tier = DifficultyTier(6, 6, 0.3, 4.0)
         assertEquals(6, tier.gridRows)
         assertEquals(6, tier.gridCols)
-        assertEquals(36, tier.maxSpawnedValue)
         assertEquals(0.3, tier.timeGainSeconds, 0.01)
         assertEquals(4.0, tier.timePenaltySeconds, 0.01)
     }
 
     @Test
     fun `difficulty tier copy`() {
-        val tier = DifficultyTier(4, 4, 16, 1.0, 1.5)
+        val tier = DifficultyTier(4, 4, 1.0, 1.5)
         val modified = tier.copy(gridRows = 5, gridCols = 5)
         assertEquals(5, modified.gridRows)
         assertEquals(5, modified.gridCols)

@@ -116,7 +116,7 @@ internal fun BottomPanel(
 
         val accPct = if (state.totalTaps > 0) (state.correctTaps * 100 / state.totalTaps) else 0
         val avgMs = state.avgTapTimeMs
-        val avgLabel = if (avgMs > 0) "${(avgMs / 1000).toInt()}s" else "—"
+        val avgLabel = if (avgMs > 0) "${avgMs.toInt()}ms" else "—"
         val statsDesc = stringResource(R.string.a11y_stats, accPct, avgLabel, state.maxCombo, state.totalTaps)
 
         // Stats row

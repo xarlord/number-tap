@@ -21,7 +21,7 @@ class GameEngine {
         val tiles = if (isTutorial) {
             generateTutorialGrid()
         } else {
-            generateGrid(tier.gridRows, tier.gridCols, tier.maxSpawnedValue)
+            generateGrid(tier.gridRows, tier.gridCols)
         }
         return GameState(
             tiles = tiles,
@@ -254,7 +254,7 @@ class GameEngine {
         }
     }
 
-    private fun generateGrid(rows: Int, cols: Int, maxValue: Int): List<List<Tile>> {
+    private fun generateGrid(rows: Int, cols: Int): List<List<Tile>> {
         val size = rows * cols
         val values = (1..size).toMutableList()
         val shuffled = fisherYatesShuffle(values)

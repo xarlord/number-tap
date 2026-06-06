@@ -83,7 +83,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "← ${stringResource(R.string.settings_back)}",
+                    text = stringResource(R.string.settings_back_button, stringResource(R.string.settings_back)),
                     color = colors.textPrimary,
                     fontSize = 16.sp,
                     fontFamily = style.bodyFontFamily,
@@ -108,7 +108,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.weight(1f))
                 // Invisible spacer to center the title
                 Text(
-                    text = "← ${stringResource(R.string.settings_back)}",
+                    text = stringResource(R.string.settings_back_button, stringResource(R.string.settings_back)),
                     color = colors.textPrimary.copy(alpha = 0f),
                     fontSize = 16.sp,
                     fontFamily = style.bodyFontFamily,
