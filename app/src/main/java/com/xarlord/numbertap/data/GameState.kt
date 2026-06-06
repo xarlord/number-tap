@@ -24,7 +24,8 @@ data class GameState(
     val correctTaps: Int = 0,
     val wrongTaps: Int = 0,
     val totalTapTimeNs: Long = 0L, // cumulative time between taps
-    val currentTheme: GameTheme = GameTheme.DEFAULT
+    val currentTheme: GameTheme = GameTheme.DEFAULT,
+    val nextFloatingTextId: Int = 0
 ) {
     val accuracy: Float get() = if (totalTaps == 0) 0f else correctTaps.toFloat() / totalTaps
     val avgTapTimeMs: Double get() = if (correctTaps <= 1) 0.0 else (totalTapTimeNs / 1_000_000.0) / (correctTaps - 1)

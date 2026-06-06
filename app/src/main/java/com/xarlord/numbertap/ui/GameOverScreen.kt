@@ -33,9 +33,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xarlord.numbertap.R
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeConfig
@@ -80,18 +82,18 @@ fun GameOverScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("GAME OVER", color = colors.failure, fontSize = 32.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
+            Text(stringResource(R.string.game_over), color = colors.failure, fontSize = 32.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
 
             Spacer(modifier = Modifier.height(28.dp))
             Text("$displayScore", color = colors.textPrimary, fontSize = 52.sp, fontWeight = FontWeight.Bold, fontFamily = style.tileFontFamily)
             Spacer(modifier = Modifier.height(6.dp))
-            Text("BEST: $highScore", color = colors.tileTarget, fontSize = 20.sp, fontFamily = style.bodyFontFamily)
+            Text(stringResource(R.string.best_label, highScore), color = colors.tileTarget, fontSize = 20.sp, fontFamily = style.bodyFontFamily)
 
             if (isNewBest) {
                 Spacer(modifier = Modifier.height(10.dp))
                 val inf = rememberInfiniteTransition(label = "nb")
                 val glow by inf.animateFloat(0.6f, 1.0f, infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "g")
-                Text("NEW BEST!", color = colors.tileTarget.copy(alpha = glow), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
+                Text(stringResource(R.string.new_best), color = colors.tileTarget.copy(alpha = glow), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
             }
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -104,20 +106,20 @@ fun GameOverScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = colors.tileTarget.copy(alpha = rvGlow), contentColor = colors.textTarget),
                     shape = shape,
                     modifier = Modifier.size(width = 260.dp, height = 48.dp)
-                ) { Text("+5 SECONDS  (Watch Ad)", fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily) }
+                ) { Text(stringResource(R.string.revive_button), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily) }
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             Button(onClick = onPlayAgain, colors = ButtonDefaults.buttonColors(containerColor = colors.tileTarget, contentColor = colors.textTarget), shape = shape, modifier = Modifier.size(width = 220.dp, height = 52.dp)) {
-                Text("PLAY AGAIN", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
+                Text(stringResource(R.string.play_again), fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
             }
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(onClick = onShare, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape, modifier = Modifier.size(width = 104.dp, height = 44.dp)) {
-                    Text("SHARE", fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
+                    Text(stringResource(R.string.share), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
                 }
                 Button(onClick = onMenu, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape, modifier = Modifier.size(width = 104.dp, height = 44.dp)) {
-                    Text("MENU", fontSize = 13.sp, fontFamily = style.bodyFontFamily)
+                    Text(stringResource(R.string.menu), fontSize = 13.sp, fontFamily = style.bodyFontFamily)
                 }
             }
         }

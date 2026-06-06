@@ -7,7 +7,6 @@ import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 /**
@@ -15,8 +14,6 @@ import kotlin.random.Random
  * Compose-safe: no mutable internal state leaked to UI layer.
  */
 class GameEngine {
-
-    private val floatingTextCounter = AtomicInteger(0)
 
     fun startNewGame(highScore: Int, isTutorial: Boolean = false, currentTheme: GameTheme = GameTheme.DEFAULT): GameState {
         val tier = DifficultyConfig.tierForScore(0)
@@ -110,7 +107,7 @@ class GameEngine {
         // Floating text for time gain
         val floatingText = if (!state.isTutorial && timeGain > 0) {
             FloatingText(
-                id = floatingTextCounter.getAndIncrement(),
+                id = state.nextFloatingTextId,
                 text = "+${timeGain}s",
                 x = col.toFloat(),
                 y = row.toFloat(),
@@ -136,7 +133,8 @@ class GameEngine {
             isNewHighScore = wasNewHighScore,
             totalTaps = state.totalTaps + 1,
             correctTaps = state.correctTaps + 1,
-            totalTapTimeNs = if (state.lastCorrectTapTime > 0) state.totalTapTimeNs + (currentTime - state.lastCorrectTapTime) * 1_000_000 else state.totalTapTimeNs
+            totalTapTimeNs = if (state.lastCorrectTapTime > 0) state.totalTapTimeNs + (currentTime - state.lastCorrectTapTime) * 1_000_000 else state.totalTapTimeNs,
+            nextFloatingTextId = if (floatingText != null) state.nextFloatingTextId + 1 else state.nextFloatingTextId
         )
 
         // Tutorial step advance

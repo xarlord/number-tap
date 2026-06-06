@@ -8,4 +8,58 @@
     <string name="score_label">Score</string>
     <string name="time_label">Time</string>
     <string name="target_label">Find</string>
+
+    <!-- Game Screen -->
+    <string name="score_format">SCORE: %1$04d</string>
+    <string name="time_format">TIME: %1$.1fs</string>
+    <string name="target_hint">TAP %1$d!</string>
+    <string name="combo_format">x%1$d COMBO!</string>
+    <string name="paused">PAUSED</string>
+    <string name="tap_to_resume">TAP TO RESUME</string>
+    <string name="pause_desc">Pause</string>
+
+    <!-- Tier labels -->
+    <string name="round_2">ROUND 2!</string>
+    <string name="hard_mode">HARD MODE!</string>
+    <string name="easy">EASY</string>
+    <string name="medium">MEDIUM</string>
+    <string name="hard">HARD</string>
+    <string name="max">MAX</string>
+
+    <!-- Tutorial -->
+    <string name="tutorial_tap_order">Tap the numbers in order!</string>
+    <string name="tutorial_keep_going">Keep going!</string>
+    <string name="tutorial_almost">Almost there!</string>
+
+    <!-- Stats -->
+    <string name="stat_acc">ACC</string>
+    <string name="stat_avg">AVG</string>
+    <string name="stat_best">BEST</string>
+    <string name="stat_taps">TAPS</string>
+
+    <!-- Game Over Screen -->
+    <string name="game_over">GAME OVER</string>
+    <string name="best_label">BEST: %1$d</string>
+    <string name="new_best">NEW BEST!</string>
+    <string name="revive_button">+5 SECONDS  (Watch Ad)</string>
+    <string name="share">SHARE</string>
+    <string name="menu">MENU</string>
+
+    <!-- Menu Screen -->
+    <string name="number_tap">NUMBER TAP</string>
+    <string name="the_ordered_grid">The Ordered Grid</string>
+    <string name="best_display">BEST: %1$d</string>
+    <string name="start">START</string>
+    <string name="how_to_play">HOW TO PLAY</string>
+    <string name="style_label">STYLE</string>
+
+    <!-- Share -->
+    <string name="share_text">Number Tap - The Ordered Grid\n\nScore: %1$d\nPersonal Best: %2$d\n\nCan you beat my score?</string>
+    <string name="share_chooser">Share Score</string>
+
+    <!-- Theme names -->
+    <string name="theme_terminal">Terminal</string>
+    <string name="theme_chalkboard">Chalkboard</string>
+    <string name="theme_matrix">Matrix</string>
+    <string name="theme_default">Default</string>
 </resources>

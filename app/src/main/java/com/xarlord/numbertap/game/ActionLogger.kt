@@ -132,4 +132,12 @@ object ActionLogger {
             extra = "tier=$tier"
         ))
     }
+
+    fun logError(location: String, message: String) {
+        log(GameAction(
+            timestamp = System.currentTimeMillis(),
+            type = ActionType.GAME_OVER,
+            extra = "error_location=$location error_message=$message"
+        ))
+    }
 }

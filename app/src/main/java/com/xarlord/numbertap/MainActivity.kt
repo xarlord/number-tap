@@ -3,6 +3,7 @@ package com.xarlord.numbertap
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
@@ -78,49 +79,54 @@ fun NumberTapApp() {
     // Game loop
     LaunchedEffect(currentScreen) {
         if (currentScreen == Screen.Game) {
-            lastTickTime = System.currentTimeMillis()
+            lastTickTime = SystemClock.elapsedRealtime()
             while (isActive) {
-                delay(16)
-                val now = System.currentTimeMillis()
+                try {
+                    delay(16)
+                    val now = SystemClock.elapsedRealtime()
 
-                val hasFeedback = gameState.tiles.any { row -> row.any { it.state != TileState.ACTIVE } }
-                if (hasFeedback) {
-                    delay(60)
-                    gameState = engine.resetTileStates(gameState)
-                    gameState = engine.clearShake(gameState)
-                }
-
-                gameState = engine.clearExpiredFloatingTexts(gameState, now)
-
-                if (gameState.tierAnnouncement != null) {
-                    delay(1500)
-                    gameState = engine.clearTierAnnouncement(gameState)
-                }
-
-                if (gameState.isPlaying && !gameState.isPaused) {
-                    val delta = (now - lastTickTime) / 1000.0
-                    lastTickTime = now
-                    gameState = engine.tick(gameState, delta)
-
-                    val currentSecond = gameState.timeRemaining.toInt()
-                    if (gameState.timeRemaining < 5.0 && gameState.timeRemaining > 0.0 && currentSecond != lastCountdownTickSecond) {
-                        lastCountdownTickSecond = currentSecond
-                        soundManager.playCountdownTick()
+                    val hasFeedback = gameState.tiles.any { row -> row.any { it.state != TileState.ACTIVE } }
+                    if (hasFeedback) {
+                        delay(60)
+                        gameState = engine.resetTileStates(gameState)
+                        gameState = engine.clearShake(gameState)
                     }
 
-                    if (gameState.isGameOver) {
-                        if (gameState.highScore > highScore) {
-                            highScore = gameState.highScore
-                            saveHighScore(context, gameState.highScore)
+                    gameState = engine.clearExpiredFloatingTexts(gameState, now)
+
+                    if (gameState.tierAnnouncement != null) {
+                        delay(1500)
+                        gameState = engine.clearTierAnnouncement(gameState)
+                    }
+
+                    if (gameState.isPlaying && !gameState.isPaused) {
+                        val delta = (now - lastTickTime) / 1000.0
+                        lastTickTime = now
+                        gameState = engine.tick(gameState, delta)
+
+                        val currentSecond = gameState.timeRemaining.toInt()
+                        if (gameState.timeRemaining < 5.0 && gameState.timeRemaining > 0.0 && currentSecond != lastCountdownTickSecond) {
+                            lastCountdownTickSecond = currentSecond
+                            soundManager.playCountdownTick()
                         }
-                        markPlayed(context)
-                        ActionLogger.logGameOver(gameState.score, gameState.highScore, gameState.timeRemaining)
-                        soundManager.playGameOver()
-                        soundManager.stopBGMusic()
-                        currentScreen = Screen.GameOver
+
+                        if (gameState.isGameOver) {
+                            if (gameState.highScore > highScore) {
+                                highScore = gameState.highScore
+                                saveHighScore(context, gameState.highScore)
+                            }
+                            markPlayed(context)
+                            ActionLogger.logGameOver(gameState.score, gameState.highScore, gameState.timeRemaining)
+                            soundManager.playGameOver()
+                            soundManager.stopBGMusic()
+                            currentScreen = Screen.GameOver
+                        }
+                    } else {
+                        lastTickTime = now
                     }
-                } else {
-                    lastTickTime = now
+                } catch (e: Exception) {
+                    ActionLogger.logError("game_loop", e.message ?: "unknown")
+                    lastTickTime = SystemClock.elapsedRealtime()
                 }
             }
         }
@@ -150,26 +156,30 @@ fun NumberTapApp() {
         is Screen.Game -> GameScreen(
             gameState = gameState,
             onTileTap = { row, col ->
-                val tile = gameState.tiles.getOrNull(row)?.getOrNull(col)
-                val (newState, result) = engine.onTap(gameState, row, col)
-                gameState = newState
-                when (result) {
-                    is TapResult.Correct -> {
-                        ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
-                        soundManager.playSuccess(result.combo)
-                        if (gameState.score % 10 == 0 && gameState.score > 0) soundManager.playMilestone()
+                try {
+                    val tile = gameState.tiles.getOrNull(row)?.getOrNull(col)
+                    val (newState, result) = engine.onTap(gameState, row, col)
+                    gameState = newState
+                    when (result) {
+                        is TapResult.Correct -> {
+                            ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
+                            soundManager.playSuccess(result.combo)
+                            if (gameState.score % 10 == 0 && gameState.score > 0) soundManager.playMilestone()
+                        }
+                        is TapResult.Wrong -> {
+                            ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
+                            soundManager.playFailure()
+                        }
+                        is TapResult.Invalid -> {}
                     }
-                    is TapResult.Wrong -> {
-                        ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
-                        soundManager.playFailure()
-                    }
-                    is TapResult.Invalid -> {}
+                } catch (e: Exception) {
+                    ActionLogger.logError("tile_tap", e.message ?: "unknown")
                 }
             },
             onPauseClick = {
                 if (gameState.isPaused) {
                     gameState = engine.resume(gameState)
-                    lastTickTime = System.currentTimeMillis()
+                    lastTickTime = SystemClock.elapsedRealtime()
                 } else {
                     gameState = engine.pause(gameState)
                 }
@@ -198,7 +208,7 @@ fun NumberTapApp() {
             },
             onRevive = {
                 gameState = engine.revive(gameState)
-                lastTickTime = System.currentTimeMillis()
+                lastTickTime = SystemClock.elapsedRealtime()
                 soundManager.startBGMusic()
                 currentScreen = Screen.Game
             }
@@ -207,18 +217,11 @@ fun NumberTapApp() {
 }
 
 private fun shareScore(context: Context, score: Int, highScore: Int) {
-    val text = """
-        Number Tap - The Ordered Grid
-
-        Score: $score
-        Personal Best: $highScore
-
-        Can you beat my score?
-    """.trimIndent()
+    val text = context.getString(R.string.share_text, score, highScore)
 
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, "Share Score"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
 }

@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -85,6 +86,12 @@ fun GameScreen(
         animationSpec = infiniteRepeatable(tween(300), RepeatMode.Reverse), label = "urgent"
     )
 
+    val strRound2 = stringResource(R.string.round_2)
+    val strHardMode = stringResource(R.string.hard_mode)
+    val strTutorialTapOrder = stringResource(R.string.tutorial_tap_order)
+    val strTutorialKeepGoing = stringResource(R.string.tutorial_keep_going)
+    val strTutorialAlmost = stringResource(R.string.tutorial_almost)
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -119,7 +126,7 @@ fun GameScreen(
 
                     if (gameState.comboCount > 1) {
                         Text(
-                            "x${gameState.comboCount} COMBO!",
+                            stringResource(R.string.combo_format, gameState.comboCount),
                             color = colors.comboGlow.copy(alpha = pulseAlpha),
                             fontSize = (16 + gameState.comboCount * 2).coerceAtMost(28).sp,
                             fontWeight = FontWeight.Bold,
@@ -147,8 +154,8 @@ fun GameScreen(
                     Text(
                         ann,
                         color = when (ann) {
-                            "ROUND 2!" -> colors.timerWarning
-                            "HARD MODE!" -> colors.timerUrgent
+                            strRound2 -> colors.timerWarning
+                            strHardMode -> colors.timerUrgent
                             else -> colors.tileTarget
                         },
                         fontSize = 36.sp,
@@ -162,9 +169,9 @@ fun GameScreen(
                 if (gameState.isTutorial) {
                     Text(
                         when {
-                            gameState.score < 2 -> "Tap the numbers in order!"
-                            gameState.score < 4 -> "Keep going!"
-                            else -> "Almost there!"
+                            gameState.score < 2 -> strTutorialTapOrder
+                            gameState.score < 4 -> strTutorialKeepGoing
+                            else -> strTutorialAlmost
                         },
                         color = colors.textSecondary,
                         fontSize = 14.sp,
@@ -209,7 +216,7 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "SCORE: %04d".format(state.score),
+            stringResource(R.string.score_format, state.score),
             color = colors.textPrimary,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
@@ -218,12 +225,12 @@ private fun TopBar(
         IconButton(onClick = onPauseClick, modifier = Modifier.size(36.dp)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_pause),
-                contentDescription = "Pause",
+                contentDescription = stringResource(R.string.pause_desc),
                 tint = colors.textSecondary
             )
         }
         Text(
-            "TIME: %.1fs".format(state.timeRemaining),
+            stringResource(R.string.time_format, state.timeRemaining),
             color = when {
                 state.timeRemaining < 5 -> colors.timerUrgent.copy(alpha = urgentPulse)
                 state.timeRemaining < 10 -> colors.timerWarning
@@ -282,7 +289,7 @@ private fun TargetHint(
     }
     if (isTutorial) {
         Text(
-            "TAP $targetNumber!",
+            stringResource(R.string.target_hint, targetNumber),
             color = colors.tileTarget,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
@@ -413,10 +420,19 @@ private fun BottomPanel(
     colors: ThemeColors,
     style: ThemeStyle
 ) {
+    val strEasy = stringResource(R.string.easy)
+    val strMedium = stringResource(R.string.medium)
+    val strHard = stringResource(R.string.hard)
+    val strMax = stringResource(R.string.max)
+    val strAcc = stringResource(R.string.stat_acc)
+    val strAvg = stringResource(R.string.stat_avg)
+    val strBest = stringResource(R.string.stat_best)
+    val strTaps = stringResource(R.string.stat_taps)
+
     val tier = when {
-        state.score <= 15 -> "EASY"
-        state.score <= 40 -> "MEDIUM"
-        else -> "HARD"
+        state.score <= 15 -> strEasy
+        state.score <= 40 -> strMedium
+        else -> strHard
     }
     val nextTierAt = when {
         state.score <= 15 -> 16
@@ -447,8 +463,8 @@ private fun BottomPanel(
             Text(
                 tier,
                 color = when (tier) {
-                    "EASY" -> colors.timerSafe
-                    "MEDIUM" -> colors.timerWarning
+                    strEasy -> colors.timerSafe
+                    strMedium -> colors.timerWarning
                     else -> colors.timerUrgent
                 },
                 fontSize = 12.sp,
@@ -479,7 +495,7 @@ private fun BottomPanel(
                     fontFamily = style.bodyFontFamily
                 )
             } else {
-                Text("MAX", color = colors.timerUrgent, fontSize = 10.sp, fontFamily = style.bodyFontFamily)
+                Text(strMax, color = colors.timerUrgent, fontSize = 10.sp, fontFamily = style.bodyFontFamily)
             }
         }
 
@@ -492,10 +508,10 @@ private fun BottomPanel(
         ) {
             val accPct = if (state.totalTaps > 0) (state.correctTaps * 100 / state.totalTaps) else 0
             val avgMs = state.avgTapTimeMs
-            StatLabel("ACC", "${accPct}%", colors, style)
-            StatLabel("AVG", if (avgMs > 0) "${(avgMs / 1000).toInt()}s" else "—", colors, style)
-            StatLabel("BEST", "x${state.maxCombo}", colors, style)
-            StatLabel("TAPS", "${state.totalTaps}", colors, style)
+            StatLabel(strAcc, "${accPct}%", colors, style)
+            StatLabel(strAvg, if (avgMs > 0) "${(avgMs / 1000).toInt()}s" else "—", colors, style)
+            StatLabel(strBest, "x${state.maxCombo}", colors, style)
+            StatLabel(strTaps, "${state.totalTaps}", colors, style)
         }
     }
 }
@@ -541,9 +557,9 @@ private fun PauseOverlay(
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("PAUSED", color = colors.textPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
+            Text(stringResource(R.string.paused), color = colors.textPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("TAP TO RESUME", color = colors.textSecondary, fontSize = 16.sp, fontFamily = style.bodyFontFamily)
+            Text(stringResource(R.string.tap_to_resume), color = colors.textSecondary, fontSize = 16.sp, fontFamily = style.bodyFontFamily)
         }
     }
 }

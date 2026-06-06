@@ -19,6 +19,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            // Developer should create their own keystore:
+            // keytool -genkey -v -keystore numbertap-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+            // Then set these via local.properties or environment variables:
+            // storeFile = file(System.getenv("KEYSTORE_FILE") ?: "numbertap-upload.jks")
+            // storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            // keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
+            // keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+        }
+    }
+
     buildTypes {
         debug {
             enableUnitTestCoverage = true
@@ -27,6 +39,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

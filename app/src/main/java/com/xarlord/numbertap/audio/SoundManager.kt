@@ -28,8 +28,6 @@ class SoundManager(context: Context) {
     private var comboBreakSoundId: Int = 0
     private var isReleased = false
 
-    private val tempFiles = mutableListOf<File>()
-
     private val pitchSteps = floatArrayOf(
         1.0f, 1.0595f, 1.1225f, 1.1892f, 1.2599f, 1.3348f,
         1.4142f, 1.4983f, 1.5874f, 1.6818f, 1.7818f, 1.8877f, 2.0f
@@ -43,26 +41,32 @@ class SoundManager(context: Context) {
         // Success: high ping 1000Hz, 0.1s
         val successFile = createTempWav(context, pcmToWav(generateSineWave(1000.0, 0.1, 44100), 44100), "nt_success.wav")
         successSoundId = soundPool.load(successFile.absolutePath, 1)
+        successFile.delete()
 
         // Failure: low thud 150Hz, 0.2s
         val failureFile = createTempWav(context, pcmToWav(generateSineWave(150.0, 0.2, 44100), 44100), "nt_failure.wav")
         failureSoundId = soundPool.load(failureFile.absolutePath, 1)
+        failureFile.delete()
 
         // Countdown tick: soft click 600Hz, 0.03s
         val tickFile = createTempWav(context, pcmToWav(generateSineWave(600.0, 0.03, 44100), 44100), "nt_tick.wav")
         tickSoundId = soundPool.load(tickFile.absolutePath, 1)
+        tickFile.delete()
 
         // Game over: descending tone 400Hz, 0.5s
         val gameOverFile = createTempWav(context, pcmToWav(generateSineWave(400.0, 0.5, 44100), 44100), "nt_gameover.wav")
         gameOverSoundId = soundPool.load(gameOverFile.absolutePath, 1)
+        gameOverFile.delete()
 
         // Milestone: bright chime 1200Hz, 0.15s
         val milestoneFile = createTempWav(context, pcmToWav(generateSineWave(1200.0, 0.15, 44100), 44100), "nt_milestone.wav")
         milestoneSoundId = soundPool.load(milestoneFile.absolutePath, 1)
+        milestoneFile.delete()
 
         // Combo break: 200Hz, 0.1s
         val comboBreakFile = createTempWav(context, pcmToWav(generateSineWave(200.0, 0.1, 44100), 44100), "nt_combobreak.wav")
         comboBreakSoundId = soundPool.load(comboBreakFile.absolutePath, 1)
+        comboBreakFile.delete()
     }
 
     fun playSuccess(combo: Int) {
@@ -175,8 +179,6 @@ class SoundManager(context: Context) {
         if (!isReleased) {
             stopBGMusic()
             soundPool.release()
-            tempFiles.forEach { it.delete() }
-            tempFiles.clear()
             isReleased = true
         }
     }
@@ -209,7 +211,6 @@ class SoundManager(context: Context) {
     private fun createTempWav(context: Context, data: ByteArray, name: String): File {
         val f = File(context.cacheDir, name)
         f.writeBytes(data)
-        tempFiles.add(f)
         return f
     }
 }

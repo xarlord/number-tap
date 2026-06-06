@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -38,10 +39,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xarlord.numbertap.R
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeConfig
@@ -82,7 +85,7 @@ fun MenuScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                "NUMBER TAP",
+                stringResource(R.string.number_tap),
                 color = colors.textPrimary,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
@@ -93,7 +96,7 @@ fun MenuScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                "The Ordered Grid",
+                stringResource(R.string.the_ordered_grid),
                 color = colors.textSecondary,
                 fontSize = 14.sp,
                 fontFamily = style.bodyFontFamily,
@@ -104,7 +107,7 @@ fun MenuScreen(
 
             if (highScore > 0) {
                 Text(
-                    "BEST: $highScore",
+                    stringResource(R.string.best_display, highScore),
                     color = colors.tileTarget,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
@@ -123,7 +126,7 @@ fun MenuScreen(
                 shape = RoundedCornerShape(style.tileCornerRadius.dp),
                 modifier = Modifier.size(width = 200.dp, height = 56.dp)
             ) {
-                Text("START", fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily, letterSpacing = 2.sp)
+                Text(stringResource(R.string.start), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily, letterSpacing = 2.sp)
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -138,14 +141,14 @@ fun MenuScreen(
                     shape = RoundedCornerShape(style.tileCornerRadius.dp),
                     modifier = Modifier.size(width = 200.dp, height = 44.dp)
                 ) {
-                    Text("HOW TO PLAY", fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
+                    Text(stringResource(R.string.how_to_play), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             // Theme selector
             Spacer(modifier = Modifier.height(8.dp))
-            Text("STYLE", color = colors.textSecondary, fontSize = 10.sp, fontFamily = style.bodyFontFamily, letterSpacing = 2.sp)
+            Text(stringResource(R.string.style_label), color = colors.textSecondary, fontSize = 10.sp, fontFamily = style.bodyFontFamily, letterSpacing = 2.sp)
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -154,20 +157,22 @@ fun MenuScreen(
                     val isSelected = theme == currentTheme
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .wrapContentWidth()
+                            .height(36.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(tc.background)
                             .then(
                                 if (isSelected) Modifier.border(2.dp, tc.tileTarget, RoundedCornerShape(8.dp))
                                 else Modifier.border(1.dp, tc.panelBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                             )
-                            .clickable { onThemeChange(theme) },
+                            .clickable { onThemeChange(theme) }
+                            .padding(horizontal = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            theme.displayName.take(1),
+                            theme.displayName,
                             color = tc.textPrimary,
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace
                         )
