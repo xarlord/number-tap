@@ -1,5 +1,18 @@
 package com.xarlord.numbertap.data
 
+/**
+ * Typed tier announcement — replaces raw string coupling between engine and UI.
+ * Each case maps to a string resource in the UI layer.
+ */
+enum class TierAnnouncement {
+    NICE,
+    GREAT,
+    ROUND_2,
+    AMAZING,
+    HARD_MODE,
+    LEGENDARY
+}
+
 data class GameState(
     val tiles: List<List<Tile>> = emptyList(),
     val targetNumber: Int = 1,
@@ -16,7 +29,7 @@ data class GameState(
     val lastCorrectTapTime: Long = 0L,
     val isTutorial: Boolean = false,
     val tutorialStep: Int = 0,
-    val tierAnnouncement: String? = null,
+    val tierAnnouncement: TierAnnouncement? = null,
     val floatingTexts: List<FloatingText> = emptyList(),
     val isNewHighScore: Boolean = false,
     // Stats tracking

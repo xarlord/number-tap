@@ -21,6 +21,10 @@
     <!-- Tier labels -->
     <string name="round_2">ROUND 2!</string>
     <string name="hard_mode">HARD MODE!</string>
+    <string name="nice">NICE!</string>
+    <string name="great">GREAT!</string>
+    <string name="amazing">AMAZING!</string>
+    <string name="legendary">LEGENDARY!</string>
     <string name="easy">EASY</string>
     <string name="medium">MEDIUM</string>
     <string name="hard">HARD</string>

@@ -5,6 +5,7 @@ import com.xarlord.numbertap.data.DifficultyTier
 import com.xarlord.numbertap.data.FloatingText
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.TierAnnouncement
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
 import kotlin.random.Random
@@ -95,12 +96,12 @@ class GameEngine {
 
         // Tier announcement
         val tierAnnouncement = when {
-            newScore == 16 && !state.isTutorial -> "ROUND 2!"
-            newScore == 41 && !state.isTutorial -> "HARD MODE!"
-            newScore == 5 && !state.isTutorial -> "NICE!"
-            newScore == 10 && !state.isTutorial -> "GREAT!"
-            newScore == 25 && !state.isTutorial -> "AMAZING!"
-            newScore == 50 && !state.isTutorial -> "LEGENDARY!"
+            newScore == 16 && !state.isTutorial -> TierAnnouncement.ROUND_2
+            newScore == 41 && !state.isTutorial -> TierAnnouncement.HARD_MODE
+            newScore == 5 && !state.isTutorial -> TierAnnouncement.NICE
+            newScore == 10 && !state.isTutorial -> TierAnnouncement.GREAT
+            newScore == 25 && !state.isTutorial -> TierAnnouncement.AMAZING
+            newScore == 50 && !state.isTutorial -> TierAnnouncement.LEGENDARY
             else -> null
         }
 
@@ -148,7 +149,7 @@ class GameEngine {
         }
 
         if (tierAnnouncement != null && newScore % 5 == 0) {
-            ActionLogger.logScoreMilestone(newScore, tierAnnouncement)
+            ActionLogger.logScoreMilestone(newScore, tierAnnouncement.name)
         }
 
         return Pair(newState, TapResult.Correct(newCombo))

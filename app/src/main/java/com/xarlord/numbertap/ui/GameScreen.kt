@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.R
 import com.xarlord.numbertap.data.GameState
+import com.xarlord.numbertap.data.TierAnnouncement
 import com.xarlord.numbertap.data.ThemeConfig
 
 @Composable
@@ -115,11 +116,19 @@ fun GameScreen(
 
                 // Tier announcement overlay
                 gameState.tierAnnouncement?.let { ann ->
+                    val announcementText = when (ann) {
+                        TierAnnouncement.ROUND_2 -> strRound2
+                        TierAnnouncement.HARD_MODE -> strHardMode
+                        TierAnnouncement.NICE -> stringResource(R.string.nice)
+                        TierAnnouncement.GREAT -> stringResource(R.string.great)
+                        TierAnnouncement.AMAZING -> stringResource(R.string.amazing)
+                        TierAnnouncement.LEGENDARY -> stringResource(R.string.legendary)
+                    }
                     Text(
-                        ann,
+                        announcementText,
                         color = when (ann) {
-                            strRound2 -> colors.timerWarning
-                            strHardMode -> colors.timerUrgent
+                            TierAnnouncement.ROUND_2 -> colors.timerWarning
+                            TierAnnouncement.HARD_MODE -> colors.timerUrgent
                             else -> colors.tileTarget
                         },
                         fontSize = 36.sp,
