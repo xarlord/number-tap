@@ -17,11 +17,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xarlord.numbertap.R
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeStyle
@@ -71,12 +77,19 @@ internal fun ThemedTile(
         Modifier.border(1.dp, borderColor, shape)
     } else Modifier
 
+    val tileDesc = if (isTarget) stringResource(R.string.a11y_tile_target, tile.currentValue)
+                   else stringResource(R.string.a11y_tile, tile.currentValue)
+
     Box(
         modifier = Modifier
             .size(tileSize)
             .clip(shape)
             .background(bg)
             .then(borderModifier)
+            .semantics {
+                contentDescription = tileDesc
+                role = Role.Button
+            }
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

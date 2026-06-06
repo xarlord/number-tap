@@ -33,6 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,6 +62,10 @@ fun SettingsScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     var showResetDone by remember { mutableStateOf(false) }
 
+    // Hoist accessibility strings
+    val backDesc = stringResource(R.string.a11y_back)
+    val resetDesc = stringResource(R.string.a11y_reset_highscore)
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -81,6 +89,10 @@ fun SettingsScreen(
                     fontFamily = style.bodyFontFamily,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
+                        .semantics {
+                            contentDescription = backDesc
+                            role = Role.Button
+                        }
                         .clickable { onBack() }
                         .padding(vertical = 8.dp)
                 )
@@ -113,7 +125,8 @@ fun SettingsScreen(
                 enabled = soundEnabled,
                 onToggle = onSoundToggle,
                 colors = colors,
-                style = style
+                style = style,
+                a11yLabel = stringResource(R.string.a11y_sound_toggle, if (soundEnabled) "on" else "off")
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -124,7 +137,8 @@ fun SettingsScreen(
                 enabled = musicEnabled,
                 onToggle = onMusicToggle,
                 colors = colors,
-                style = style
+                style = style,
+                a11yLabel = stringResource(R.string.a11y_music_toggle, if (musicEnabled) "on" else "off")
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -147,6 +161,7 @@ fun SettingsScreen(
                 GameTheme.entries.forEach { theme ->
                     val tc = ThemeConfig.colorsFor(theme)
                     val isSelected = theme == currentTheme
+                    val themeSelectDesc = stringResource(R.string.a11y_theme_select, theme.displayName)
                     Box(
                         modifier = Modifier
                             .wrapContentWidth()
@@ -157,6 +172,10 @@ fun SettingsScreen(
                                 if (isSelected) Modifier.border(2.dp, tc.tileTarget, RoundedCornerShape(8.dp))
                                 else Modifier.border(1.dp, tc.panelBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                             )
+                            .semantics {
+                                contentDescription = themeSelectDesc
+                                role = Role.Button
+                            }
                             .clickable { onThemeChange(theme) }
                             .padding(horizontal = 10.dp),
                         contentAlignment = Alignment.Center
@@ -184,7 +203,12 @@ fun SettingsScreen(
                     contentColor = colors.failure
                 ),
                 shape = RoundedCornerShape(style.tileCornerRadius.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = resetDesc
+                        role = Role.Button
+                    }
             ) {
                 Text(
                     text = stringResource(R.string.settings_reset_highscore),
@@ -293,7 +317,8 @@ private fun SettingsToggleRow(
     enabled: Boolean,
     onToggle: (Boolean) -> Unit,
     colors: com.xarlord.numbertap.data.ThemeColors,
-    style: com.xarlord.numbertap.data.ThemeStyle
+    style: com.xarlord.numbertap.data.ThemeStyle,
+    a11yLabel: String = label
 ) {
     Row(
         modifier = Modifier
@@ -301,6 +326,7 @@ private fun SettingsToggleRow(
             .clip(RoundedCornerShape(8.dp))
             .background(colors.tileBackground.copy(alpha = 0.5f))
             .border(1.dp, colors.panelBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+            .semantics { contentDescription = a11yLabel }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween

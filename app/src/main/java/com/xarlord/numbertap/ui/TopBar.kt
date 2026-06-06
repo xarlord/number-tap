@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +31,9 @@ internal fun TopBar(
     onPauseClick: () -> Unit,
     urgentPulse: Float
 ) {
+    val scoreDesc = stringResource(R.string.a11y_score, state.score)
+    val timeDesc = stringResource(R.string.a11y_time, state.timeRemaining)
+
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -39,7 +44,8 @@ internal fun TopBar(
             color = colors.textPrimary,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = style.headerFontFamily
+            fontFamily = style.headerFontFamily,
+            modifier = Modifier.semantics { contentDescription = scoreDesc }
         )
         IconButton(onClick = onPauseClick, modifier = Modifier.size(36.dp)) {
             Icon(
@@ -57,7 +63,8 @@ internal fun TopBar(
             },
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = style.headerFontFamily
+            fontFamily = style.headerFontFamily,
+            modifier = Modifier.semantics { contentDescription = timeDesc }
         )
     }
 }

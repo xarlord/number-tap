@@ -40,6 +40,10 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,6 +68,10 @@ fun MenuScreen(
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
     val style = ThemeConfig.styleFor(currentTheme)
+
+    // Hoist accessibility strings
+    val startDesc = stringResource(R.string.a11y_start_game)
+    val settingsDesc = stringResource(R.string.a11y_settings)
 
     val infiniteTransition = rememberInfiniteTransition(label = "menu")
     val pulseScale by infiniteTransition.animateFloat(
@@ -125,7 +133,9 @@ fun MenuScreen(
                     contentColor = colors.textTarget
                 ),
                 shape = RoundedCornerShape(style.tileCornerRadius.dp),
-                modifier = Modifier.size(width = 200.dp, height = 56.dp)
+                modifier = Modifier
+                    .size(width = 200.dp, height = 56.dp)
+                    .semantics { contentDescription = startDesc }
             ) {
                 Text(stringResource(R.string.start), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily, letterSpacing = 2.sp)
             }
@@ -156,6 +166,7 @@ fun MenuScreen(
                 GameTheme.entries.forEach { theme ->
                     val tc = ThemeConfig.colorsFor(theme)
                     val isSelected = theme == currentTheme
+                    val themeSelectDesc = stringResource(R.string.a11y_theme_select, theme.displayName)
                     Box(
                         modifier = Modifier
                             .wrapContentWidth()
@@ -166,6 +177,10 @@ fun MenuScreen(
                                 if (isSelected) Modifier.border(2.dp, tc.tileTarget, RoundedCornerShape(8.dp))
                                 else Modifier.border(1.dp, tc.panelBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                             )
+                            .semantics {
+                                contentDescription = themeSelectDesc
+                                role = Role.Button
+                            }
                             .clickable { onThemeChange(theme) }
                             .padding(horizontal = 8.dp),
                         contentAlignment = Alignment.Center
@@ -190,6 +205,10 @@ fun MenuScreen(
                 fontFamily = style.bodyFontFamily,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
+                    .semantics {
+                        contentDescription = settingsDesc
+                        role = Role.Button
+                    }
                     .clickable { onSettingsClick() }
                     .padding(8.dp)
             )

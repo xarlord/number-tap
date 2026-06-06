@@ -83,4 +83,27 @@
     <string name="settings_confirm">Reset</string>
     <string name="settings_disabled">Disabled</string>
     <string name="settings_button">⚙ Settings</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_tile">Number %1$d</string>
+    <string name="a11y_tile_target">Number %1$d, target</string>
+    <string name="a11y_score">Score: %1$d</string>
+    <string name="a11y_time">Time remaining: %1$.1f seconds</string>
+    <string name="a11y_find_number">Find number %1$d</string>
+    <string name="a11y_stats">Accuracy %1$d%%, Average %2$s, Best combo x%3$d, Taps %4$d</string>
+    <string name="a11y_final_score">Final score: %1$d</string>
+    <string name="a11y_best_score">Best score: %1$d</string>
+    <string name="a11y_new_best">New personal best!</string>
+    <string name="a11y_paused">Game paused. Tap to resume.</string>
+    <string name="a11y_theme_select">Select %1$s theme</string>
+    <string name="a11y_start_game">Start game</string>
+    <string name="a11y_settings">Open settings</string>
+    <string name="a11y_play_again">Play again</string>
+    <string name="a11y_share_score">Share score</string>
+    <string name="a11y_go_menu">Go to menu</string>
+    <string name="a11y_revive">Watch ad to revive with 5 extra seconds</string>
+    <string name="a11y_sound_toggle">Sound effects %1$s</string>
+    <string name="a11y_music_toggle">Background music %1$s</string>
+    <string name="a11y_reset_highscore">Reset high score</string>
+    <string name="a11y_back">Go back</string>
 </resources>

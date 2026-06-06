@@ -34,6 +34,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,6 +64,15 @@ fun GameOverScreen(
     val style = ThemeConfig.styleFor(currentTheme)
     val shape = RoundedCornerShape(style.tileCornerRadius.dp)
 
+    // Hoist accessibility strings
+    val finalScoreDesc = stringResource(R.string.a11y_final_score, score)
+    val bestScoreDesc = stringResource(R.string.a11y_best_score, highScore)
+    val newBestDesc = stringResource(R.string.a11y_new_best)
+    val reviveDesc = stringResource(R.string.a11y_revive)
+    val playAgainDesc = stringResource(R.string.a11y_play_again)
+    val shareDesc = stringResource(R.string.a11y_share_score)
+    val menuDesc = stringResource(R.string.a11y_go_menu)
+
     // Animated score counter
     var displayScore by remember { mutableStateOf(0) }
     LaunchedEffect(score) {
@@ -85,15 +98,21 @@ fun GameOverScreen(
             Text(stringResource(R.string.game_over), color = colors.failure, fontSize = 32.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
 
             Spacer(modifier = Modifier.height(28.dp))
-            Text("$displayScore", color = colors.textPrimary, fontSize = 52.sp, fontWeight = FontWeight.Bold, fontFamily = style.tileFontFamily)
+            Text("$displayScore", color = colors.textPrimary, fontSize = 52.sp, fontWeight = FontWeight.Bold, fontFamily = style.tileFontFamily,
+                modifier = Modifier.semantics { contentDescription = finalScoreDesc }
+            )
             Spacer(modifier = Modifier.height(6.dp))
-            Text(stringResource(R.string.best_label, highScore), color = colors.tileTarget, fontSize = 20.sp, fontFamily = style.bodyFontFamily)
+            Text(stringResource(R.string.best_label, highScore), color = colors.tileTarget, fontSize = 20.sp, fontFamily = style.bodyFontFamily,
+                modifier = Modifier.semantics { contentDescription = bestScoreDesc }
+            )
 
             if (isNewBest) {
                 Spacer(modifier = Modifier.height(10.dp))
                 val inf = rememberInfiniteTransition(label = "nb")
                 val glow by inf.animateFloat(0.6f, 1.0f, infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "g")
-                Text(stringResource(R.string.new_best), color = colors.tileTarget.copy(alpha = glow), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
+                Text(stringResource(R.string.new_best), color = colors.tileTarget.copy(alpha = glow), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily,
+                    modifier = Modifier.semantics { contentDescription = newBestDesc }
+                )
             }
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -105,20 +124,31 @@ fun GameOverScreen(
                     onClick = onRevive,
                     colors = ButtonDefaults.buttonColors(containerColor = colors.tileTarget.copy(alpha = rvGlow), contentColor = colors.textTarget),
                     shape = shape,
-                    modifier = Modifier.size(width = 260.dp, height = 48.dp)
+                    modifier = Modifier
+                        .size(width = 260.dp, height = 48.dp)
+                        .semantics {
+                            contentDescription = reviveDesc
+                            role = Role.Button
+                        }
                 ) { Text(stringResource(R.string.revive_button), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily) }
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Button(onClick = onPlayAgain, colors = ButtonDefaults.buttonColors(containerColor = colors.tileTarget, contentColor = colors.textTarget), shape = shape, modifier = Modifier.size(width = 220.dp, height = 52.dp)) {
+            Button(onClick = onPlayAgain, colors = ButtonDefaults.buttonColors(containerColor = colors.tileTarget, contentColor = colors.textTarget), shape = shape,
+                modifier = Modifier.size(width = 220.dp, height = 52.dp).semantics { contentDescription = playAgainDesc; role = Role.Button }
+            ) {
                 Text(stringResource(R.string.play_again), fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
             }
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onShare, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape, modifier = Modifier.size(width = 104.dp, height = 44.dp)) {
+                Button(onClick = onShare, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape,
+                    modifier = Modifier.size(width = 104.dp, height = 44.dp).semantics { contentDescription = shareDesc; role = Role.Button }
+                ) {
                     Text(stringResource(R.string.share), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
                 }
-                Button(onClick = onMenu, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape, modifier = Modifier.size(width = 104.dp, height = 44.dp)) {
+                Button(onClick = onMenu, colors = ButtonDefaults.buttonColors(containerColor = colors.tileBackground, contentColor = colors.textPrimary), shape = shape,
+                    modifier = Modifier.size(width = 104.dp, height = 44.dp).semantics { contentDescription = menuDesc; role = Role.Button }
+                ) {
                     Text(stringResource(R.string.menu), fontSize = 13.sp, fontFamily = style.bodyFontFamily)
                 }
             }

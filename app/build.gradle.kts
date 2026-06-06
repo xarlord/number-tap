@@ -1,3 +1,11 @@
+import java.util.Properties
+
+// Read signing config from local.properties
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -21,13 +29,10 @@ android {
 
     signingConfigs {
         create("release") {
-            // Developer should create their own keystore:
-            // keytool -genkey -v -keystore numbertap-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
-            // Then set these via local.properties or environment variables:
-            // storeFile = file(System.getenv("KEYSTORE_FILE") ?: "numbertap-upload.jks")
-            // storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-            // keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
-            // keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            storeFile = localProps.getProperty("keystore.file")?.let { file(it) }
+            storePassword = localProps.getProperty("keystore.password", "")
+            keyAlias = localProps.getProperty("key.alias", "upload")
+            keyPassword = localProps.getProperty("key.password", "")
         }
     }
 

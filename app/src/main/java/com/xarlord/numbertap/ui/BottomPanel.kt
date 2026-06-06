@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -112,15 +114,20 @@ internal fun BottomPanel(
 
         Spacer(modifier = Modifier.height(6.dp))
 
+        val accPct = if (state.totalTaps > 0) (state.correctTaps * 100 / state.totalTaps) else 0
+        val avgMs = state.avgTapTimeMs
+        val avgLabel = if (avgMs > 0) "${(avgMs / 1000).toInt()}s" else "—"
+        val statsDesc = stringResource(R.string.a11y_stats, accPct, avgLabel, state.maxCombo, state.totalTaps)
+
         // Stats row
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = statsDesc },
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val accPct = if (state.totalTaps > 0) (state.correctTaps * 100 / state.totalTaps) else 0
-            val avgMs = state.avgTapTimeMs
             StatLabel(strAcc, "${accPct}%", colors, style)
-            StatLabel(strAvg, if (avgMs > 0) "${(avgMs / 1000).toInt()}s" else "—", colors, style)
+            StatLabel(strAvg, avgLabel, colors, style)
             StatLabel(strBest, "x${state.maxCombo}", colors, style)
             StatLabel(strTaps, "${state.totalTaps}", colors, style)
         }

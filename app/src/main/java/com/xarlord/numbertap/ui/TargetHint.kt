@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,13 +31,15 @@ internal fun TargetHint(
     val cornerRadius = style.tileCornerRadius
     val bgColor = colors.tileTarget.copy(alpha = if (isTutorial) pulseAlpha else 1f)
     val shape = RoundedCornerShape(cornerRadius.dp)
+    val findDesc = stringResource(R.string.a11y_find_number, targetNumber)
 
     Box(
         modifier = Modifier
             .size(72.dp)
             .clip(shape)
             .background(bgColor)
-            .then(if (style.showTileBorder) Modifier.border(2.dp, colors.tileTarget, shape) else Modifier),
+            .then(if (style.showTileBorder) Modifier.border(2.dp, colors.tileTarget, shape) else Modifier)
+            .semantics { contentDescription = findDesc },
         contentAlignment = Alignment.Center
     ) {
         Text(
