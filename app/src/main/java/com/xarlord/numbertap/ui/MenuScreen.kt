@@ -225,6 +225,14 @@ private fun ThemedLogo(
 ) {
     val cornerRadius = style.tileCornerRadius
 
+    // Hoist Paint to avoid allocation on every draw frame (fixes #116)
+    val paint = remember {
+        android.graphics.Paint().apply {
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+    }
+
     Canvas(modifier = Modifier.size(size)) {
         val tileSize = this.size.width / 3
         for (row in 0..2) {
@@ -259,22 +267,19 @@ private fun ThemedLogo(
                 }
 
                 if (idx < 3) {
+                    val c = if (idx == 4) colors.textTarget else colors.textPrimary
+                    val argb = (c.alpha * 255).toInt() shl 24 or
+                               (c.red * 255).toInt() shl 16 or
+                               (c.green * 255).toInt() shl 8 or
+                               (c.blue * 255).toInt()
+                    paint.color = argb
+                    paint.textSize = s * 0.4f
+                    paint.typeface = if (style.tileFontFamily == FontFamily.Monospace) android.graphics.Typeface.MONOSPACE else android.graphics.Typeface.DEFAULT_BOLD
                     drawContext.canvas.nativeCanvas.drawText(
                         "${idx + 1}",
                         x + s / 2,
                         y + s * 0.65f,
-                        android.graphics.Paint().apply {
-                            val c = if (idx == 4) colors.textTarget else colors.textPrimary
-                            val argb = (c.alpha * 255).toInt() shl 24 or
-                                       (c.red * 255).toInt() shl 16 or
-                                       (c.green * 255).toInt() shl 8 or
-                                       (c.blue * 255).toInt()
-                            setColor(argb)
-                            textSize = s * 0.4f
-                            textAlign = android.graphics.Paint.Align.CENTER
-                            typeface = if (style.tileFontFamily == FontFamily.Monospace) android.graphics.Typeface.MONOSPACE else android.graphics.Typeface.DEFAULT_BOLD
-                            isAntiAlias = true
-                        }
+                        paint
                     )
                 }
             }

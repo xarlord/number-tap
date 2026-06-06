@@ -28,6 +28,7 @@ class SoundManager(context: Context) : SoundManagerProvider {
     private var comboBreakSoundId: Int = 0
     private var isReleased = false
     private val pendingDeleteFiles = mutableListOf<File>()
+    private val totalSoundsToLoad = 6
 
     private val pitchSteps = floatArrayOf(
         1.0f, 1.0595f, 1.1225f, 1.1892f, 1.2599f, 1.3348f,
@@ -39,10 +40,13 @@ class SoundManager(context: Context) : SoundManagerProvider {
     private var isMusicPlaying = false
 
     init {
-        // Defer temp file cleanup until SoundPool finishes async loading
+        // Defer temp file cleanup until ALL SoundPool samples finish loading (fixes #117)
+        val loadedCount = java.util.concurrent.atomic.AtomicInteger(0)
         soundPool.setOnLoadCompleteListener { _, _, _ ->
-            pendingDeleteFiles.forEach { it.delete() }
-            pendingDeleteFiles.clear()
+            if (loadedCount.incrementAndGet() >= totalSoundsToLoad) {
+                pendingDeleteFiles.forEach { it.delete() }
+                pendingDeleteFiles.clear()
+            }
         }
 
         // Success: high ping 1000Hz, 0.1s

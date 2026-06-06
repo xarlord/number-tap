@@ -110,6 +110,8 @@ fun NumberTapApp() {
                         delay(60)
                         gameState = engine.resetTileStates(gameState)
                         gameState = engine.clearShake(gameState)
+                        // Reset delta after feedback freeze so timer doesn't tick during visual pause (fixes #118)
+                        lastTickTime = SystemClock.elapsedRealtime()
                     }
 
                     gameState = engine.clearExpiredFloatingTexts(gameState, now)
@@ -117,6 +119,8 @@ fun NumberTapApp() {
                     if (gameState.tierAnnouncement != null) {
                         delay(1500)
                         gameState = engine.clearTierAnnouncement(gameState)
+                        // Also reset delta after tier announcement pause
+                        lastTickTime = SystemClock.elapsedRealtime()
                     }
 
                     if (gameState.isPlaying && !gameState.isPaused) {

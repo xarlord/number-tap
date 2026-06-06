@@ -160,7 +160,7 @@ fun GameOverScreen(
 private fun ConfettiAnimation(colors: ThemeColors) {
     val inf = rememberInfiniteTransition(label = "cf")
     val phase by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "cf")
-    val particles = remember { (0..25).map { Triple(Random.nextFloat(), Random.nextFloat(), Random.nextInt(0, 4)) } }
+    val particles = remember { (0..25).map { Triple(kotlin.random.Random(seed = 42 + it).nextFloat(), kotlin.random.Random(seed = 137 + it).nextFloat(), kotlin.random.Random(seed = 256 + it).nextInt(0, 4)) } }
     val particleColors = listOf(colors.tileTarget, colors.success, colors.comboGlow, colors.failure)
 
     Canvas(modifier = Modifier.fillMaxSize()) {
