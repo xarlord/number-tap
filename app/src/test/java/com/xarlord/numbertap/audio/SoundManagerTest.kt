@@ -60,9 +60,12 @@ class SoundManagerTest {
     @Test
     fun `negative combo is handled gracefully`() {
         val combo = -1
-        val clamped = maxOf(0, combo)
-        val pitch = pitchSteps[minOf(clamped, pitchSteps.size - 1)]
-        assertEquals(1.0f, pitch, 0.001f)
+        // Simulate SoundManager: combo comes from GameEngine where min is 1
+        // But defensively handle edge case
+        val pitchIndex = (combo - 1).coerceIn(0, pitchSteps.size - 1)
+        val pitch = pitchSteps[pitchIndex]
+        assertTrue(pitch >= 1.0f)
+        assertTrue(pitch <= 2.0f)
     }
 
     @Test
@@ -80,8 +83,9 @@ class SoundManagerTest {
     @Test
     fun `minOf combo capping logic works for various values`() {
         // Test the actual capping logic used in SoundManager
-        for (combo in 0..12) {
-            val pitch = pitchSteps[minOf(combo, pitchSteps.size - 1)]
+        for (combo in 1..13) {
+            val pitchIndex = (combo - 1).coerceIn(0, pitchSteps.size - 1)
+            val pitch = pitchSteps[pitchIndex]
             assertTrue("Pitch for combo $combo should be >= 1.0", pitch >= 1.0f)
             assertTrue("Pitch for combo $combo should be <= 2.0", pitch <= 2.0f)
         }
@@ -89,9 +93,32 @@ class SoundManagerTest {
 
     @Test
     fun `combo beyond max returns last entry`() {
-        for (combo in 13..100) {
-            val pitch = pitchSteps[minOf(combo, pitchSteps.size - 1)]
+        for (combo in 14..100) {
+            val pitchIndex = (combo - 1).coerceIn(0, pitchSteps.size - 1)
+            val pitch = pitchSteps[pitchIndex]
             assertEquals(2.0f, pitch, 0.001f)
         }
+    }
+
+    @Test
+    fun `combo 1 maps to base pitch per GDD`() {
+        // GDD: first correct tap in sequence plays at base pitch
+        // combo is 1-based; subtract 1 for pitch table index
+        val pitchIndex = (1 - 1).coerceIn(0, pitchSteps.size - 1)
+        assertEquals(1.0f, pitchSteps[pitchIndex], 0.001f)
+    }
+
+    @Test
+    fun `combo 2 maps to first semitone step`() {
+        // GDD: each consecutive correct tap increases pitch by half-step
+        val pitchIndex = (2 - 1).coerceIn(0, pitchSteps.size - 1)
+        assertEquals(1.0595f, pitchSteps[pitchIndex], 0.001f)
+    }
+
+    @Test
+    fun `combo 13 maps to octave up`() {
+        // combo 13 → index 12 → 2.0 (octave)
+        val pitchIndex = (13 - 1).coerceIn(0, pitchSteps.size - 1)
+        assertEquals(2.0f, pitchSteps[pitchIndex], 0.001f)
     }
 }

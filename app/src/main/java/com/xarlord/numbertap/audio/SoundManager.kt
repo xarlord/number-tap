@@ -67,7 +67,10 @@ class SoundManager(context: Context) {
 
     fun playSuccess(combo: Int) {
         if (isReleased) return
-        val pitch = pitchSteps[minOf(combo, pitchSteps.size - 1)]
+        // GDD: first tap in sequence plays at base pitch; consecutive taps step up
+        // combo is 1-based from GameEngine, so subtract 1 for pitch table index
+        val pitchIndex = (combo - 1).coerceIn(0, pitchSteps.size - 1)
+        val pitch = pitchSteps[pitchIndex]
         if (successSoundId != 0) soundPool.play(successSoundId, 1.0f, 1.0f, 1, 0, pitch)
     }
 
