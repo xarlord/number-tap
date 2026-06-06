@@ -491,7 +491,7 @@ private fun BottomPanel(
             val accPct = if (state.totalTaps > 0) (state.correctTaps * 100 / state.totalTaps) else 0
             val avgMs = state.avgTapTimeMs
             StatLabel("ACC", "${accPct}%", colors, style)
-            StatLabel("AVG", if (avgMs > 0) "${(avgMs / 1000).toInt()}s" else "—", colors, style)
+            StatLabel("AVG", if (avgMs > 0) String.format("%.1fs", avgMs / 1000.0) else "—", colors, style)
             StatLabel("BEST", "x${state.maxCombo}", colors, style)
             StatLabel("TAPS", "${state.totalTaps}", colors, style)
         }

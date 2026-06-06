@@ -137,10 +137,17 @@ class GameEngine {
             totalTapTimeNs = if (state.lastCorrectTapTime > 0) state.totalTapTimeNs + (currentTime - state.lastCorrectTapTime) * 1_000_000 else state.totalTapTimeNs
         )
 
-        // Tutorial step advance
+        // Tutorial step advance — regenerate as proper 4×4 grid
         if (state.isTutorial && newScore >= 5) {
             ActionLogger.logTutorialComplete(newScore)
-            return Pair(newState.copy(isTutorial = false, timeRemaining = 30.0), TapResult.Correct(newCombo))
+            val freshTier = DifficultyConfig.tierForScore(newScore)
+            val freshTiles = regenerateForNewGrid(freshTier, newTarget)
+            return Pair(newState.copy(
+                isTutorial = false,
+                timeRemaining = 30.0,
+                tiles = freshTiles,
+                gridSize = freshTier.gridRows
+            ), TapResult.Correct(newCombo))
         }
 
         if (didTransition) {
