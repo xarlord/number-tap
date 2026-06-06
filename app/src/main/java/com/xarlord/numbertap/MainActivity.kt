@@ -18,6 +18,7 @@ import com.xarlord.numbertap.audio.SoundManager
 import com.xarlord.numbertap.ui.GameOverScreen
 import com.xarlord.numbertap.ui.GameScreen
 import com.xarlord.numbertap.ui.MenuScreen
+import com.xarlord.numbertap.ui.SettingsScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -32,12 +33,15 @@ sealed class Screen {
     data object Menu : Screen()
     data object Game : Screen()
     data object GameOver : Screen()
+    data object Settings : Screen()
 }
 
 private const val PREFS_NAME = "number_tap_prefs"
 private const val KEY_HIGH_SCORE = "high_score"
 private const val KEY_HAS_PLAYED = "has_played"
 private const val KEY_THEME = "selected_theme"
+private const val KEY_SOUND_ENABLED = "sound_enabled"
+private const val KEY_MUSIC_ENABLED = "music_enabled"
 
 private fun loadHighScore(context: Context) =
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getInt(KEY_HIGH_SCORE, 0)
@@ -62,6 +66,20 @@ private fun markPlayed(context: Context) {
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_HAS_PLAYED, true).apply()
 }
 
+private fun loadSoundEnabled(context: Context): Boolean =
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_SOUND_ENABLED, true)
+
+private fun saveSoundEnabled(context: Context, enabled: Boolean) {
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_SOUND_ENABLED, enabled).apply()
+}
+
+private fun loadMusicEnabled(context: Context): Boolean =
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_MUSIC_ENABLED, true)
+
+private fun saveMusicEnabled(context: Context, enabled: Boolean) {
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_MUSIC_ENABLED, enabled).apply()
+}
+
 @Composable
 fun NumberTapApp() {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Menu) }
@@ -70,6 +88,8 @@ fun NumberTapApp() {
     val context = LocalContext.current
     var highScore by remember { mutableStateOf(loadHighScore(context)) }
     var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
+    var soundEnabled by remember { mutableStateOf(loadSoundEnabled(context)) }
+    var musicEnabled by remember { mutableStateOf(loadMusicEnabled(context)) }
     var lastTickTime by remember { mutableLongStateOf(0L) }
     var lastCountdownTickSecond by remember { mutableIntStateOf(-1) }
 
@@ -105,7 +125,7 @@ fun NumberTapApp() {
                         gameState = engine.tick(gameState, delta)
 
                         val currentSecond = gameState.timeRemaining.toInt()
-                        if (gameState.timeRemaining < 5.0 && gameState.timeRemaining > 0.0 && currentSecond != lastCountdownTickSecond) {
+                        if (soundEnabled && gameState.timeRemaining < 5.0 && gameState.timeRemaining > 0.0 && currentSecond != lastCountdownTickSecond) {
                             lastCountdownTickSecond = currentSecond
                             soundManager.playCountdownTick()
                         }
@@ -117,7 +137,7 @@ fun NumberTapApp() {
                             }
                             markPlayed(context)
                             ActionLogger.logGameOver(gameState.score, gameState.highScore, gameState.timeRemaining)
-                            soundManager.playGameOver()
+                            if (soundEnabled) soundManager.playGameOver()
                             soundManager.stopBGMusic()
                             currentScreen = Screen.GameOver
                         }
@@ -139,7 +159,7 @@ fun NumberTapApp() {
             onStartClick = {
                 gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
                 ActionLogger.logGameStart(0, highScore)
-                soundManager.startBGMusic()
+                if (musicEnabled) soundManager.startBGMusic()
                 currentScreen = Screen.Game
             },
             onTutorialClick = {
@@ -150,6 +170,9 @@ fun NumberTapApp() {
             onThemeChange = { theme ->
                 selectedTheme = theme
                 saveTheme(context, theme)
+            },
+            onSettingsClick = {
+                currentScreen = Screen.Settings
             }
         )
 
@@ -163,12 +186,14 @@ fun NumberTapApp() {
                     when (result) {
                         is TapResult.Correct -> {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
-                            soundManager.playSuccess(result.combo)
-                            if (gameState.score % 10 == 0 && gameState.score > 0) soundManager.playMilestone()
+                            if (soundEnabled) {
+                                soundManager.playSuccess(result.combo)
+                                if (gameState.score % 10 == 0 && gameState.score > 0) soundManager.playMilestone()
+                            }
                         }
                         is TapResult.Wrong -> {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
-                            soundManager.playFailure()
+                            if (soundEnabled) soundManager.playFailure()
                         }
                         is TapResult.Invalid -> {}
                     }
@@ -195,7 +220,7 @@ fun NumberTapApp() {
             onPlayAgain = {
                 gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
                 ActionLogger.logGameStart(0, highScore)
-                soundManager.startBGMusic()
+                if (musicEnabled) soundManager.startBGMusic()
                 currentScreen = Screen.Game
             },
             onMenu = {
@@ -209,8 +234,33 @@ fun NumberTapApp() {
             onRevive = {
                 gameState = engine.revive(gameState)
                 lastTickTime = SystemClock.elapsedRealtime()
-                soundManager.startBGMusic()
+                if (musicEnabled) soundManager.startBGMusic()
                 currentScreen = Screen.Game
+            }
+        )
+
+        is Screen.Settings -> SettingsScreen(
+            currentTheme = selectedTheme,
+            soundEnabled = soundEnabled,
+            musicEnabled = musicEnabled,
+            onThemeChange = { theme ->
+                selectedTheme = theme
+                saveTheme(context, theme)
+            },
+            onSoundToggle = { enabled ->
+                soundEnabled = enabled
+                saveSoundEnabled(context, enabled)
+            },
+            onMusicToggle = { enabled ->
+                musicEnabled = enabled
+                saveMusicEnabled(context, enabled)
+            },
+            onResetHighScore = {
+                highScore = 0
+                saveHighScore(context, 0)
+            },
+            onBack = {
+                currentScreen = Screen.Menu
             }
         )
     }

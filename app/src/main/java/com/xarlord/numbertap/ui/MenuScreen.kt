@@ -59,6 +59,7 @@ fun MenuScreen(
     onStartClick: () -> Unit,
     onTutorialClick: () -> Unit = {},
     onThemeChange: (GameTheme) -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
@@ -179,6 +180,19 @@ fun MenuScreen(
                     }
                 }
             }
+
+            // Settings button
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.settings_button),
+                color = colors.textSecondary,
+                fontSize = 14.sp,
+                fontFamily = style.bodyFontFamily,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .clickable { onSettingsClick() }
+                    .padding(8.dp)
+            )
         }
     }
 }

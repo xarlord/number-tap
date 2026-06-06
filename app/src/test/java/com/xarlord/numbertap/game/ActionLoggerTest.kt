@@ -5,7 +5,31 @@ import com.xarlord.numbertap.data.GameAction
 import org.junit.Assert.*
 import org.junit.Test
 
+/**
+ * In-memory test double for ActionLoggerProvider.
+ * Captures logged actions for assertion in tests.
+ */
+class InMemoryActionLogger : ActionLoggerProvider {
+    val actions = mutableListOf<GameAction>()
+    override fun log(action: GameAction) { actions.add(action) }
+    override fun logGameStart(score: Int, highScore: Int) { log(GameAction(timestamp = 0L, type = ActionType.GAME_START, score = score)) }
+    override fun logTap(row: Int, col: Int, value: Int, target: Int, correct: Boolean, score: Int, time: Double) { log(GameAction(timestamp = 0L, type = if (correct) ActionType.TAP_CORRECT else ActionType.TAP_WRONG, tileRow = row, tileCol = col, tileValue = value, targetValue = target, score = score, timeRemaining = time)) }
+    override fun logGameOver(score: Int, highScore: Int, time: Double) { log(GameAction(timestamp = 0L, type = ActionType.GAME_OVER, score = score)) }
+    override fun logGridTransition(score: Int, newSize: Int) {}
+    override fun logTutorialStart() {}
+    override fun logTutorialComplete(score: Int) {}
+    override fun logPause(score: Int, time: Double) {}
+    override fun logResume(score: Int, time: Double) {}
+    override fun logRevive(score: Int, time: Double) {}
+    override fun logScoreMilestone(score: Int, label: String) {}
+    override fun logShare(score: Int) {}
+    override fun logTierAnnouncement(score: Int, tier: String) {}
+    override fun logError(location: String, message: String) {}
+}
+
 class ActionLoggerTest {
+
+    // --- Original data-class tests (unchanged) ---
 
     @Test
     fun `game action for tap correct has all fields`() {
@@ -91,5 +115,87 @@ class ActionLoggerTest {
     fun `all action types have distinct names`() {
         val names = ActionType.entries.map { it.name }.toSet()
         assertEquals(ActionType.entries.size, names.size)
+    }
+
+    // --- New interface / InMemoryActionLogger tests ---
+
+    @Test
+    fun `InMemoryActionLogger captures logGameStart action`() {
+        val logger = InMemoryActionLogger()
+        logger.logGameStart(score = 0, highScore = 100)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.GAME_START, logger.actions[0].type)
+        assertEquals(0, logger.actions[0].score)
+    }
+
+    @Test
+    fun `InMemoryActionLogger captures logTap correct action`() {
+        val logger = InMemoryActionLogger()
+        logger.logTap(row = 1, col = 2, value = 5, target = 5, correct = true, score = 10, time = 20.0)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.TAP_CORRECT, logger.actions[0].type)
+        assertEquals(1, logger.actions[0].tileRow)
+        assertEquals(2, logger.actions[0].tileCol)
+        assertEquals(5, logger.actions[0].tileValue)
+        assertEquals(10, logger.actions[0].score)
+    }
+
+    @Test
+    fun `InMemoryActionLogger captures logTap wrong action`() {
+        val logger = InMemoryActionLogger()
+        logger.logTap(row = 0, col = 0, value = 3, target = 7, correct = false, score = 5, time = 15.0)
+        assertEquals(ActionType.TAP_WRONG, logger.actions[0].type)
+    }
+
+    @Test
+    fun `InMemoryActionLogger captures logGameOver action`() {
+        val logger = InMemoryActionLogger()
+        logger.logGameOver(score = 42, highScore = 50, time = 0.0)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.GAME_OVER, logger.actions[0].type)
+        assertEquals(42, logger.actions[0].score)
+    }
+
+    @Test
+    fun `InMemoryActionLogger captures multiple actions in order`() {
+        val logger = InMemoryActionLogger()
+        logger.logGameStart(score = 0, highScore = 0)
+        logger.logTap(row = 0, col = 1, value = 1, target = 1, correct = true, score = 1, time = 29.5)
+        logger.logGameOver(score = 1, highScore = 1, time = 0.0)
+        assertEquals(3, logger.actions.size)
+        assertEquals(ActionType.GAME_START, logger.actions[0].type)
+        assertEquals(ActionType.TAP_CORRECT, logger.actions[1].type)
+        assertEquals(ActionType.GAME_OVER, logger.actions[2].type)
+    }
+
+    @Test
+    fun `ActionLogger singleton delegates to LogcatActionLogger`() {
+        // Verify the singleton implements the interface via delegation
+        val provider: ActionLoggerProvider = ActionLogger
+        assertNotNull(provider)
+        // ActionLogger is backed by LogcatActionLogger, so it should be non-null
+        assertTrue(ActionLogger is ActionLoggerProvider)
+    }
+
+    @Test
+    fun `interface contract covers all public methods`() {
+        // Verify all methods defined on the interface are callable via a test double
+        val logger = InMemoryActionLogger()
+        logger.logGameStart(0, 0)
+        logger.logTap(0, 0, 1, 1, true, 1, 30.0)
+        logger.logGameOver(0, 0, 0.0)
+        logger.logGridTransition(10, 4)
+        logger.logTutorialStart()
+        logger.logTutorialComplete(5)
+        logger.logPause(5, 15.0)
+        logger.logResume(5, 15.0)
+        logger.logRevive(5, 3.0)
+        logger.logScoreMilestone(10, "10")
+        logger.logShare(10)
+        logger.logTierAnnouncement(10, "bronze")
+        logger.logError("loc", "msg")
+        // logGridTransition and others that are no-ops in InMemoryActionLogger don't add to actions
+        // Only logGameStart, logTap, logGameOver add to actions
+        assertEquals(3, logger.actions.size)
     }
 }

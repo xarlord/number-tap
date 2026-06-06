@@ -62,4 +62,21 @@
     <string name="theme_chalkboard">Chalkboard</string>
     <string name="theme_matrix">Matrix</string>
     <string name="theme_default">Default</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_sound">Sound Effects</string>
+    <string name="settings_music">Background Music</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_reset_highscore">Reset High Score</string>
+    <string name="settings_reset_confirm">Are you sure? This cannot be undone.</string>
+    <string name="settings_reset_done">High score reset!</string>
+    <string name="settings_privacy">Privacy Policy</string>
+    <string name="settings_privacy_text">Number Tap does not collect any personal data.</string>
+    <string name="settings_version">Number Tap v1.0.0</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_confirm">Reset</string>
+    <string name="settings_disabled">Disabled</string>
+    <string name="settings_button">⚙ Settings</string>
 </resources>

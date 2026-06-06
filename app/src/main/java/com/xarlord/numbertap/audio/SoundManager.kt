@@ -8,7 +8,7 @@ import android.media.SoundPool
 import java.io.ByteArrayOutputStream
 import java.io.File
 
-class SoundManager(context: Context) {
+class SoundManager(context: Context) : SoundManagerProvider {
 
     private val soundPool = SoundPool.Builder()
         .setMaxStreams(6)
@@ -69,7 +69,7 @@ class SoundManager(context: Context) {
         comboBreakFile.delete()
     }
 
-    fun playSuccess(combo: Int) {
+    override fun playSuccess(combo: Int) {
         if (isReleased) return
         // GDD: first tap in sequence plays at base pitch; consecutive taps step up
         // combo is 1-based from GameEngine, so subtract 1 for pitch table index
@@ -78,33 +78,33 @@ class SoundManager(context: Context) {
         if (successSoundId != 0) soundPool.play(successSoundId, 1.0f, 1.0f, 1, 0, pitch)
     }
 
-    fun playFailure() {
+    override fun playFailure() {
         if (isReleased) return
         if (failureSoundId != 0) soundPool.play(failureSoundId, 1.0f, 1.0f, 1, 0, 0.5f)
     }
 
-    fun playCountdownTick() {
+    override fun playCountdownTick() {
         if (isReleased) return
         if (tickSoundId != 0) soundPool.play(tickSoundId, 0.4f, 0.4f, 1, 0, 1.0f)
     }
 
-    fun playGameOver() {
+    override fun playGameOver() {
         if (isReleased) return
         if (gameOverSoundId != 0) soundPool.play(gameOverSoundId, 1.0f, 1.0f, 1, 0, 0.7f)
     }
 
-    fun playMilestone() {
+    override fun playMilestone() {
         if (isReleased) return
         if (milestoneSoundId != 0) soundPool.play(milestoneSoundId, 0.8f, 0.8f, 1, 0, 1.2f)
     }
 
-    fun playComboBreak() {
+    override fun playComboBreak() {
         if (isReleased) return
         if (comboBreakSoundId != 0) soundPool.play(comboBreakSoundId, 0.6f, 0.6f, 1, 0, 1.0f)
     }
 
     /** Start procedural background music — simple looping beat */
-    fun startBGMusic() {
+    override fun startBGMusic() {
         if (isReleased || isMusicPlaying) return
         try {
             val sampleRate = 22050
@@ -166,7 +166,7 @@ class SoundManager(context: Context) {
         }
     }
 
-    fun stopBGMusic() {
+    override fun stopBGMusic() {
         try {
             bgMusicTrack?.stop()
             bgMusicTrack?.release()
@@ -175,7 +175,7 @@ class SoundManager(context: Context) {
         isMusicPlaying = false
     }
 
-    fun release() {
+    override fun release() {
         if (!isReleased) {
             stopBGMusic()
             soundPool.release()
