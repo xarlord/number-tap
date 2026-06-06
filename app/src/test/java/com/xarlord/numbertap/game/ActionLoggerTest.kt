@@ -15,16 +15,16 @@ class InMemoryActionLogger : ActionLoggerProvider {
     override fun logGameStart(score: Int, highScore: Int) { log(GameAction(timestamp = 0L, type = ActionType.GAME_START, score = score)) }
     override fun logTap(row: Int, col: Int, value: Int, target: Int, correct: Boolean, score: Int, time: Double) { log(GameAction(timestamp = 0L, type = if (correct) ActionType.TAP_CORRECT else ActionType.TAP_WRONG, tileRow = row, tileCol = col, tileValue = value, targetValue = target, score = score, timeRemaining = time)) }
     override fun logGameOver(score: Int, highScore: Int, time: Double) { log(GameAction(timestamp = 0L, type = ActionType.GAME_OVER, score = score)) }
-    override fun logGridTransition(score: Int, newSize: Int) {}
-    override fun logTutorialStart() {}
-    override fun logTutorialComplete(score: Int) {}
-    override fun logPause(score: Int, time: Double) {}
-    override fun logResume(score: Int, time: Double) {}
-    override fun logRevive(score: Int, time: Double) {}
-    override fun logScoreMilestone(score: Int, label: String) {}
-    override fun logShare(score: Int) {}
-    override fun logTierAnnouncement(score: Int, tier: String) {}
-    override fun logError(location: String, message: String) {}
+    override fun logGridTransition(score: Int, newSize: Int) { log(GameAction(timestamp = 0L, type = ActionType.GRID_TRANSITION, score = score, extra = "newGrid=$newSize")) }
+    override fun logTutorialStart() { log(GameAction(timestamp = 0L, type = ActionType.TUTORIAL_START, extra = "firstTime=true")) }
+    override fun logTutorialComplete(score: Int) { log(GameAction(timestamp = 0L, type = ActionType.TUTORIAL_COMPLETE, score = score, extra = "transitionedToGame=true")) }
+    override fun logPause(score: Int, time: Double) { log(GameAction(timestamp = 0L, type = ActionType.PAUSE, score = score, timeRemaining = time)) }
+    override fun logResume(score: Int, time: Double) { log(GameAction(timestamp = 0L, type = ActionType.RESUME, score = score, timeRemaining = time)) }
+    override fun logRevive(score: Int, time: Double) { log(GameAction(timestamp = 0L, type = ActionType.REVIVE, score = score, timeRemaining = time, extra = "bonusTime=5.0")) }
+    override fun logScoreMilestone(score: Int, label: String) { log(GameAction(timestamp = 0L, type = ActionType.SCORE_MILESTONE, score = score, extra = "label=$label")) }
+    override fun logShare(score: Int) { log(GameAction(timestamp = 0L, type = ActionType.SHARE, score = score)) }
+    override fun logTierAnnouncement(score: Int, tier: String) { log(GameAction(timestamp = 0L, type = ActionType.TIER_ANNOUNCEMENT, score = score, extra = "tier=$tier")) }
+    override fun logError(location: String, message: String) { log(GameAction(timestamp = 0L, type = ActionType.ERROR, extra = "error_location=$location error_message=$message")) }
 }
 
 class ActionLoggerTest {
@@ -194,8 +194,103 @@ class ActionLoggerTest {
         logger.logShare(10)
         logger.logTierAnnouncement(10, "bronze")
         logger.logError("loc", "msg")
-        // logGridTransition and others that are no-ops in InMemoryActionLogger don't add to actions
-        // Only logGameStart, logTap, logGameOver add to actions
-        assertEquals(3, logger.actions.size)
+        // Now all methods capture actions
+        assertEquals(13, logger.actions.size)
+    }
+
+    // --- Tests for previously uncovered LogcatActionLogger methods ---
+
+    @Test
+    fun `logShare captures SHARE action with score`() {
+        val logger = InMemoryActionLogger()
+        logger.logShare(42)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.SHARE, logger.actions[0].type)
+        assertEquals(42, logger.actions[0].score)
+    }
+
+    @Test
+    fun `logTierAnnouncement captures TIER_ANNOUNCEMENT with tier extra`() {
+        val logger = InMemoryActionLogger()
+        logger.logTierAnnouncement(25, "AMAZING")
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.TIER_ANNOUNCEMENT, logger.actions[0].type)
+        assertEquals(25, logger.actions[0].score)
+        assertTrue(logger.actions[0].extra.contains("tier=AMAZING"))
+    }
+
+    @Test
+    fun `logError captures ERROR action with location and message`() {
+        val logger = InMemoryActionLogger()
+        logger.logError("game_loop", "timeout")
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.ERROR, logger.actions[0].type)
+        assertTrue(logger.actions[0].extra.contains("error_location=game_loop"))
+        assertTrue(logger.actions[0].extra.contains("error_message=timeout"))
+    }
+
+    @Test
+    fun `logGridTransition captures GRID_TRANSITION with new grid size`() {
+        val logger = InMemoryActionLogger()
+        logger.logGridTransition(41, 5)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.GRID_TRANSITION, logger.actions[0].type)
+        assertEquals(41, logger.actions[0].score)
+        assertTrue(logger.actions[0].extra.contains("newGrid=5"))
+    }
+
+    @Test
+    fun `logTutorialStart captures TUTORIAL_START`() {
+        val logger = InMemoryActionLogger()
+        logger.logTutorialStart()
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.TUTORIAL_START, logger.actions[0].type)
+    }
+
+    @Test
+    fun `logTutorialComplete captures TUTORIAL_COMPLETE with score`() {
+        val logger = InMemoryActionLogger()
+        logger.logTutorialComplete(5)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.TUTORIAL_COMPLETE, logger.actions[0].type)
+        assertEquals(5, logger.actions[0].score)
+    }
+
+    @Test
+    fun `logPause captures PAUSE with score and time`() {
+        val logger = InMemoryActionLogger()
+        logger.logPause(10, 15.5)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.PAUSE, logger.actions[0].type)
+        assertEquals(10, logger.actions[0].score)
+        assertEquals(15.5, logger.actions[0].timeRemaining, 0.01)
+    }
+
+    @Test
+    fun `logResume captures RESUME with score and time`() {
+        val logger = InMemoryActionLogger()
+        logger.logResume(10, 15.5)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.RESUME, logger.actions[0].type)
+    }
+
+    @Test
+    fun `logRevive captures REVIVE with bonus time extra`() {
+        val logger = InMemoryActionLogger()
+        logger.logRevive(20, 0.0)
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.REVIVE, logger.actions[0].type)
+        assertEquals(20, logger.actions[0].score)
+        assertTrue(logger.actions[0].extra.contains("bonusTime=5.0"))
+    }
+
+    @Test
+    fun `logScoreMilestone captures SCORE_MILESTONE with label`() {
+        val logger = InMemoryActionLogger()
+        logger.logScoreMilestone(50, "LEGENDARY")
+        assertEquals(1, logger.actions.size)
+        assertEquals(ActionType.SCORE_MILESTONE, logger.actions[0].type)
+        assertEquals(50, logger.actions[0].score)
+        assertTrue(logger.actions[0].extra.contains("label=LEGENDARY"))
     }
 }

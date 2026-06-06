@@ -13,8 +13,11 @@ import kotlin.random.Random
 /**
  * Pure game logic engine. All methods return new GameState without side effects.
  * Compose-safe: no mutable internal state leaked to UI layer.
+ *
+ * @param logger injectable action logger; defaults to the ActionLogger singleton.
+ *               Pass a NoOpActionLogger in tests to avoid Android logcat dependency.
  */
-class GameEngine {
+class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
 
     fun startNewGame(highScore: Int, isTutorial: Boolean = false, currentTheme: GameTheme = GameTheme.DEFAULT): GameState {
         val tier = DifficultyConfig.tierForScore(0)
@@ -140,16 +143,16 @@ class GameEngine {
 
         // Tutorial step advance
         if (state.isTutorial && newScore >= 5) {
-            ActionLogger.logTutorialComplete(newScore)
+            logger.logTutorialComplete(newScore)
             return Pair(newState.copy(isTutorial = false, timeRemaining = 30.0), TapResult.Correct(newCombo))
         }
 
         if (didTransition) {
-            ActionLogger.logGridTransition(newScore, newTier.gridRows)
+            logger.logGridTransition(newScore, newTier.gridRows)
         }
 
         if (tierAnnouncement != null && newScore % 5 == 0) {
-            ActionLogger.logScoreMilestone(newScore, tierAnnouncement.name)
+            logger.logScoreMilestone(newScore, tierAnnouncement.name)
         }
 
         return Pair(newState, TapResult.Correct(newCombo))
@@ -215,19 +218,19 @@ class GameEngine {
 
     fun pause(state: GameState): GameState {
         if (!state.isPlaying || state.isGameOver) return state
-        ActionLogger.logPause(state.score, state.timeRemaining)
+        logger.logPause(state.score, state.timeRemaining)
         return state.copy(isPaused = true)
     }
 
     fun resume(state: GameState): GameState {
         if (!state.isPaused) return state
-        ActionLogger.logResume(state.score, state.timeRemaining)
+        logger.logResume(state.score, state.timeRemaining)
         return state.copy(isPaused = false)
     }
 
     fun revive(state: GameState): GameState {
         if (state.isPlaying || !state.isGameOver) return state
-        ActionLogger.logRevive(state.score, state.timeRemaining)
+        logger.logRevive(state.score, state.timeRemaining)
         return state.copy(
             timeRemaining = 5.0,
             isPlaying = true,
