@@ -339,22 +339,27 @@ private fun FloatingTextOverlay(floatingTexts: List<FloatingText>, gridSize: Int
     val tileSizePx = with(LocalDensity.current) { tileSizeDp.toPx() }
     val spacingPx = with(LocalDensity.current) { spacingDp.toPx() }
 
+    // Reuse Paint instance to avoid per-frame allocations and GC pressure
+    val textPaint = remember {
+        android.graphics.Paint().apply {
+            textSize = 36f
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            isAntiAlias = true
+        }
+    }
+
     Canvas(modifier = Modifier.fillMaxSize()) {
         floatingTexts.forEach { ft ->
             val x = ft.x * (tileSizePx + spacingPx) + tileSizePx / 2f
             val y = ft.y * (tileSizePx + spacingPx)
 
+            textPaint.color = ft.colorHex.toInt()
             drawContext.canvas.nativeCanvas.drawText(
                 ft.text,
                 x,
                 y,
-                android.graphics.Paint().apply {
-                    setColor(ft.colorHex.toInt())
-                    textSize = 36f
-                    textAlign = android.graphics.Paint.Align.CENTER
-                    typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    isAntiAlias = true
-                }
+                textPaint
             )
         }
     }

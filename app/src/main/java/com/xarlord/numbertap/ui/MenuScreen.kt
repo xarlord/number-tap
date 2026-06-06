@@ -71,8 +71,17 @@ fun MenuScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Custom logo — stylized grid icon
+            val logoPaint = remember {
+                android.graphics.Paint().apply {
+                    color = android.graphics.Color.WHITE
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    isAntiAlias = true
+                }
+            }
             Canvas(modifier = Modifier.size(80.dp)) {
                 val tileSize = size.width / 3
+                logoPaint.textSize = tileSize * 0.4f
                 for (row in 0..2) {
                     for (col in 0..2) {
                         val idx = row * 3 + col
@@ -91,13 +100,7 @@ fun MenuScreen(
                                 "${idx + 1}",
                                 col * tileSize + tileSize / 2,
                                 row * tileSize + tileSize * 0.65f,
-                                android.graphics.Paint().apply {
-                                    setColor(android.graphics.Color.WHITE)
-                                    textSize = tileSize * 0.4f
-                                    textAlign = android.graphics.Paint.Align.CENTER
-                                    typeface = android.graphics.Typeface.DEFAULT_BOLD
-                                    isAntiAlias = true
-                                }
+                                logoPaint
                             )
                         }
                     }
@@ -199,6 +202,15 @@ private fun FloatingNumbersBackground() {
         }
     }
 
+    // Reuse Paint instance to avoid per-frame allocations
+    val bgPaint = remember {
+        android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textAlign = android.graphics.Paint.Align.CENTER
+            isAntiAlias = true
+        }
+    }
+
     Canvas(modifier = Modifier.fillMaxSize()) {
         val width = size.width
         val height = size.height
@@ -209,17 +221,13 @@ private fun FloatingNumbersBackground() {
             val y = (baseY * height + phase * 0.5f * (idx % 3 + 1)) % height
             val alpha = 0.06f + 0.04f * sin(Math.toRadians((phase + idx * 30.0).toDouble())).toFloat()
 
+            bgPaint.alpha = (alpha * 255).toInt().coerceIn(0, 255)
+            bgPaint.textSize = 28f + idx % 3 * 8f
             drawContext.canvas.nativeCanvas.drawText(
                 "$number",
                 x,
                 y,
-                android.graphics.Paint().apply {
-                    color = android.graphics.Color.WHITE
-                    this.alpha = (alpha * 255).toInt().coerceIn(0, 255)
-                    textSize = 28f + idx % 3 * 8f
-                    textAlign = android.graphics.Paint.Align.CENTER
-                    isAntiAlias = true
-                }
+                bgPaint
             )
         }
     }
