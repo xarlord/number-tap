@@ -243,8 +243,9 @@ class GameEngineTest {
         val (s1, _) = engine.onTap(state, r1, c1, time)
         // Tap wrong number
         val (r2, c2) = findTileWithValue(s1, s1.targetNumber + 1)!!
-        val (newState, _) = engine.onTap(s1, r2, c2, time + 100)
+        val (newState, result) = engine.onTap(s1, r2, c2, time + 100)
         assertEquals(0, newState.comboCount)
+        assertTrue("Wrong result should carry previousCombo", (result as TapResult.Wrong).previousCombo == 1)
     }
 
     @Test
@@ -493,10 +494,18 @@ class GameEngineTest {
     }
 
     @Test
-    fun `TapResult Wrong is singleton`() {
-        val r1 = TapResult.Wrong
-        val r2 = TapResult.Wrong
+    fun `TapResult Wrong holds previousCombo`() {
+        val r1 = TapResult.Wrong(previousCombo = 3)
+        val r2 = TapResult.Wrong(previousCombo = 3)
         assertEquals(r1, r2)
+        assertEquals(3, r1.previousCombo)
+    }
+
+    @Test
+    fun `TapResult Wrong with different combos are not equal`() {
+        val r1 = TapResult.Wrong(previousCombo = 3)
+        val r2 = TapResult.Wrong(previousCombo = 0)
+        assertNotEquals(r1, r2)
     }
 
     @Test

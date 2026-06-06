@@ -167,7 +167,7 @@ fun NumberTapApp() {
                     is TapResult.Wrong -> {
                         ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
                         soundManager.playFailure()
-                        if (gameState.comboCount > 2) {
+                        if (result.previousCombo > 2) {
                             soundManager.playComboBreak()
                         }
                     }

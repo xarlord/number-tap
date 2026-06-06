@@ -169,7 +169,7 @@ class GameEngine {
                 Random.nextFloat() * 12 - 6
             ),
             tierAnnouncement = null
-        ), TapResult.Wrong)
+        ), TapResult.Wrong(previousCombo = state.comboCount))
     }
 
     fun clearShake(state: GameState): GameState {
@@ -280,6 +280,6 @@ class GameEngine {
 
 sealed class TapResult {
     data class Correct(val combo: Int) : TapResult()
-    data object Wrong : TapResult()
+    data class Wrong(val previousCombo: Int) : TapResult()
     data object Invalid : TapResult()
 }
