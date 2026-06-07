@@ -33,7 +33,9 @@ class AdManagerTest {
 
     @Test
     fun `stub implements AdManager interface`() {
-        assertTrue(adManager is AdManager)
+        // Verify the concrete type is StubAdManager (declared as AdManager)
+        assertNotNull(adManager)
+        assertEquals(StubAdManager::class.java, adManager::class.java)
     }
 
     @Test

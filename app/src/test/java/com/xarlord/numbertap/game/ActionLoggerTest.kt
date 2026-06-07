@@ -173,8 +173,8 @@ class ActionLoggerTest {
         // Verify the singleton implements the interface via delegation
         val provider: ActionLoggerProvider = ActionLogger
         assertNotNull(provider)
-        // ActionLogger is backed by LogcatActionLogger, so it should be non-null
-        assertTrue(ActionLogger is ActionLoggerProvider)
+        // Verify the singleton can be used as an ActionLoggerProvider
+        assertNotEquals(null, provider as? ActionLoggerProvider)
     }
 
     @Test

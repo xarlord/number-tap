@@ -25,6 +25,14 @@ object NotificationScheduler {
     private const val WORK_STREAK = "streak_reminder"
     private const val WORK_MISSIONS = "missions_reminder"
 
+    // Near-achievement notification threshold (points away from high score)
+    const val NEAR_ACHIEVEMENT_THRESHOLD = 10
+
+    // Notification IDs
+    const val NOTIFICATION_ID_NEAR_ACHIEVEMENT = 1001
+    const val NOTIFICATION_ID_STREAK = 2001
+    const val NOTIFICATION_ID_MISSIONS = 2002
+
     /**
      * Create notification channel (required Android 8+).
      * Call once in Application.onCreate or Activity.onCreate.
@@ -119,7 +127,7 @@ object NotificationScheduler {
      */
     fun showNearAchievementNotification(context: Context, score: Int, highScore: Int) {
         val pointsAway = highScore - score
-        if (pointsAway <= 0 || pointsAway > 10) return
+        if (pointsAway <= 0 || pointsAway > NEAR_ACHIEVEMENT_THRESHOLD) return
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -139,7 +147,7 @@ object NotificationScheduler {
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(1001, notification)
+        manager.notify(NOTIFICATION_ID_NEAR_ACHIEVEMENT, notification)
     }
 }
 
@@ -181,7 +189,7 @@ class StreakReminderWorker(
             .build()
 
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(2001, notification)
+        manager.notify(NotificationScheduler.NOTIFICATION_ID_STREAK, notification)
 
         return Result.success()
     }
@@ -219,7 +227,7 @@ class MissionsReminderWorker(
             .build()
 
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(2002, notification)
+        manager.notify(NotificationScheduler.NOTIFICATION_ID_MISSIONS, notification)
 
         return Result.success()
     }
