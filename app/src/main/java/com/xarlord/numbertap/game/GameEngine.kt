@@ -151,7 +151,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
             logger.logGridTransition(newScore, newTier.gridRows)
         }
 
-        if (tierAnnouncement != null && newScore % 5 == 0) {
+        if (tierAnnouncement != null) {
             logger.logScoreMilestone(newScore, tierAnnouncement.name)
         }
 

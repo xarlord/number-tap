@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xarlord.numbertap.BuildConfig
 import com.xarlord.numbertap.R
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.ThemeConfig
@@ -259,7 +260,7 @@ fun SettingsScreen(
 
             // Version info
             Text(
-                text = stringResource(R.string.settings_version),
+                text = "Number Tap v${BuildConfig.VERSION_NAME}",
                 color = colors.textSecondary.copy(alpha = 0.5f),
                 fontSize = 12.sp,
                 fontFamily = style.bodyFontFamily

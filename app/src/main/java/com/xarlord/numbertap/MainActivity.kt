@@ -197,7 +197,10 @@ fun NumberTapApp() {
                         }
                         is TapResult.Wrong -> {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
-                            if (soundEnabled) soundManager.playFailure()
+                            if (soundEnabled) {
+                                soundManager.playFailure()
+                                if (gameState.comboCount > 1) soundManager.playComboBreak()
+                            }
                         }
                         is TapResult.Invalid -> {}
                     }
