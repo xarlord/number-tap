@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,12 @@ fun BannerAd(
         }
     }
 
+    // #146 fix: Load ad exactly once, not on every recomposition.
+    // LaunchedEffect with Unit key runs once per composition lifecycle.
+    LaunchedEffect(adView) {
+        adView.loadAd(AdRequest.Builder().build())
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -51,10 +58,7 @@ fun BannerAd(
         contentAlignment = Alignment.Center
     ) {
         AndroidView(
-            factory = { adView },
-            update = { view ->
-                view.loadAd(AdRequest.Builder().build())
-            }
+            factory = { adView }
         )
     }
 }
