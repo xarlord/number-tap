@@ -1,18 +1,24 @@
 package com.xarlord.numbertap
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import com.xarlord.numbertap.ads.AdManagerImpl
 import com.xarlord.numbertap.ads.BannerAd
 import com.xarlord.numbertap.analytics.AnalyticsTracker
@@ -120,6 +126,20 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var showDailyLoginPopup by remember { mutableStateOf(false) }
     var dailyLoginCoins by remember { mutableIntStateOf(0) }
     var dailyLoginStreak by remember { mutableIntStateOf(0) }
+
+    // #140: POST_NOTIFICATIONS runtime permission launcher (Android 13+)
+    var pendingNotificationEnable by remember { mutableStateOf(false) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            playerProfile = playerProfile.copy(notificationEnabled = true)
+            profileRepository.saveProfile(playerProfile)
+            NotificationScheduler.scheduleStreakReminder(context)
+            NotificationScheduler.scheduleMissionsReminder(context)
+        }
+        pendingNotificationEnable = false
+    }
 
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) { onDispose { soundManager.release() } }
@@ -422,13 +442,30 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 saveMusicEnabled(context, enabled)
             },
             onNotificationsToggle = { enabled ->
-                playerProfile = playerProfile.copy(notificationEnabled = enabled)
-                profileRepository.saveProfile(playerProfile)
-                if (enabled) {
-                    NotificationScheduler.scheduleStreakReminder(context)
-                    NotificationScheduler.scheduleMissionsReminder(context)
+                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // #140: Request runtime permission on Android 13+
+                    val hasPermission = ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (hasPermission) {
+                        playerProfile = playerProfile.copy(notificationEnabled = true)
+                        profileRepository.saveProfile(playerProfile)
+                        NotificationScheduler.scheduleStreakReminder(context)
+                        NotificationScheduler.scheduleMissionsReminder(context)
+                    } else {
+                        pendingNotificationEnable = true
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
                 } else {
-                    NotificationScheduler.cancelAll(context)
+                    // Below Android 13 or disabling — no permission needed
+                    playerProfile = playerProfile.copy(notificationEnabled = enabled)
+                    profileRepository.saveProfile(playerProfile)
+                    if (enabled) {
+                        NotificationScheduler.scheduleStreakReminder(context)
+                        NotificationScheduler.scheduleMissionsReminder(context)
+                    } else {
+                        NotificationScheduler.cancelAll(context)
+                    }
                 }
             },
             onResetHighScore = {
