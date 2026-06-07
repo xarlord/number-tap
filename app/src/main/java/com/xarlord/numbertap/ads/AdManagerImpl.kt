@@ -18,8 +18,10 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
  * Real AdMob implementation — banner, interstitial, rewarded ads.
  * Issue #90: Full AdMob SDK integration.
  *
- * Uses Google's test ad unit IDs by default.
- * Replace with real IDs from AdMob console before release.
+ * AdMob App ID: ca-app-pub-2335615408331368~9734224673
+ *
+ * Using test ad unit IDs during development.
+ * Replace with real ad unit IDs from AdMob console before production.
  *
  * Test Ad Unit IDs (https://developers.google.com/admob/android/test-ads):
  * - Banner: ca-app-pub-3940256099942544/6300978111
@@ -33,7 +35,7 @@ class AdManagerImpl(
     companion object {
         private const val TAG = "NumberTap:Ads"
 
-        // Test ad unit IDs — replace with real ones before production
+        // TODO: Replace with real ad unit IDs from AdMob console
         const val BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
         const val INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
         const val REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
