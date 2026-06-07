@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.datastore.preferences)
     implementation(libs.work.runtime.ktx)
+    implementation(libs.lifecycle.runtime.compose) // #145: needed for LocalLifecycle
 
     // Compose
     implementation(platform(libs.compose.bom))

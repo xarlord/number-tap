@@ -118,18 +118,9 @@ class AdManagerImpl(
      * #138 fix: Activity passed at show-time, not stored.
      */
     override fun showInterstitial(): Boolean {
-        gameOverCount++
-        if (gameOverCount % INTERSTITIAL_FREQUENCY != 0) {
-            Log.d(TAG, "Skipping interstitial (game over #$gameOverCount)")
-            return false
-        }
-        val ad = interstitialAd
-        if (ad != null) {
-            // Caller must use showInterstitial(activity) overload
-            Log.d(TAG, "Interstitial ad ready but no Activity provided — use showInterstitial(activity)")
-            return false
-        }
-        Log.d(TAG, "No interstitial ad ready")
+        // #144 fix: Do NOT increment gameOverCount — the Activity overload handles counting.
+        // This no-arg stub is kept for interface compliance but should not affect state.
+        Log.d(TAG, "No Activity provided — use showInterstitial(activity) for full-screen ads")
         return false
     }
 
