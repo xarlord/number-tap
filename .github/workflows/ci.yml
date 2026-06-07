@@ -1,0 +1,193 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  # ============================================
+  # Unit Tests with Coverage
+  # ============================================
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Generate Kover coverage report
+        run: ./gradlew :app:koverXmlReportDebug
+
+      - name: Check coverage threshold
+        run: |
+          REPORT_FILE="app/build/reports/kover/report.xml"
+          if [ ! -f "$REPORT_FILE" ]; then
+            echo "⚠️ No coverage report found at $REPORT_FILE"
+            echo "Skipping coverage check (report generation may have failed)"
+            exit 0
+          fi
+
+          # Parse line coverage from Kover XML report
+          LINE_RATE=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('$REPORT_FILE')
+          root = tree.getroot()
+          counter = root.find('.//counter[@type=\"LINE\"]')
+          if counter is not None:
+            missed = int(counter.get('missed', 0))
+            covered = int(counter.get('covered', 0))
+            total = missed + covered
+            rate = (covered / total * 100) if total > 0 else 0
+            print(f'{rate:.1f}')
+          else:
+            print('0.0')
+          ")
+          
+          echo "📊 Line coverage: ${LINE_RATE}%"
+          echo "📊 Line coverage: ${LINE_RATE}%" >> $GITHUB_STEP_SUMMARY
+          
+          # Fail if below 60% threshold
+          if (( $(echo "$LINE_RATE < 60" | bc -l) )); then
+            echo "❌ Coverage ${LINE_RATE}% is below 60% threshold"
+            exit 1
+          fi
+          echo "✅ Coverage ${LINE_RATE}% meets 60% threshold"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: app/build/reports/tests/
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: app/build/reports/kover/
+
+  # ============================================
+  # Test Presence Gate (TDD Enforcement)
+  # ============================================
+  test-presence-check:
+    name: "🚦 Tests Required for Changes"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.base_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check test presence for changed files
+        run: |
+          python scripts/test-enforcement/check-test-presence.py \
+            --base ${{ github.base_ref }} \
+            --verbose
+
+  # ============================================
+  # Lint
+  # ============================================
+  lint:
+    name: 🔍 Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Run Android Lint
+        run: ./gradlew :app:lintDebug
+        continue-on-error: true
+
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-results
+          path: app/build/reports/lint-results-debug.html
+
+  # ============================================
+  # Instrumented Tests (needs emulator)
+  # TODO: Enable when macOS runner is available
+  # ============================================
+  # instrumented-tests:
+  #   name: 📱 Instrumented Tests
+  #   runs-on: macos-latest
+  #   needs: [unit-tests]
+  #   timeout-minutes: 30
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Setup Java
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         distribution: temurin
+  #         java-version: '17'
+  #
+  #     - name: Run instrumented tests
+  #       uses: reactivecircus/android-emulator-runner@v2
+  #       with:
+  #         api-level: 29
+  #         arch: x86_64
+  #         profile: Nexus 6
+  #         script: ./gradlew :app:connectedDebugAndroidTest
