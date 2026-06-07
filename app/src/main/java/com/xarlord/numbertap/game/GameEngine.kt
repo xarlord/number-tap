@@ -3,6 +3,7 @@ package com.xarlord.numbertap.game
 import com.xarlord.numbertap.data.DifficultyConfig
 import com.xarlord.numbertap.data.DifficultyTier
 import com.xarlord.numbertap.data.FloatingText
+import com.xarlord.numbertap.data.GameConfig
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.TierAnnouncement
@@ -30,7 +31,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
             tiles = tiles,
             targetNumber = 1,
             score = 0,
-            timeRemaining = if (isTutorial) 999.0 else 30.0,
+            timeRemaining = if (isTutorial) GameConfig.TUTORIAL_TIME_SECONDS else GameConfig.INITIAL_TIME_SECONDS,
             highScore = highScore,
             isPlaying = true,
             isGameOver = false,
@@ -95,7 +96,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
 
         // Combo logic
         val timeSinceLastTap = if (state.lastCorrectTapTime > 0) currentTime - state.lastCorrectTapTime else Long.MAX_VALUE
-        val newCombo = if (timeSinceLastTap < 500) state.comboCount + 1 else 1
+        val newCombo = if (timeSinceLastTap < GameConfig.COMBO_WINDOW_MS) state.comboCount + 1 else 1
 
         // Tier announcement
         val tierAnnouncement = when {
@@ -144,7 +145,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
         // Tutorial step advance
         if (state.isTutorial && newScore >= 5) {
             logger.logTutorialComplete(newScore)
-            return Pair(newState.copy(isTutorial = false, timeRemaining = 30.0), TapResult.Correct(newCombo))
+            return Pair(newState.copy(isTutorial = false, timeRemaining = GameConfig.INITIAL_TIME_SECONDS), TapResult.Correct(newCombo))
         }
 
         if (didTransition) {
@@ -198,7 +199,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
     }
 
     fun clearExpiredFloatingTexts(state: GameState, currentTime: Long): GameState {
-        val active = state.floatingTexts.filter { currentTime - it.createdAt < 800 }
+        val active = state.floatingTexts.filter { currentTime - it.createdAt < GameConfig.FLOATING_TEXT_DURATION_MS }
         return state.copy(floatingTexts = active)
     }
 
@@ -232,7 +233,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
         if (state.isPlaying || !state.isGameOver) return state
         logger.logRevive(state.score, state.timeRemaining)
         return state.copy(
-            timeRemaining = 5.0,
+            timeRemaining = GameConfig.REVIVE_BONUS_SECONDS,
             isPlaying = true,
             isGameOver = false,
             isPaused = false
@@ -241,7 +242,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
 
     fun isReviveEligible(state: GameState): Boolean {
         if (!state.isGameOver || state.highScore == 0) return false
-        val threshold = state.highScore * 0.9
+        val threshold = state.highScore * GameConfig.REVIVE_ELIGIBILITY_THRESHOLD
         return state.score >= threshold
     }
 

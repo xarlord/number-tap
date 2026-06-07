@@ -3,6 +3,7 @@ package com.xarlord.numbertap.game
 import android.util.Log
 import com.xarlord.numbertap.data.ActionType
 import com.xarlord.numbertap.data.GameAction
+import com.xarlord.numbertap.data.GameConfig
 import org.json.JSONObject
 
 /**
@@ -50,7 +51,7 @@ class LogcatActionLogger : ActionLoggerProvider {
     }
 
     override fun logGameStart(score: Int, highScore: Int) {
-        log(GameAction(timestamp = System.currentTimeMillis(), type = ActionType.GAME_START, score = score, timeRemaining = 30.0))
+        log(GameAction(timestamp = System.currentTimeMillis(), type = ActionType.GAME_START, score = score, timeRemaining = GameConfig.INITIAL_TIME_SECONDS))
     }
 
     override fun logTap(row: Int, col: Int, value: Int, target: Int, correct: Boolean, score: Int, time: Double) {
@@ -82,7 +83,7 @@ class LogcatActionLogger : ActionLoggerProvider {
     }
 
     override fun logRevive(score: Int, time: Double) {
-        log(GameAction(timestamp = System.currentTimeMillis(), type = ActionType.REVIVE, score = score, timeRemaining = time, extra = "bonusTime=5.0"))
+        log(GameAction(timestamp = System.currentTimeMillis(), type = ActionType.REVIVE, score = score, timeRemaining = time, extra = "bonusTime=${GameConfig.REVIVE_BONUS_SECONDS}"))
     }
 
     override fun logScoreMilestone(score: Int, label: String) {
