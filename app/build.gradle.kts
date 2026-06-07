@@ -97,6 +97,8 @@ dependencies {
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.work.testing)
+    testImplementation(libs.mockk)
+    testImplementation("org.json:json:20231013")
     implementation(libs.play.services.ads)
 }
 
