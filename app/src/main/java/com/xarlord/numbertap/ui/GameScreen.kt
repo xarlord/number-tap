@@ -172,5 +172,15 @@ fun GameScreen(
         if (gameState.timeRemaining < 5 && gameState.isPlaying && !gameState.isPaused) {
             UrgencyVignette(colors.vignetteColor, urgentPulse)
         }
+
+        // Debug overlay (debug builds only, toggled via BuildConfig)
+        if (com.xarlord.numbertap.BuildConfig.DEBUG) {
+            DebugOverlay(
+                gameState = gameState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            )
+        }
     }
 }

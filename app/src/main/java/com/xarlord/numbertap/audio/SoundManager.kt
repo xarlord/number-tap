@@ -5,7 +5,6 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.SoundPool
-import java.io.ByteArrayOutputStream
 import java.io.File
 
 class SoundManager(context: Context) : SoundManagerProvider {
@@ -30,10 +29,7 @@ class SoundManager(context: Context) : SoundManagerProvider {
     private val pendingDeleteFiles = mutableListOf<File>()
     private val totalSoundsToLoad = 6
 
-    private val pitchSteps = floatArrayOf(
-        1.0f, 1.0595f, 1.1225f, 1.1892f, 1.2599f, 1.3348f,
-        1.4142f, 1.4983f, 1.5874f, 1.6818f, 1.7818f, 1.8877f, 2.0f
-    )
+    private val pitchSteps = AudioUtils.PITCH_STEPS
 
     // Background music state
     private var bgMusicTrack: AudioTrack? = null
@@ -50,32 +46,32 @@ class SoundManager(context: Context) : SoundManagerProvider {
         }
 
         // Success: high ping 1000Hz, 0.1s
-        val successFile = createTempWav(context, pcmToWav(generateSineWave(1000.0, 0.1, 44100), 44100), "nt_success.wav")
+        val successFile = createTempWav(context, AudioUtils.pcmToWav(AudioUtils.generateSineWave(1000.0, 0.1, 44100), 44100), "nt_success.wav")
         successSoundId = soundPool.load(successFile.absolutePath, 1)
         pendingDeleteFiles.add(successFile)
 
         // Failure: low thud 150Hz, 0.2s
-        val failureFile = createTempWav(context, pcmToWav(generateSineWave(150.0, 0.2, 44100), 44100), "nt_failure.wav")
+        val failureFile = createTempWav(context, AudioUtils.pcmToWav(AudioUtils.generateSineWave(150.0, 0.2, 44100), 44100), "nt_failure.wav")
         failureSoundId = soundPool.load(failureFile.absolutePath, 1)
         pendingDeleteFiles.add(failureFile)
 
         // Countdown tick: soft click 600Hz, 0.03s
-        val tickFile = createTempWav(context, pcmToWav(generateSineWave(600.0, 0.03, 44100), 44100), "nt_tick.wav")
+        val tickFile = createTempWav(context, AudioUtils.pcmToWav(AudioUtils.generateSineWave(600.0, 0.03, 44100), 44100), "nt_tick.wav")
         tickSoundId = soundPool.load(tickFile.absolutePath, 1)
         pendingDeleteFiles.add(tickFile)
 
         // Game over: descending tone 400Hz, 0.5s
-        val gameOverFile = createTempWav(context, pcmToWav(generateSineWave(400.0, 0.5, 44100), 44100), "nt_gameover.wav")
+        val gameOverFile = createTempWav(context, AudioUtils.pcmToWav(AudioUtils.generateSineWave(400.0, 0.5, 44100), 44100), "nt_gameover.wav")
         gameOverSoundId = soundPool.load(gameOverFile.absolutePath, 1)
         pendingDeleteFiles.add(gameOverFile)
 
         // Milestone: bright chime 1200Hz, 0.15s
-        val milestoneFile = createTempWav(context, pcmToWav(generateSineWave(1200.0, 0.15, 44100), 44100), "nt_milestone.wav")
+        val milestoneFile = createTempWav(context, AudioUtils.pcmToWav(AudioUtils.generateSineWave(1200.0, 0.15, 44100), 44100), "nt_milestone.wav")
         milestoneSoundId = soundPool.load(milestoneFile.absolutePath, 1)
         pendingDeleteFiles.add(milestoneFile)
 
         // Combo break: 200Hz, 0.1s
-        val comboBreakFile = createTempWav(context, pcmToWav(generateSineWave(200.0, 0.1, 44100), 44100), "nt_combobreak.wav")
+        val comboBreakFile = createTempWav(context, AudioUtils.pcmToWav(AudioUtils.generateSineWave(200.0, 0.1, 44100), 44100), "nt_combobreak.wav")
         comboBreakSoundId = soundPool.load(comboBreakFile.absolutePath, 1)
         pendingDeleteFiles.add(comboBreakFile)
     }
@@ -195,31 +191,6 @@ class SoundManager(context: Context) : SoundManagerProvider {
             isReleased = true
         }
     }
-
-    private fun generateSineWave(freqHz: Double, durationSec: Double, sampleRate: Int): ShortArray {
-        val n = (sampleRate * durationSec).toInt()
-        val samples = ShortArray(n)
-        for (i in 0 until n) {
-            val t = i.toDouble() / sampleRate
-            val env = if (i > n * 0.8) (n - i).toDouble() / (n * 0.2) else 1.0
-            samples[i] = (Math.sin(2.0 * Math.PI * freqHz * t) * Short.MAX_VALUE * 0.5 * env).toInt().toShort()
-        }
-        return samples
-    }
-
-    private fun pcmToWav(pcm: ShortArray, sr: Int): ByteArray {
-        val b = ByteArrayOutputStream()
-        val ds = pcm.size * 2
-        b.write("RIFF".toByteArray()); writeLEInt(b, 36 + ds); b.write("WAVE".toByteArray())
-        b.write("fmt ".toByteArray()); writeLEInt(b, 16); writeLEShort(b, 1); writeLEShort(b, 1)
-        writeLEInt(b, sr); writeLEInt(b, sr * 2); writeLEShort(b, 2); writeLEShort(b, 16)
-        b.write("data".toByteArray()); writeLEInt(b, ds)
-        for (s in pcm) writeLEShort(b, s.toInt())
-        return b.toByteArray()
-    }
-
-    private fun writeLEInt(b: ByteArrayOutputStream, v: Int) { b.write(v and 0xFF); b.write((v shr 8) and 0xFF); b.write((v shr 16) and 0xFF); b.write((v shr 24) and 0xFF) }
-    private fun writeLEShort(b: ByteArrayOutputStream, v: Int) { b.write(v and 0xFF); b.write((v shr 8) and 0xFF) }
 
     private fun createTempWav(context: Context, data: ByteArray, name: String): File {
         val f = File(context.cacheDir, name)

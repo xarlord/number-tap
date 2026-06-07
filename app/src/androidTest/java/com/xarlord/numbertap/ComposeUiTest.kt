@@ -4,6 +4,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.Tile
+import com.xarlord.numbertap.data.TileState
 import com.xarlord.numbertap.ui.MenuScreen
 import com.xarlord.numbertap.ui.GameScreen
 import com.xarlord.numbertap.ui.GameOverScreen
@@ -12,8 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Compose UI tests — rendering verification for all screens and themes.
- * Click tests are limited on API 35 emulator due to infinite animation interference.
+ * Comprehensive Compose UI tests — all screens, all themes, all states.
+ * Issue #121: UI layer test coverage.
  */
 class ComposeUiTest {
 
@@ -63,12 +65,19 @@ class ComposeUiTest {
         composeTestRule.setContent {
             MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, onStartClick = {}, onSettingsClick = {})
         }
-        // Settings button has ⚙ prefix — use substring match
         composeTestRule.onNodeWithText("Settings", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Settings", substring = true).assertHasClickAction()
     }
 
-    // === GameScreen ===
+    @Test
+    fun menuScreen_zeroHighScore_showsBestZero() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, onStartClick = {})
+        }
+        composeTestRule.onNodeWithText("BEST: 0").assertIsDisplayed()
+    }
+
+    // === GameScreen — rendering ===
 
     @Test
     fun gameScreen_showsScore() {
@@ -110,6 +119,49 @@ class ComposeUiTest {
         composeTestRule.onNodeWithContentDescription("Pause").assertIsDisplayed()
     }
 
+    @Test
+    fun gameScreen_showsFormattedScoreWithLeadingZeros() {
+        composeTestRule.setContent {
+            GameScreen(gameState = GameState(score = 3, isPlaying = true), onTileTap = { _, _ -> })
+        }
+        composeTestRule.onNodeWithText("SCORE: 0003").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameScreen_showsLowTime() {
+        composeTestRule.setContent {
+            GameScreen(gameState = GameState(timeRemaining = 3.5, isPlaying = true), onTileTap = { _, _ -> })
+        }
+        composeTestRule.onNodeWithText("TIME: 3.5s").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameScreen_showsTargetOne() {
+        composeTestRule.setContent {
+            GameScreen(gameState = GameState(targetNumber = 1, isPlaying = true), onTileTap = { _, _ -> })
+        }
+        // Target "1" should appear in both grid and hint — use unmerged tree
+        composeTestRule.onNodeWithText("1", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun gameScreen_showsHighScore() {
+        composeTestRule.setContent {
+            GameScreen(gameState = GameState(isPlaying = true, highScore = 50), onTileTap = { _, _ -> })
+        }
+        composeTestRule.onNodeWithText("BEST: 50").assertIsDisplayed()
+    }
+
+    // === GameScreen — not playing state ===
+
+    @Test
+    fun gameScreen_notPlaying_stillRenders() {
+        composeTestRule.setContent {
+            GameScreen(gameState = GameState(isPlaying = false), onTileTap = { _, _ -> })
+        }
+        composeTestRule.onNodeWithText("SCORE: 0000").assertIsDisplayed()
+    }
+
     // === GameOverScreen ===
 
     @Test
@@ -125,7 +177,19 @@ class ComposeUiTest {
     }
 
     @Test
-    fun gameOverScreen_showsButtons() {
+    fun gameOverScreen_showsScore() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 42, highScore = 100, isNewHighScore = false,
+                isReviveEligible = false, currentTheme = GameTheme.DEFAULT,
+                onPlayAgain = {}, onMenu = {}
+            )
+        }
+        composeTestRule.onNodeWithText("42").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOverScreen_showsPlayAgain() {
         composeTestRule.setContent {
             GameOverScreen(
                 score = 10, highScore = 50, isNewHighScore = false,
@@ -133,9 +197,44 @@ class ComposeUiTest {
                 onPlayAgain = {}, onMenu = {}
             )
         }
-        // Use case-insensitive search via assertExists
         composeTestRule.onAllNodesWithText("Play Again", substring = true, useUnmergedTree = true)
             .assertCountEquals(1)
+    }
+
+    @Test
+    fun gameOverScreen_reviveEligible_showsRevive() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 45, highScore = 50, isNewHighScore = false,
+                isReviveEligible = true, currentTheme = GameTheme.DEFAULT,
+                onPlayAgain = {}, onMenu = {}
+            )
+        }
+        composeTestRule.onNodeWithText("+5 SECONDS").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOverScreen_notReviveEligible_noRevive() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 5, highScore = 100, isNewHighScore = false,
+                isReviveEligible = false, currentTheme = GameTheme.DEFAULT,
+                onPlayAgain = {}, onMenu = {}
+            )
+        }
+        composeTestRule.onNodeWithText("+5 SECONDS").assertDoesNotExist()
+    }
+
+    @Test
+    fun gameOverScreen_newHighScore_showsIndicator() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 100, highScore = 100, isNewHighScore = true,
+                isReviveEligible = false, currentTheme = GameTheme.DEFAULT,
+                onPlayAgain = {}, onMenu = {}
+            )
+        }
+        composeTestRule.onNodeWithText("NEW BEST!", substring = true).assertIsDisplayed()
     }
 
     // === SettingsScreen ===
@@ -166,7 +265,67 @@ class ComposeUiTest {
         composeTestRule.onNodeWithText("Reset High Score").assertIsDisplayed()
     }
 
-    // === Theme rendering ===
+    @Test
+    fun settingsScreen_showsThemeOptions() {
+        composeTestRule.setContent {
+            SettingsScreen(
+                currentTheme = GameTheme.DEFAULT, soundEnabled = true, musicEnabled = true,
+                onThemeChange = {}, onSoundToggle = {}, onMusicToggle = {},
+                onResetHighScore = {}, onBack = {}
+            )
+        }
+        composeTestRule.onNodeWithText("Terminal").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Chalkboard").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Matrix").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Default").assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsScreen_soundOff_stateReflects() {
+        composeTestRule.setContent {
+            SettingsScreen(
+                currentTheme = GameTheme.DEFAULT, soundEnabled = false, musicEnabled = true,
+                onThemeChange = {}, onSoundToggle = {}, onMusicToggle = {},
+                onResetHighScore = {}, onBack = {}
+            )
+        }
+        // The switch for Sound Effects should be displayed (off state)
+        composeTestRule.onNodeWithText("Sound Effects").assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsScreen_showsBackButton() {
+        composeTestRule.setContent {
+            SettingsScreen(
+                currentTheme = GameTheme.DEFAULT, soundEnabled = true, musicEnabled = true,
+                onThemeChange = {}, onSoundToggle = {}, onMusicToggle = {},
+                onResetHighScore = {}, onBack = {}
+            )
+        }
+        composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsScreen_showsVersionInfo() {
+        composeTestRule.setContent {
+            SettingsScreen(
+                currentTheme = GameTheme.DEFAULT, soundEnabled = true, musicEnabled = true,
+                onThemeChange = {}, onSoundToggle = {}, onMusicToggle = {},
+                onResetHighScore = {}, onBack = {}
+            )
+        }
+        composeTestRule.onNodeWithText("Version", substring = true).assertIsDisplayed()
+    }
+
+    // === Theme rendering — all 4 themes ===
+
+    @Test
+    fun gameScreen_defaultTheme() {
+        composeTestRule.setContent {
+            GameScreen(gameState = GameState(isPlaying = true, currentTheme = GameTheme.DEFAULT), onTileTap = { _, _ -> })
+        }
+        composeTestRule.onNodeWithText("SCORE: 0000").assertIsDisplayed()
+    }
 
     @Test
     fun gameScreen_terminalTheme() {
@@ -177,10 +336,80 @@ class ComposeUiTest {
     }
 
     @Test
+    fun gameScreen_chalkboardTheme() {
+        composeTestRule.setContent {
+            GameScreen(gameState = GameState(isPlaying = true, currentTheme = GameTheme.CHALKBOARD), onTileTap = { _, _ -> })
+        }
+        composeTestRule.onNodeWithText("SCORE: 0000").assertIsDisplayed()
+    }
+
+    @Test
     fun gameScreen_matrixTheme() {
         composeTestRule.setContent {
             GameScreen(gameState = GameState(isPlaying = true, currentTheme = GameTheme.MATRIX), onTileTap = { _, _ -> })
         }
         composeTestRule.onNodeWithText("SCORE: 0000").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOverScreen_terminalTheme() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 10, highScore = 50, isNewHighScore = false,
+                isReviveEligible = false, currentTheme = GameTheme.TERMINAL,
+                onPlayAgain = {}, onMenu = {}
+            )
+        }
+        composeTestRule.onNodeWithText("GAME OVER").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOverScreen_chalkboardTheme() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 10, highScore = 50, isNewHighScore = false,
+                isReviveEligible = false, currentTheme = GameTheme.CHALKBOARD,
+                onPlayAgain = {}, onMenu = {}
+            )
+        }
+        composeTestRule.onNodeWithText("GAME OVER").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOverScreen_matrixTheme() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 10, highScore = 50, isNewHighScore = false,
+                isReviveEligible = false, currentTheme = GameTheme.MATRIX,
+                onPlayAgain = {}, onMenu = {}
+            )
+        }
+        composeTestRule.onNodeWithText("GAME OVER").assertIsDisplayed()
+    }
+
+    // === Theme in menu ===
+
+    @Test
+    fun menuScreen_terminalTheme() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 0, currentTheme = GameTheme.TERMINAL, onStartClick = {})
+        }
+        composeTestRule.onNodeWithText("NUMBER TAP").assertIsDisplayed()
+    }
+
+    @Test
+    fun menuScreen_chalkboardTheme() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 0, currentTheme = GameTheme.CHALKBOARD, onStartClick = {})
+        }
+        composeTestRule.onNodeWithText("NUMBER TAP").assertIsDisplayed()
+    }
+
+    @Test
+    fun menuScreen_matrixTheme() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 0, currentTheme = GameTheme.MATRIX, onStartClick = {})
+        }
+        composeTestRule.onNodeWithText("NUMBER TAP").assertIsDisplayed()
     }
 }
