@@ -2,7 +2,5 @@
 <full-backup-content>
     <!-- Only back up SharedPreferences (high score, theme, sound prefs) -->
     <include domain="sharedpref" path="." />
-    <!-- Exclude cache files (sound temp WAVs) -->
-    <exclude domain="cache" path="." />
-    <exclude domain="no_backup" path="." />
+    <!-- Exclude everything else by not including it -->
 </full-backup-content>
