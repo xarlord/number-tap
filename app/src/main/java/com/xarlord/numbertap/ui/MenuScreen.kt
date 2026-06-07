@@ -60,6 +60,8 @@ import kotlin.random.Random
 fun MenuScreen(
     highScore: Int,
     currentTheme: GameTheme,
+    coins: Int = 0,
+    streak: Int = 0,
     onStartClick: () -> Unit,
     onTutorialClick: () -> Unit = {},
     onThemeChange: (GameTheme) -> Unit = {},
@@ -122,7 +124,35 @@ fun MenuScreen(
                     fontWeight = FontWeight.Bold,
                     fontFamily = style.tileFontFamily
                 )
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // Coin and streak display
+            if (coins > 0 || streak > 0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (coins > 0) {
+                        Text(
+                            stringResource(R.string.coins_display, coins),
+                            color = colors.textPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = style.tileFontFamily
+                        )
+                    }
+                    if (streak > 0) {
+                        Text(
+                            stringResource(R.string.streak_display, streak),
+                            color = colors.textPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = style.tileFontFamily
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
             // START button

@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import com.xarlord.numbertap.analytics.AnalyticsTracker
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.TileState
@@ -15,6 +16,11 @@ import com.xarlord.numbertap.game.ActionLogger
 import com.xarlord.numbertap.game.GameEngine
 import com.xarlord.numbertap.game.TapResult
 import com.xarlord.numbertap.audio.SoundManager
+import com.xarlord.numbertap.retention.NotificationScheduler
+import com.xarlord.numbertap.retention.PlayerProfile
+import com.xarlord.numbertap.retention.ProfileRepository
+import com.xarlord.numbertap.retention.RetentionLogic
+import com.xarlord.numbertap.retention.StreakRewards
 import com.xarlord.numbertap.ui.GameOverScreen
 import com.xarlord.numbertap.ui.GameScreen
 import com.xarlord.numbertap.ui.MenuScreen
@@ -25,6 +31,7 @@ import kotlinx.coroutines.isActive
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationScheduler.createChannel(this)
         setContent { NumberTapApp() }
     }
 }
@@ -93,8 +100,36 @@ fun NumberTapApp() {
     var lastTickTime by remember { mutableLongStateOf(0L) }
     var lastCountdownTickSecond by remember { mutableIntStateOf(-1) }
 
+    // --- Retention state ---
+    val profileRepository = remember { ProfileRepository(context) }
+    var playerProfile by remember { mutableStateOf(profileRepository.loadProfile()) }
+    var showDailyLoginPopup by remember { mutableStateOf(false) }
+    var dailyLoginCoins by remember { mutableIntStateOf(0) }
+    var dailyLoginStreak by remember { mutableIntStateOf(0) }
+
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) { onDispose { soundManager.release() } }
+
+    // Process daily login on first composition
+    LaunchedEffect(Unit) {
+        val oldStreak = playerProfile.currentStreak
+        val updated = profileRepository.processDailyLogin(playerProfile)
+        if (updated.currentStreak != oldStreak || updated.lastLoginDate != playerProfile.lastLoginDate) {
+            val coinsAwarded = StreakRewards.coinsForDay(updated.currentStreak)
+            playerProfile = updated
+            profileRepository.saveProfile(updated)
+            dailyLoginCoins = coinsAwarded
+            dailyLoginStreak = updated.currentStreak
+            showDailyLoginPopup = updated.currentStreak > 0
+            AnalyticsTracker.dailyLogin(updated.currentStreak, coinsAwarded)
+        }
+        // Schedule retention notifications if enabled
+        if (playerProfile.notificationEnabled) {
+            NotificationScheduler.scheduleStreakReminder(context)
+            NotificationScheduler.scheduleMissionsReminder(context)
+        }
+        AnalyticsTracker.sessionStart()
+    }
 
     // Game loop
     LaunchedEffect(currentScreen) {
@@ -141,6 +176,29 @@ fun NumberTapApp() {
                             }
                             markPlayed(context)
                             ActionLogger.logGameOver(gameState.score, gameState.highScore, gameState.timeRemaining)
+                            AnalyticsTracker.gameOver(gameState.score, gameState.highScore, gameState.timeRemaining)
+
+                            // Update mission progress after game over
+                            val updatedMissions = RetentionLogic.updateMissionProgress(
+                                missions = playerProfile.todayMissions,
+                                gameScore = gameState.score,
+                                maxCombo = gameState.maxCombo,
+                                gamesPlayed = 1,
+                                correctTaps = gameState.correctTaps
+                            )
+                            playerProfile = playerProfile.copy(
+                                todayMissions = updatedMissions,
+                                totalGamesPlayed = playerProfile.totalGamesPlayed + 1,
+                                totalCorrectTaps = playerProfile.totalCorrectTaps + gameState.correctTaps,
+                                highScore = maxOf(playerProfile.highScore, gameState.highScore)
+                            )
+                            profileRepository.saveProfile(playerProfile)
+
+                            // Near-achievement notification
+                            if (playerProfile.notificationEnabled) {
+                                NotificationScheduler.showNearAchievementNotification(context, gameState.score, highScore)
+                            }
+
                             if (soundEnabled) soundManager.playGameOver()
                             soundManager.stopBGMusic()
                             currentScreen = Screen.GameOver
@@ -156,13 +214,40 @@ fun NumberTapApp() {
         }
     }
 
+    // Daily login reward popup
+    if (showDailyLoginPopup) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDailyLoginPopup = false },
+            title = {
+                androidx.compose.material3.Text(
+                    text = context.getString(R.string.daily_login_popup_title)
+                )
+            },
+            text = {
+                androidx.compose.material3.Text(
+                    text = context.getString(R.string.daily_login_popup_body, dailyLoginCoins, dailyLoginStreak)
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showDailyLoginPopup = false }) {
+                    androidx.compose.material3.Text(
+                        text = context.getString(R.string.daily_login_popup_dismiss)
+                    )
+                }
+            }
+        )
+    }
+
     when (currentScreen) {
         is Screen.Menu -> MenuScreen(
             highScore = highScore,
             currentTheme = selectedTheme,
+            coins = playerProfile.coins,
+            streak = playerProfile.currentStreak,
             onStartClick = {
                 gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
                 ActionLogger.logGameStart(0, highScore)
+                AnalyticsTracker.gameStart(score = 0, highScore = highScore)
                 if (musicEnabled) soundManager.startBGMusic()
                 currentScreen = Screen.Game
             },
@@ -190,13 +275,38 @@ fun NumberTapApp() {
                     when (result) {
                         is TapResult.Correct -> {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
+                            AnalyticsTracker.tapCorrect(score = gameState.score, combo = result.combo)
+
+                            // Award coins for correct tap
+                            playerProfile = playerProfile.copy(
+                                coins = RetentionLogic.awardTapCoins(playerProfile.coins)
+                            )
+
+                            // Award combo bonus
+                            if (result.combo >= 3) {
+                                playerProfile = playerProfile.copy(
+                                    coins = RetentionLogic.awardComboBonus(playerProfile.coins, result.combo)
+                                )
+                            }
+
+                            // Track total correct taps
+                            playerProfile = playerProfile.copy(
+                                totalCorrectTaps = playerProfile.totalCorrectTaps + 1
+                            )
+
+                            profileRepository.saveProfile(playerProfile)
+
                             if (soundEnabled) {
                                 soundManager.playSuccess(result.combo)
-                                if (gameState.score % 10 == 0 && gameState.score > 0) soundManager.playMilestone()
+                                if (gameState.score % 10 == 0 && gameState.score > 0) {
+                                    soundManager.playMilestone()
+                                    AnalyticsTracker.milestone(gameState.score)
+                                }
                             }
                         }
                         is TapResult.Wrong -> {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
+                            AnalyticsTracker.tapWrong(score = gameState.score)
                             if (soundEnabled) {
                                 soundManager.playFailure()
                                 if (gameState.comboCount > 1) soundManager.playComboBreak()
@@ -227,6 +337,7 @@ fun NumberTapApp() {
             onPlayAgain = {
                 gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
                 ActionLogger.logGameStart(0, highScore)
+                AnalyticsTracker.gameStart(score = 0, highScore = highScore)
                 if (musicEnabled) soundManager.startBGMusic()
                 currentScreen = Screen.Game
             },
@@ -250,6 +361,7 @@ fun NumberTapApp() {
             currentTheme = selectedTheme,
             soundEnabled = soundEnabled,
             musicEnabled = musicEnabled,
+            notificationsEnabled = playerProfile.notificationEnabled,
             onThemeChange = { theme ->
                 selectedTheme = theme
                 saveTheme(context, theme)
@@ -261,6 +373,16 @@ fun NumberTapApp() {
             onMusicToggle = { enabled ->
                 musicEnabled = enabled
                 saveMusicEnabled(context, enabled)
+            },
+            onNotificationsToggle = { enabled ->
+                playerProfile = playerProfile.copy(notificationEnabled = enabled)
+                profileRepository.saveProfile(playerProfile)
+                if (enabled) {
+                    NotificationScheduler.scheduleStreakReminder(context)
+                    NotificationScheduler.scheduleMissionsReminder(context)
+                } else {
+                    NotificationScheduler.cancelAll(context)
+                }
             },
             onResetHighScore = {
                 highScore = 0

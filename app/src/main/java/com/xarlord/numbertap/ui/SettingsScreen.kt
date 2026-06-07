@@ -51,9 +51,11 @@ fun SettingsScreen(
     currentTheme: GameTheme,
     soundEnabled: Boolean,
     musicEnabled: Boolean,
+    notificationsEnabled: Boolean = true,
     onThemeChange: (GameTheme) -> Unit,
     onSoundToggle: (Boolean) -> Unit,
     onMusicToggle: (Boolean) -> Unit,
+    onNotificationsToggle: (Boolean) -> Unit = {},
     onResetHighScore: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -140,6 +142,18 @@ fun SettingsScreen(
                 colors = colors,
                 style = style,
                 a11yLabel = stringResource(R.string.a11y_music_toggle, if (musicEnabled) "on" else "off")
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Notifications toggle
+            SettingsToggleRow(
+                label = stringResource(R.string.settings_notifications),
+                enabled = notificationsEnabled,
+                onToggle = onNotificationsToggle,
+                colors = colors,
+                style = style,
+                a11yLabel = stringResource(R.string.a11y_notifications_toggle, if (notificationsEnabled) "on" else "off")
             )
 
             Spacer(modifier = Modifier.height(24.dp))

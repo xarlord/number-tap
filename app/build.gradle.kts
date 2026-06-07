@@ -97,6 +97,7 @@ dependencies {
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.work.testing)
+    implementation(libs.play.services.ads)
 }
 
 kover {

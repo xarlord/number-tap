@@ -133,4 +133,8 @@
     <string name="powerup_locked">🔒 Unlock @ %1$d</string>
     <string name="daily_login_reward">+%1$d 🪙 Day %2$d streak!</string>
     <string name="settings_notifications">Notifications</string>
+    <string name="a11y_notifications_toggle">Notifications %1$s</string>
+    <string name="daily_login_popup_title">Daily Reward!</string>
+    <string name="daily_login_popup_body">+%1$d coins for your %2$d-day streak!</string>
+    <string name="daily_login_popup_dismiss">Nice!</string>
 </resources>
