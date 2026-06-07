@@ -3,6 +3,7 @@ package com.xarlord.numbertap.game
 import com.xarlord.numbertap.data.FloatingText
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
+import com.xarlord.numbertap.data.TierAnnouncement
 import com.xarlord.numbertap.data.TileState
 import org.junit.Assert.*
 import org.junit.Before
@@ -551,5 +552,148 @@ class GameEngineThemeTest {
         val state = engine.startNewGame(0, currentTheme = GameTheme.MATRIX)
         val ticked = engine.tick(state, 1.0)
         assertEquals(GameTheme.MATRIX, ticked.currentTheme)
+    }
+}
+
+class GameEngineTierAnnouncementTest {
+
+    private val engine = GameEngine()
+
+    @Test
+    fun `clearTierAnnouncement clears announcement`() {
+        val state = GameState(tierAnnouncement = TierAnnouncement.NICE, isPlaying = true)
+        val cleared = engine.clearTierAnnouncement(state)
+        assertNull(cleared.tierAnnouncement)
+    }
+
+    @Test
+    fun `clearTierAnnouncement with null announcement is no-op`() {
+        val state = GameState(tierAnnouncement = null, isPlaying = true)
+        val cleared = engine.clearTierAnnouncement(state)
+        assertNull(cleared.tierAnnouncement)
+    }
+
+    @Test
+    fun `score 5 triggers NICE announcement`() {
+        val state = playToScore(5)
+        assertEquals(TierAnnouncement.NICE, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `score 10 triggers GREAT announcement`() {
+        val state = playToScore(10)
+        assertEquals(TierAnnouncement.GREAT, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `score 16 triggers ROUND_2 announcement`() {
+        val state = playToScore(16)
+        assertEquals(TierAnnouncement.ROUND_2, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `score 25 triggers AMAZING announcement`() {
+        val state = playToScore(25)
+        assertEquals(TierAnnouncement.AMAZING, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `score 41 triggers HARD_MODE announcement`() {
+        val state = playToScore(41)
+        assertEquals(TierAnnouncement.HARD_MODE, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `score 50 triggers LEGENDARY announcement`() {
+        val state = playToScore(50)
+        assertEquals(TierAnnouncement.LEGENDARY, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `non-milestone score has no announcement`() {
+        val state = playToScore(3)
+        assertNull(state.tierAnnouncement)
+    }
+
+    @Test
+    fun `score 1 has no announcement`() {
+        val state = playToScore(1)
+        assertNull(state.tierAnnouncement)
+    }
+
+    private fun playToScore(targetScore: Int): GameState {
+        var state = engine.startNewGame(0)
+        val time = System.currentTimeMillis()
+        for (i in 1..targetScore) {
+            val pos = findTile(state, i) ?: return state
+            val (newState, _) = engine.onTap(state, pos.first, pos.second, time + i * 100)
+            state = newState
+        }
+        return state
+    }
+
+    private fun findTile(state: GameState, value: Int): Pair<Int, Int>? {
+        state.tiles.forEachIndexed { row, rowTiles ->
+            rowTiles.forEachIndexed { col, tile ->
+                if (tile.currentValue == value) return Pair(row, col)
+            }
+        }
+        return null
+    }
+}
+
+class GameEngineIsNewHighScoreTest {
+
+    private val engine = GameEngine()
+
+    @Test
+    fun `isNewHighScore is false at game start`() {
+        val state = engine.startNewGame(0)
+        assertFalse(state.isNewHighScore)
+    }
+
+    @Test
+    fun `isNewHighScore is true when score exceeds highScore`() {
+        var state = engine.startNewGame(0)
+        val time = System.currentTimeMillis()
+        val pos = findTile(state, 1)!!
+        val (newState, _) = engine.onTap(state, pos.first, pos.second, time)
+        assertTrue(newState.isNewHighScore)
+        assertEquals(1, newState.highScore)
+    }
+
+    @Test
+    fun `isNewHighScore is false when score does not exceed highScore`() {
+        var state = engine.startNewGame(10)
+        val time = System.currentTimeMillis()
+        val pos = findTile(state, 1)!!
+        val (newState, _) = engine.onTap(state, pos.first, pos.second, time)
+        assertFalse(newState.isNewHighScore)
+        assertEquals(10, newState.highScore)
+    }
+
+    @Test
+    fun `isNewHighScore updates when score catches up to highScore`() {
+        var state = engine.startNewGame(0)
+        val time = System.currentTimeMillis()
+        // First tap sets highScore to 1, isNewHighScore=true
+        val pos1 = findTile(state, 1)!!
+        val (s1, _) = engine.onTap(state, pos1.first, pos1.second, time + 100)
+        assertTrue(s1.isNewHighScore)
+
+        // Second tap: score=2, highScore=1, so isNewHighScore=true
+        val pos2 = findTile(s1, 2)!!
+        val (s2, _) = engine.onTap(s1, pos2.first, pos2.second, time + 200)
+        assertTrue(s2.isNewHighScore)
+        assertEquals(2, s2.highScore)
+    }
+
+    private fun findTile(state: GameState, value: Int): Pair<Int, Int>? {
+        state.tiles.forEachIndexed { row, rowTiles ->
+            rowTiles.forEachIndexed { col, tile ->
+                if (tile.currentValue == value) return Pair(row, col)
+            }
+        }
+        return null
     }
 }

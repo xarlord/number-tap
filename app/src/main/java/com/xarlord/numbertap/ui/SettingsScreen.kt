@@ -260,7 +260,7 @@ fun SettingsScreen(
 
             // Version info
             Text(
-                text = "Number Tap v${BuildConfig.VERSION_NAME}",
+                text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
                 color = colors.textSecondary.copy(alpha = 0.5f),
                 fontSize = 12.sp,
                 fontFamily = style.bodyFontFamily
