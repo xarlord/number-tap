@@ -20,13 +20,10 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
  *
  * AdMob App ID: ca-app-pub-2335615408331368~9734224673
  *
- * Using test ad unit IDs during development.
- * Replace with real ad unit IDs from AdMob console before production.
- *
- * Test Ad Unit IDs (https://developers.google.com/admob/android/test-ads):
- * - Banner: ca-app-pub-3940256099942544/6300978111
- * - Interstitial: ca-app-pub-3940256099942544/1033173712
- * - Rewarded: ca-app-pub-3940256099942544/5224354917
+ * Real Ad Unit IDs from AdMob console:
+ * - Banner (menu_banner): ca-app-pub-2335615408331368/9191829422
+ * - Interstitial (game_over_interstitial): ca-app-pub-2335615408331368/3129287879
+ * - Rewarded (revive_rewarded): ca-app-pub-2335615408331368/8440334628
  */
 class AdManagerImpl(
     private val context: Context
@@ -35,10 +32,9 @@ class AdManagerImpl(
     companion object {
         private const val TAG = "NumberTap:Ads"
 
-        // TODO: Replace with real ad unit IDs from AdMob console
-        const val BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
-        const val INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
-        const val REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
+        const val BANNER_AD_UNIT_ID = "ca-app-pub-2335615408331368/9191829422"
+        const val INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-2335615408331368/3129287879"
+        const val REWARDED_AD_UNIT_ID = "ca-app-pub-2335615408331368/8440334628"
 
         // Show interstitial every N game overs
         const val INTERSTITIAL_FREQUENCY = 3
