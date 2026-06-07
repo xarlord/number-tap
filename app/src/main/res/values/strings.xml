@@ -107,4 +107,30 @@
     <string name="a11y_music_toggle">Background music %1$s</string>
     <string name="a11y_reset_highscore">Reset high score</string>
     <string name="a11y_back">Go back</string>
+
+    <!-- Retention: Notifications (#94) -->
+    <string name="notif_streak_title">Streak at risk! 🔥</string>
+    <string name="notif_streak_body">Your %1$d-day streak is about to break! Tap to keep it going.</string>
+    <string name="notif_missions_title">New missions ready!</string>
+    <string name="notif_missions_body">%1$d coins await! Complete today\'s challenges.</string>
+    <string name="notif_near_achievement_title">So close! 🏆</string>
+    <string name="notif_near_achievement_body">Only %1$d points away from your high score!</string>
+
+    <!-- Retention: Profile (#89) -->
+    <string name="coins_display">🪙 %1$d</string>
+    <string name="streak_display">🔥 %1$d</string>
+    <string name="missions_title">DAILY MISSIONS</string>
+    <string name="mission_progress">%1$d / %2$d</string>
+    <string name="mission_claim">CLAIM %1$d 🪙</string>
+    <string name="mission_completed">✅ DONE</string>
+    <string name="mission_type_score">Score %1$d</string>
+    <string name="mission_type_combo">Reach x%1$d combo</string>
+    <string name="mission_type_games">Play %1$d games</string>
+    <string name="mission_type_taps">Tap %1$d correctly</string>
+    <string name="powerups_title">POWER-UPS</string>
+    <string name="powerup_buy">BUY %1$d 🪙</string>
+    <string name="powerup_owned">x%1$d</string>
+    <string name="powerup_locked">🔒 Unlock @ %1$d</string>
+    <string name="daily_login_reward">+%1$d 🪙 Day %2$d streak!</string>
+    <string name="settings_notifications">Notifications</string>
 </resources>

@@ -78,6 +78,8 @@ dependencies {
     // AndroidX
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
+    implementation(libs.datastore.preferences)
+    implementation(libs.work.runtime.ktx)
 
     // Compose
     implementation(platform(libs.compose.bom))
@@ -94,6 +96,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.work.testing)
 }
 
 kover {
