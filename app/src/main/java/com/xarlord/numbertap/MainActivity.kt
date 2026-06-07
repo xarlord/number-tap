@@ -7,7 +7,13 @@ import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.platform.LocalContext
+import com.xarlord.numbertap.ads.AdManagerImpl
+import com.xarlord.numbertap.ads.BannerAd
 import com.xarlord.numbertap.analytics.AnalyticsTracker
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
@@ -32,7 +38,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         NotificationScheduler.createChannel(this)
-        setContent { NumberTapApp() }
+
+        // Initialize AdMob SDK
+        val adManager = AdManagerImpl(this)
+        adManager.initialize()
+        adManager.preloadInterstitial()
+        adManager.preloadRewarded()
+
+        setContent { NumberTapApp(adManager) }
     }
 }
 
@@ -88,7 +101,7 @@ private fun saveMusicEnabled(context: Context, enabled: Boolean) {
 }
 
 @Composable
-fun NumberTapApp() {
+fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Menu) }
     var gameState by remember { mutableStateOf(GameState()) }
     val engine = remember { GameEngine() }
@@ -201,6 +214,12 @@ fun NumberTapApp() {
 
                             if (soundEnabled) soundManager.playGameOver()
                             soundManager.stopBGMusic()
+
+                            // Show interstitial ad every N game overs
+                            if (adManager is AdManagerImpl) {
+                                adManager.showInterstitial()
+                            }
+
                             currentScreen = Screen.GameOver
                         }
                     } else {
@@ -238,8 +257,11 @@ fun NumberTapApp() {
         )
     }
 
+    // Banner ad below menu (not during gameplay to prevent accidental taps)
     when (currentScreen) {
-        is Screen.Menu -> MenuScreen(
+        is Screen.Menu -> {
+            Box(modifier = Modifier.fillMaxSize()) {
+                MenuScreen(
             highScore = highScore,
             currentTheme = selectedTheme,
             coins = playerProfile.coins,
@@ -264,6 +286,12 @@ fun NumberTapApp() {
                 currentScreen = Screen.Settings
             }
         )
+                // Banner ad at bottom of menu screen
+                BannerAd(
+                    modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
+                )
+            }
+        }
 
         is Screen.Game -> GameScreen(
             gameState = gameState,
@@ -350,10 +378,27 @@ fun NumberTapApp() {
                 shareScore(context, gameState.score, gameState.highScore)
             },
             onRevive = {
-                gameState = engine.revive(gameState)
-                lastTickTime = SystemClock.elapsedRealtime()
-                if (musicEnabled) soundManager.startBGMusic()
-                currentScreen = Screen.Game
+                // Show rewarded ad for revive — issue #16
+                if (adManager is AdManagerImpl) {
+                    adManager.showRewardedWithCallbacks(
+                        onReward = {
+                            gameState = engine.revive(gameState)
+                            lastTickTime = SystemClock.elapsedRealtime()
+                            if (musicEnabled) soundManager.startBGMusic()
+                            currentScreen = Screen.Game
+                            ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                        },
+                        onFailure = {
+                            ActionLogger.logError("revive_failed", "Ad not ready")
+                        }
+                    )
+                } else {
+                    // Stub fallback — just revive without ad
+                    gameState = engine.revive(gameState)
+                    lastTickTime = SystemClock.elapsedRealtime()
+                    if (musicEnabled) soundManager.startBGMusic()
+                    currentScreen = Screen.Game
+                }
             }
         )
 

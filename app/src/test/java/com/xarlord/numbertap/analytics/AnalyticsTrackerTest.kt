@@ -32,7 +32,9 @@ class AnalyticsTrackerTest {
         val expected = setOf(
             "SESSION_START", "SESSION_END", "GAME_START", "GAME_OVER",
             "TAP_CORRECT", "TAP_WRONG", "MILESTONE", "POWERUP_USED",
-            "MISSION_COMPLETED", "DAILY_LOGIN"
+            "MISSION_COMPLETED", "DAILY_LOGIN",
+            "AD_INTERSTITIAL_SHOWN", "AD_REWARDED_SHOWN",
+            "AD_REWARDED_EARNED", "AD_REWARDED_FAILED", "REVIVE_USED"
         )
         val actual = AnalyticsEvent.entries.map { it.name }.toSet()
         assertEquals(expected, actual)

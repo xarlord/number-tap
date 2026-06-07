@@ -137,4 +137,9 @@
     <string name="daily_login_popup_title">Daily Reward!</string>
     <string name="daily_login_popup_body">+%1$d coins for your %2$d-day streak!</string>
     <string name="daily_login_popup_dismiss">Nice!</string>
+
+    <!-- Ads (#90) -->
+    <string name="ad_loading">Loading ad…</string>
+    <string name="ad_not_ready">Ad not ready yet. Try again later.</string>
+    <string name="revive_watch_ad">Watch Ad for +5s</string>
 </resources>
