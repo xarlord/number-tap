@@ -6,24 +6,53 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 
 /**
  * Composable banner ad for AdMob.
  * Issue #90: Banner ad placed below game content, clear of gameplay grid.
+ * #141 fix: Proper lifecycle management — destroy AdView on dispose.
  */
 @Composable
 fun BannerAd(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val adView = remember {
+        AdView(context).apply {
+            adUnitId = AdManagerImpl.BANNER_AD_UNIT_ID
+            setAdSize(AdSize.BANNER)
+        }
+    }
+
+    // Lifecycle management
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> adView.pause()
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> adView.resume()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            adView.destroy()
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -33,12 +62,9 @@ fun BannerAd(
         contentAlignment = Alignment.Center
     ) {
         AndroidView(
-            factory = { ctx ->
-                AdView(ctx).apply {
-                    adUnitId = AdManagerImpl.BANNER_AD_UNIT_ID
-                    setAdSize(AdSize.BANNER)
-                    loadAd(com.google.android.gms.ads.AdRequest.Builder().build())
-                }
+            factory = { adView },
+            update = { view ->
+                view.loadAd(AdRequest.Builder().build())
             }
         )
     }

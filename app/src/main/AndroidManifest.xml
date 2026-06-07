@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NumberTap">
 
-        <!-- Google AdMob — test app ID. Replace with real ID from AdMob console. -->
+        <!-- Google AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-2335615408331368~9734224673" />

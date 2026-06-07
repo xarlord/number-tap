@@ -4,9 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 /**
  * Persists PlayerProfile via SharedPreferences.
@@ -17,7 +16,7 @@ class ProfileRepository(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("number_tap_profile", Context.MODE_PRIVATE)
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 
     fun loadProfile(): PlayerProfile {
         val coins = prefs.getInt("coins", 0)
@@ -73,10 +72,10 @@ class ProfileRepository(context: Context) {
      * Returns updated profile.
      */
     fun processDailyLogin(profile: PlayerProfile): PlayerProfile {
-        val today = dateFormat.format(Date())
+        val today = LocalDate.now().format(dateFormat)
         if (profile.lastLoginDate == today) return profile // Already logged in today
 
-        val yesterday = dateFormat.format(Date(System.currentTimeMillis() - 86_400_000))
+        val yesterday = LocalDate.now().minusDays(1).format(dateFormat)
         val newStreak = if (profile.lastLoginDate == yesterday) {
             profile.currentStreak + 1
         } else {

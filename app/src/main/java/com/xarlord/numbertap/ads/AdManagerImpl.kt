@@ -24,10 +24,15 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
  * - Banner (menu_banner): ca-app-pub-2335615408331368/9191829422
  * - Interstitial (game_over_interstitial): ca-app-pub-2335615408331368/3129287879
  * - Rewarded (revive_rewarded): ca-app-pub-2335615408331368/8440334628
+ *
+ * #138 fix: Stores applicationContext to avoid Activity leaks.
+ * Accepts Activity parameter at show-time for full-screen ads.
  */
 class AdManagerImpl(
-    private val context: Context
+    context: Context
 ) : AdManager {
+
+    private val appContext: Context = context.applicationContext
 
     companion object {
         private const val TAG = "NumberTap:Ads"
@@ -54,9 +59,17 @@ class AdManagerImpl(
      */
     fun initialize() {
         if (isInitialized) return
-        MobileAds.initialize(context) {
+        MobileAds.initialize(appContext) {
             Log.d(TAG, "AdMob SDK initialized")
             isInitialized = true
+            // #142: Auto-register emulator as test device in debug builds
+            if (com.xarlord.numbertap.BuildConfig.DEBUG) {
+                val config = RequestConfiguration.Builder()
+                    .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
+                    .build()
+                MobileAds.setRequestConfiguration(config)
+                Log.d(TAG, "Debug build: registered emulator test device")
+            }
         }
     }
 
@@ -72,7 +85,7 @@ class AdManagerImpl(
     fun preloadInterstitial() {
         val adRequest = AdRequest.Builder().build()
         InterstitialAd.load(
-            context,
+            appContext,
             INTERSTITIAL_AD_UNIT_ID,
             adRequest,
             object : InterstitialAdLoadCallback() {
@@ -100,6 +113,10 @@ class AdManagerImpl(
         )
     }
 
+    /**
+     * Show interstitial ad. Requires an Activity for full-screen display.
+     * #138 fix: Activity passed at show-time, not stored.
+     */
     override fun showInterstitial(): Boolean {
         gameOverCount++
         if (gameOverCount % INTERSTITIAL_FREQUENCY != 0) {
@@ -107,8 +124,27 @@ class AdManagerImpl(
             return false
         }
         val ad = interstitialAd
-        if (ad != null && context is Activity) {
-            ad.show(context)
+        if (ad != null) {
+            // Caller must use showInterstitial(activity) overload
+            Log.d(TAG, "Interstitial ad ready but no Activity provided — use showInterstitial(activity)")
+            return false
+        }
+        Log.d(TAG, "No interstitial ad ready")
+        return false
+    }
+
+    /**
+     * Show interstitial with an Activity context. Use this from game-over screen.
+     */
+    fun showInterstitial(activity: Activity): Boolean {
+        gameOverCount++
+        if (gameOverCount % INTERSTITIAL_FREQUENCY != 0) {
+            Log.d(TAG, "Skipping interstitial (game over #$gameOverCount)")
+            return false
+        }
+        val ad = interstitialAd
+        if (ad != null) {
+            ad.show(activity)
             Log.d(TAG, "Showing interstitial ad")
             return true
         }
@@ -122,7 +158,7 @@ class AdManagerImpl(
     fun preloadRewarded() {
         val adRequest = AdRequest.Builder().build()
         RewardedAd.load(
-            context,
+            appContext,
             REWARDED_AD_UNIT_ID,
             adRequest,
             object : RewardedAdLoadCallback() {
@@ -152,9 +188,19 @@ class AdManagerImpl(
     }
 
     override fun showRewardedAd(): Boolean {
+        Log.d(TAG, "Use showRewardedAd(activity) overload for proper Activity context")
+        onRewardFailed?.invoke()
+        return false
+    }
+
+    /**
+     * Show rewarded ad with Activity context.
+     * #138 fix: Activity passed at show-time, not stored.
+     */
+    fun showRewardedAd(activity: Activity): Boolean {
         val ad = rewardedAd
-        if (ad != null && context is Activity) {
-            ad.show(context) { rewardItem ->
+        if (ad != null) {
+            ad.show(activity) { rewardItem ->
                 val amount = rewardItem.amount
                 val type = rewardItem.type
                 Log.d(TAG, "Reward earned: $amount $type")
@@ -175,19 +221,26 @@ class AdManagerImpl(
      * Issue #16: Used for the +5s revive mechanic.
      */
     fun showRewardedWithCallbacks(
+        activity: Activity,
         onReward: () -> Unit,
         onFailure: () -> Unit
     ) {
         onRewardEarned = onReward
         onRewardFailed = onFailure
-        if (!showRewardedAd()) {
+        val ad = rewardedAd
+        if (ad != null) {
+            ad.show(activity) { rewardItem ->
+                Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
+                onReward()
+            }
+        } else {
+            Log.d(TAG, "No rewarded ad ready for revive")
             onFailure()
         }
     }
 
     /**
      * Add test device IDs for development.
-     * Call after initialize() with your device ID from logcat.
      */
     fun addTestDeviceIds(deviceIds: List<String>) {
         val config = RequestConfiguration.Builder()

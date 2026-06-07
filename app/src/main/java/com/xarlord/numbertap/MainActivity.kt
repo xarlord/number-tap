@@ -1,5 +1,6 @@
 package com.xarlord.numbertap
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -216,8 +217,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             soundManager.stopBGMusic()
 
                             // Show interstitial ad every N game overs
-                            if (adManager is AdManagerImpl) {
-                                adManager.showInterstitial()
+                            if (adManager is AdManagerImpl && context is Activity) {
+                                adManager.showInterstitial(context)
                             }
 
                             currentScreen = Screen.GameOver
@@ -322,7 +323,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                                 totalCorrectTaps = playerProfile.totalCorrectTaps + 1
                             )
 
-                            profileRepository.saveProfile(playerProfile)
+                            // #139: Profile saved at game-over only, not every tap
 
                             if (soundEnabled) {
                                 soundManager.playSuccess(result.combo)
@@ -379,8 +380,9 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
             },
             onRevive = {
                 // Show rewarded ad for revive — issue #16
-                if (adManager is AdManagerImpl) {
+                if (adManager is AdManagerImpl && context is Activity) {
                     adManager.showRewardedWithCallbacks(
+                        activity = context,
                         onReward = {
                             gameState = engine.revive(gameState)
                             lastTickTime = SystemClock.elapsedRealtime()
