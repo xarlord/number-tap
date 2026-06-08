@@ -50,10 +50,6 @@ class AdManagerImpl(
     private var gameOverCount = 0
     private var isInitialized = false
 
-    // Callbacks for rewarded ad
-    private var onRewardEarned: (() -> Unit)? = null
-    private var onRewardFailed: (() -> Unit)? = null
-
     /**
      * Initialize the Mobile Ads SDK. Call once in Application.onCreate() or Activity.onCreate().
      */
@@ -164,7 +160,6 @@ class AdManagerImpl(
                         }
                         override fun onAdFailedToShowFullScreenContent(error: AdError) {
                             rewardedAd = null
-                            onRewardFailed?.invoke()
                             preloadRewarded()
                             Log.w(TAG, "Rewarded show failed: ${error.message}")
                         }
@@ -180,29 +175,22 @@ class AdManagerImpl(
 
     override fun showRewardedAd(): Boolean {
         Log.d(TAG, "Use showRewardedAd(activity) overload for proper Activity context")
-        onRewardFailed?.invoke()
         return false
     }
 
     /**
      * Show rewarded ad with Activity context.
      * #138 fix: Activity passed at show-time, not stored.
+     * #150 fix: Consolidated — delegates to showRewardedWithCallbacks to avoid duplicate logic.
      */
     fun showRewardedAd(activity: Activity): Boolean {
-        val ad = rewardedAd
-        if (ad != null) {
-            ad.show(activity) { rewardItem ->
-                val amount = rewardItem.amount
-                val type = rewardItem.type
-                Log.d(TAG, "Reward earned: $amount $type")
-                onRewardEarned?.invoke()
-            }
-            Log.d(TAG, "Showing rewarded ad")
-            return true
-        }
-        Log.d(TAG, "No rewarded ad ready")
-        onRewardFailed?.invoke()
-        return false
+        var result = false
+        showRewardedWithCallbacks(
+            activity,
+            onReward = { result = true },
+            onFailure = { result = false }
+        )
+        return result
     }
 
     override fun isAdReady(): Boolean = rewardedAd != null
@@ -210,20 +198,20 @@ class AdManagerImpl(
     /**
      * Show rewarded ad with callbacks for success/failure.
      * Issue #16: Used for the +5s revive mechanic.
+     * #150 fix: Single implementation — showRewardedAd(activity) delegates here.
      */
     fun showRewardedWithCallbacks(
         activity: Activity,
         onReward: () -> Unit,
         onFailure: () -> Unit
     ) {
-        onRewardEarned = onReward
-        onRewardFailed = onFailure
         val ad = rewardedAd
         if (ad != null) {
             ad.show(activity) { rewardItem ->
                 Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
                 onReward()
             }
+            Log.d(TAG, "Showing rewarded ad")
         } else {
             Log.d(TAG, "No rewarded ad ready for revive")
             onFailure()

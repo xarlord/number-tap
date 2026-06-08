@@ -77,4 +77,34 @@ class AdManagerImplTest {
         val impl = AdManagerImpl(mockk(relaxed = true))
         assertFalse("loadBanner should return false before initialization", impl.loadBanner())
     }
+
+    /**
+     * #150: showRewardedAd(activity) delegates to showRewardedWithCallbacks.
+     * With no ad loaded, it should call onFailure and return false.
+     */
+    @Test
+    fun `showRewardedAd with activity returns false when no ad loaded`() {
+        val impl = AdManagerImpl(mockk(relaxed = true))
+        val activity = mockk<android.app.Activity>(relaxed = true)
+        assertFalse("showRewardedAd(activity) should return false with no ad loaded",
+            impl.showRewardedAd(activity))
+    }
+
+    /**
+     * #150: showRewardedWithCallbacks calls onFailure when no ad is loaded.
+     */
+    @Test
+    fun `showRewardedWithCallbacks calls onFailure when no ad loaded`() {
+        val impl = AdManagerImpl(mockk(relaxed = true))
+        val activity = mockk<android.app.Activity>(relaxed = true)
+        var failureCalled = false
+        var rewardCalled = false
+        impl.showRewardedWithCallbacks(
+            activity,
+            onReward = { rewardCalled = true },
+            onFailure = { failureCalled = true }
+        )
+        assertTrue("onFailure should be called", failureCalled)
+        assertFalse("onReward should NOT be called", rewardCalled)
+    }
 }
