@@ -1,5 +1,8 @@
 package com.xarlord.numbertap.ui
 
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,12 +14,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -46,13 +53,47 @@ internal fun ThemedTile(
     style: ThemeStyle,
     onClick: () -> Unit
 ) {
+    // --- Phase 3.5: Smooth fade animation ---
+    var fadeProgress by remember(tile.id) { mutableFloatStateOf(if (tile.state != TileState.ACTIVE) 0f else 1f) }
     var fadeFrame by remember(tile.id) { mutableIntStateOf(if (tile.state != TileState.ACTIVE) 0 else -1) }
+
+    // Scale bounce on state change
+    var scale by remember(tile.id) { mutableFloatStateOf(1f) }
 
     LaunchedEffect(tile.state) {
         if (tile.state != TileState.ACTIVE) {
-            fadeFrame = 0; delay(20)
-            fadeFrame = 1; delay(20)
+            // Bounce down then settle
+            scale = 0.85f
+            animate(
+                initialValue = 0.85f,
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessHigh
+                )
+            ) { value, _ ->
+                scale = value
+            }
+
+            // Fade through color states
+            fadeFrame = 0; delay(120)
+            fadeFrame = 1; delay(120)
             fadeFrame = 2
+        }
+    }
+
+    // Entry animation — subtle scale-in when tile first appears
+    var entryScale by remember(tile.id) { mutableFloatStateOf(0.6f) }
+    LaunchedEffect(tile.id) {
+        animate(
+            initialValue = 0.6f,
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+        ) { value, _ ->
+            entryScale = value
         }
     }
 
@@ -77,6 +118,11 @@ internal fun ThemedTile(
         Modifier.border(1.dp, borderColor, shape)
     } else Modifier
 
+    // Subtle glow for target tile
+    val glowModifier = if (isTarget && tile.state == TileState.ACTIVE) {
+        Modifier.border(2.dp, colors.tileTarget.copy(alpha = 0.4f), shape)
+    } else Modifier
+
     val tileDesc = if (isTarget) stringResource(R.string.a11y_tile_target, tile.currentValue)
                    else stringResource(R.string.a11y_tile, tile.currentValue)
 
@@ -86,6 +132,13 @@ internal fun ThemedTile(
             .clip(shape)
             .background(bg)
             .then(borderModifier)
+            .then(glowModifier)
+            .graphicsLayer {
+                // Apply both entry and interaction scale
+                val s = entryScale * scale
+                scaleX = s
+                scaleY = s
+            }
             .semantics {
                 contentDescription = tileDesc
                 role = Role.Button

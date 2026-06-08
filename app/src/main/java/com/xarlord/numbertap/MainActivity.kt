@@ -36,6 +36,7 @@ import com.xarlord.numbertap.retention.RetentionLogic
 import com.xarlord.numbertap.retention.StreakRewards
 import com.xarlord.numbertap.ui.GameOverScreen
 import com.xarlord.numbertap.ui.GameScreen
+import com.xarlord.numbertap.ui.HapticFeedback
 import com.xarlord.numbertap.ui.MenuScreen
 import com.xarlord.numbertap.ui.SettingsScreen
 import kotlinx.coroutines.delay
@@ -235,6 +236,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
 
                             if (soundEnabled) soundManager.playGameOver()
                             soundManager.stopBGMusic()
+                            HapticFeedback.gameOverBuzz(context)
 
                             // Show interstitial ad every N game overs
                             if (adManager is AdManagerImpl && context is Activity) {
@@ -326,6 +328,10 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
                             AnalyticsTracker.tapCorrect(score = gameState.score, combo = result.combo)
 
+                            // Phase 3.5: Haptic feedback
+                            if (result.combo >= 3) HapticFeedback.comboBuzz(context)
+                            else HapticFeedback.lightClick(context)
+
                             // Award coins for correct tap
                             playerProfile = playerProfile.copy(
                                 coins = RetentionLogic.awardTapCoins(playerProfile.coins)
@@ -349,6 +355,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                                 soundManager.playSuccess(result.combo)
                                 if (gameState.score % 10 == 0 && gameState.score > 0) {
                                     soundManager.playMilestone()
+                                    HapticFeedback.mediumClick(context)
                                     AnalyticsTracker.milestone(gameState.score)
                                 }
                             }
@@ -356,6 +363,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         is TapResult.Wrong -> {
                             ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
                             AnalyticsTracker.tapWrong(score = gameState.score)
+                            // Phase 3.5: Haptic feedback for wrong tap
+                            HapticFeedback.errorBuzz(context)
                             if (soundEnabled) {
                                 soundManager.playFailure()
                                 if (gameState.comboCount > 1) soundManager.playComboBreak()

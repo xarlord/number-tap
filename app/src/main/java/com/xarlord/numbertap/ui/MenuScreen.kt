@@ -5,7 +5,9 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,14 +30,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -53,8 +61,6 @@ import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeConfig
 import com.xarlord.numbertap.data.ThemeStyle
-import kotlin.math.sin
-import kotlin.random.Random
 
 @Composable
 fun MenuScreen(
@@ -78,27 +84,69 @@ fun MenuScreen(
     val infiniteTransition = rememberInfiniteTransition(label = "menu")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.97f, targetValue = 1.03f,
-        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "pulse"
+        animationSpec = infiniteRepeatable(
+            androidx.compose.animation.core.tween(1200, easing = LinearEasing),
+            RepeatMode.Reverse
+        ), label = "pulse"
     )
 
+    // Logo float animation
+    val logoFloat by infiniteTransition.animateFloat(
+        initialValue = -4f, targetValue = 4f,
+        animationSpec = infiniteRepeatable(
+            androidx.compose.animation.core.tween(3000, easing = LinearEasing),
+            RepeatMode.Reverse
+        ), label = "logoFloat"
+    )
+
+    // Button pulse for first-time users
+    var buttonScale by remember { mutableFloatStateOf(1f) }
+    LaunchedEffect(highScore) {
+        if (highScore == 0) {
+            while (true) {
+                animate(
+                    initialValue = 1f,
+                    targetValue = 1.05f,
+                    animationSpec = spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessLow)
+                ) { value, _ -> buttonScale = value }
+                animate(
+                    initialValue = 1.05f,
+                    targetValue = 1f,
+                    animationSpec = spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessLow)
+                ) { value, _ -> buttonScale = value }
+                kotlinx.coroutines.delay(800)
+            }
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
-        // Themed background
+        // Gradient background
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(colors.background),
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            colors.background,
+                            colors.panelBackground,
+                            colors.background
+                        )
+                    )
+                ),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo — themed grid icon
-            ThemedLogo(currentTheme, colors, style, 72.dp)
+            // Floating logo
+            Box(modifier = Modifier.offset(y = logoFloat.dp)) {
+                ThemedLogo(currentTheme, colors, style, 72.dp)
+            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 stringResource(R.string.number_tap),
                 color = colors.textPrimary,
-                fontSize = 36.sp,
+                fontSize = 38.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = style.headerFontFamily,
                 letterSpacing = 2.sp
@@ -109,53 +157,82 @@ fun MenuScreen(
             Text(
                 stringResource(R.string.the_ordered_grid),
                 color = colors.textSecondary,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontFamily = style.bodyFontFamily,
-                letterSpacing = 3.sp
+                letterSpacing = 4.sp
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             if (highScore > 0) {
-                Text(
-                    stringResource(R.string.best_display, highScore),
-                    color = colors.tileTarget,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = style.tileFontFamily
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                // High score badge with subtle background
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.tileTarget.copy(alpha = 0.1f))
+                        .border(1.dp, colors.tileTarget.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.best_display, highScore),
+                        color = colors.tileTarget,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = style.tileFontFamily
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
             // Coin and streak display
             if (coins > 0 || streak > 0) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (coins > 0) {
-                        Text(
-                            stringResource(R.string.coins_display, coins),
-                            color = colors.textPrimary,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = style.tileFontFamily
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(colors.panelBackground.copy(alpha = 0.5f))
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("🪙", fontSize = 14.sp)
+                            Text(
+                                stringResource(R.string.coins_display, coins),
+                                color = colors.textPrimary,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = style.tileFontFamily
+                            )
+                        }
                     }
                     if (streak > 0) {
-                        Text(
-                            stringResource(R.string.streak_display, streak),
-                            color = colors.textPrimary,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = style.tileFontFamily
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(colors.panelBackground.copy(alpha = 0.5f))
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("🔥", fontSize = 14.sp)
+                            Text(
+                                stringResource(R.string.streak_display, streak),
+                                color = colors.textPrimary,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = style.tileFontFamily
+                            )
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // START button
+            // START button with elevation
             Button(
                 onClick = onStartClick,
                 colors = ButtonDefaults.buttonColors(
@@ -164,10 +241,17 @@ fun MenuScreen(
                 ),
                 shape = RoundedCornerShape(style.tileCornerRadius.dp),
                 modifier = Modifier
-                    .size(width = 200.dp, height = 56.dp)
+                    .size(width = 220.dp, height = 58.dp)
+                    .shadow(8.dp, RoundedCornerShape(style.tileCornerRadius.dp))
                     .semantics { contentDescription = startDesc }
             ) {
-                Text(stringResource(R.string.start), fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily, letterSpacing = 2.sp)
+                Text(
+                    stringResource(R.string.start),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = style.headerFontFamily,
+                    letterSpacing = 3.sp
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -180,17 +264,23 @@ fun MenuScreen(
                         contentColor = colors.textPrimary
                     ),
                     shape = RoundedCornerShape(style.tileCornerRadius.dp),
-                    modifier = Modifier.size(width = 200.dp, height = 44.dp)
+                    modifier = Modifier.size(width = 220.dp, height = 46.dp)
                 ) {
-                    Text(stringResource(R.string.how_to_play), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
+                    Text(stringResource(R.string.how_to_play), fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
             // Theme selector
             Spacer(modifier = Modifier.height(8.dp))
-            Text(stringResource(R.string.style_label), color = colors.textSecondary, fontSize = 10.sp, fontFamily = style.bodyFontFamily, letterSpacing = 2.sp)
-            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                stringResource(R.string.style_label),
+                color = colors.textSecondary,
+                fontSize = 10.sp,
+                fontFamily = style.bodyFontFamily,
+                letterSpacing = 2.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 GameTheme.entries.forEach { theme ->
@@ -212,7 +302,7 @@ fun MenuScreen(
                                 role = Role.Button
                             }
                             .clickable { onThemeChange(theme) }
-                            .padding(horizontal = 8.dp),
+                            .padding(horizontal = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -227,7 +317,7 @@ fun MenuScreen(
             }
 
             // Settings button
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = stringResource(R.string.settings_button),
                 color = colors.textSecondary,
@@ -285,7 +375,6 @@ private fun ThemedLogo(
                     )
                 } else {
                     drawRect(bgColor, topLeft = Offset(x, y), size = Size(s, s))
-                    // Terminal/Matrix: draw border
                     if (style.showTileBorder) {
                         drawRect(
                             colors.panelBorder,
