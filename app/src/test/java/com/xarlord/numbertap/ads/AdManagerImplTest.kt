@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.*
 import org.junit.Test
+import java.lang.reflect.Field
 
 /**
  * Tests for AdManagerImpl behavior — #144 fix verification.
@@ -12,6 +13,16 @@ import org.junit.Test
  * the game over counter used by the Activity overload.
  */
 class AdManagerImplTest {
+
+    /**
+     * Helper: inject a mock RewardedAd into AdManagerImpl via reflection.
+     * #151: Needed to test the "ad loaded" code path.
+     */
+    private fun injectRewardedAd(impl: AdManagerImpl, ad: com.google.android.gms.ads.rewarded.RewardedAd?) {
+        val field: Field = AdManagerImpl::class.java.getDeclaredField("rewardedAd")
+        field.isAccessible = true
+        field.set(impl, ad)
+    }
 
     /**
      * #144: The no-arg showInterstitial() must not increment gameOverCount.
@@ -106,5 +117,33 @@ class AdManagerImplTest {
         )
         assertTrue("onFailure should be called", failureCalled)
         assertFalse("onReward should NOT be called", rewardCalled)
+    }
+
+    /**
+     * #151: When a rewarded ad IS loaded, showRewardedAd(activity) must return true.
+     * The #150 refactor broke this — it always returned false because onReward
+     * is async and hadn't fired when the method returned.
+     */
+    @Test
+    fun `showRewardedAd with activity returns true when ad is loaded`() {
+        val impl = AdManagerImpl(mockk(relaxed = true))
+        val mockAd = mockk<com.google.android.gms.ads.rewarded.RewardedAd>(relaxed = true)
+        injectRewardedAd(impl, mockAd)
+
+        val activity = mockk<android.app.Activity>(relaxed = true)
+        assertTrue("showRewardedAd(activity) should return true when ad is loaded",
+            impl.showRewardedAd(activity))
+    }
+
+    /**
+     * #151: isAdReady returns true when a rewarded ad is loaded.
+     */
+    @Test
+    fun `isAdReady returns true when ad is loaded`() {
+        val impl = AdManagerImpl(mockk(relaxed = true))
+        val mockAd = mockk<com.google.android.gms.ads.rewarded.RewardedAd>(relaxed = true)
+        injectRewardedAd(impl, mockAd)
+
+        assertTrue("isAdReady should return true when ad is loaded", impl.isAdReady())
     }
 }

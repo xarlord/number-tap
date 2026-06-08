@@ -181,16 +181,20 @@ class AdManagerImpl(
     /**
      * Show rewarded ad with Activity context.
      * #138 fix: Activity passed at show-time, not stored.
-     * #150 fix: Consolidated — delegates to showRewardedWithCallbacks to avoid duplicate logic.
+     * #151 fix: Must return true when ad IS available — onReward is async and won't fire
+     * before this method returns, so we cannot capture its result synchronously.
      */
     fun showRewardedAd(activity: Activity): Boolean {
-        var result = false
-        showRewardedWithCallbacks(
-            activity,
-            onReward = { result = true },
-            onFailure = { result = false }
-        )
-        return result
+        val ad = rewardedAd
+        if (ad != null) {
+            ad.show(activity) { rewardItem ->
+                Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
+            }
+            Log.d(TAG, "Showing rewarded ad")
+            return true
+        }
+        Log.d(TAG, "No rewarded ad ready")
+        return false
     }
 
     override fun isAdReady(): Boolean = rewardedAd != null
