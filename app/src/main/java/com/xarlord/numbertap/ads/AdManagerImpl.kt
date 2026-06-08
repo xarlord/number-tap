@@ -179,11 +179,23 @@ class AdManagerImpl(
     }
 
     /**
-     * Show rewarded ad with Activity context.
+     * Show rewarded ad with Activity context — DISPLAY ONLY, does NOT grant rewards.
      * #138 fix: Activity passed at show-time, not stored.
      * #151 fix: Must return true when ad IS available — onReward is async and won't fire
      * before this method returns, so we cannot capture its result synchronously.
+     *
+     * #153: The reward callback is a no-op (only logs). Callers that need to know
+     * the reward outcome (e.g., +5s revive mechanic) MUST use [showRewardedWithCallbacks]
+     * instead. This method is unsuitable for game mechanics.
+     *
+     * @param activity Activity context for full-screen ad display
+     * @return true if ad was shown, false if no ad ready
      */
+    @Deprecated(
+        message = "Use showRewardedWithCallbacks(activity, onReward, onFailure) to handle reward outcomes. " +
+            "This method silently discards the reward (issue #153).",
+        replaceWith = ReplaceWith("showRewardedWithCallbacks(activity, onReward = {}, onFailure = {})")
+    )
     fun showRewardedAd(activity: Activity): Boolean {
         val ad = rewardedAd
         if (ad != null) {

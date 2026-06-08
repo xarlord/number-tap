@@ -92,8 +92,10 @@ class AdManagerImplTest {
     /**
      * #150/#152: showRewardedAd(activity) does NOT delegate to showRewardedWithCallbacks.
      * It has its own ad.show() call. With no ad loaded, it returns false.
+     * #153: Deprecated — callers should use showRewardedWithCallbacks instead.
      */
     @Test
+    @Suppress("DEPRECATION")
     fun `showRewardedAd with activity returns false when no ad loaded`() {
         val impl = AdManagerImpl(mockk(relaxed = true))
         val activity = mockk<android.app.Activity>(relaxed = true)
@@ -123,8 +125,10 @@ class AdManagerImplTest {
      * #151: When a rewarded ad IS loaded, showRewardedAd(activity) must return true.
      * The #150 refactor broke this — it always returned false because onReward
      * is async and hadn't fired when the method returned.
+     * #153: Deprecated — callers should use showRewardedWithCallbacks instead.
      */
     @Test
+    @Suppress("DEPRECATION")
     fun `showRewardedAd with activity returns true when ad is loaded`() {
         val impl = AdManagerImpl(mockk(relaxed = true))
         val mockAd = mockk<com.google.android.gms.ads.rewarded.RewardedAd>(relaxed = true)
