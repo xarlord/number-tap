@@ -202,7 +202,8 @@ class AdManagerImpl(
     /**
      * Show rewarded ad with callbacks for success/failure.
      * Issue #16: Used for the +5s revive mechanic.
-     * #150 fix: Single implementation — showRewardedAd(activity) delegates here.
+     * Note: showRewardedAd(activity) does NOT delegate here — it has its own
+     * ad.show() call. Use THIS method when you need to know the reward outcome.
      */
     fun showRewardedWithCallbacks(
         activity: Activity,
