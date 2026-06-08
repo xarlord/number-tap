@@ -90,8 +90,8 @@ class AdManagerImplTest {
     }
 
     /**
-     * #150: showRewardedAd(activity) delegates to showRewardedWithCallbacks.
-     * With no ad loaded, it should call onFailure and return false.
+     * #150/#152: showRewardedAd(activity) does NOT delegate to showRewardedWithCallbacks.
+     * It has its own ad.show() call. With no ad loaded, it returns false.
      */
     @Test
     fun `showRewardedAd with activity returns false when no ad loaded`() {
