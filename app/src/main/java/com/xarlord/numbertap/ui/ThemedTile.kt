@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
@@ -54,7 +53,6 @@ internal fun ThemedTile(
     onClick: () -> Unit
 ) {
     // --- Phase 3.5: Smooth fade animation ---
-    var fadeProgress by remember(tile.id) { mutableFloatStateOf(if (tile.state != TileState.ACTIVE) 0f else 1f) }
     var fadeFrame by remember(tile.id) { mutableIntStateOf(if (tile.state != TileState.ACTIVE) 0 else -1) }
 
     // Scale bounce on state change
