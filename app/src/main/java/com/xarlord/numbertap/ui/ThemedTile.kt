@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -40,6 +39,16 @@ import com.xarlord.numbertap.data.ThemeStyle
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
 import kotlinx.coroutines.delay
+
+// Animation constants
+private const val BOUNCE_SCALE = 0.85f
+private const val FADE_STEP_DURATION_MS = 120L
+private const val ENTRY_INITIAL_SCALE = 0.6f
+private const val TUTORIAL_TARGET_ALPHA = 0.3f
+private const val TARGET_GLOW_ALPHA = 0.12f
+private const val TARGET_BORDER_ALPHA = 0.4f
+private const val CORNER_DECORATION_ALPHA = 0.3f
+private const val CORNER_OFFSET_RATIO = 0.38f
 
 @Composable
 internal fun ThemedTile(
@@ -61,9 +70,9 @@ internal fun ThemedTile(
     LaunchedEffect(tile.state) {
         if (tile.state != TileState.ACTIVE) {
             // Bounce down then settle
-            scale = 0.85f
+            scale = BOUNCE_SCALE
             animate(
-                initialValue = 0.85f,
+                initialValue = BOUNCE_SCALE,
                 targetValue = 1f,
                 animationSpec = spring(
                     dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -74,17 +83,17 @@ internal fun ThemedTile(
             }
 
             // Fade through color states
-            fadeFrame = 0; delay(120)
-            fadeFrame = 1; delay(120)
+            fadeFrame = 0; delay(FADE_STEP_DURATION_MS)
+            fadeFrame = 1; delay(FADE_STEP_DURATION_MS)
             fadeFrame = 2
         }
     }
 
     // Entry animation — subtle scale-in when tile first appears
-    var entryScale by remember(tile.id) { mutableFloatStateOf(0.6f) }
+    var entryScale by remember(tile.id) { mutableFloatStateOf(ENTRY_INITIAL_SCALE) }
     LaunchedEffect(tile.id) {
         animate(
-            initialValue = 0.6f,
+            initialValue = ENTRY_INITIAL_SCALE,
             targetValue = 1f,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioLowBouncy,
@@ -100,8 +109,8 @@ internal fun ThemedTile(
         tile.state == TileState.TAPPED_CORRECT && fadeFrame == 1 -> colors.successFade
         tile.state == TileState.TAPPED_WRONG && fadeFrame == 0 -> colors.failure
         tile.state == TileState.TAPPED_WRONG && fadeFrame == 1 -> colors.failureFade
-        isTarget && isTutorial -> colors.tileTarget.copy(alpha = 0.3f)
-        isTarget -> colors.tileTargetGlow.copy(alpha = 0.12f)
+        isTarget && isTutorial -> colors.tileTarget.copy(alpha = TUTORIAL_TARGET_ALPHA)
+        isTarget -> colors.tileTargetGlow.copy(alpha = TARGET_GLOW_ALPHA)
         else -> colors.tileBackground
     }
 
@@ -118,7 +127,7 @@ internal fun ThemedTile(
 
     // Subtle glow for target tile
     val glowModifier = if (isTarget && tile.state == TileState.ACTIVE) {
-        Modifier.border(2.dp, colors.tileTarget.copy(alpha = 0.4f), shape)
+        Modifier.border(2.dp, colors.tileTarget.copy(alpha = TARGET_BORDER_ALPHA), shape)
     } else Modifier
 
     val tileDesc = if (isTarget) stringResource(R.string.a11y_tile_target, tile.currentValue)
@@ -150,10 +159,10 @@ internal fun ThemedTile(
             if (cornerChar.isNotEmpty() && tile.state == TileState.ACTIVE) {
                 Text(
                     cornerChar,
-                    color = colors.textSecondary.copy(alpha = 0.3f),
+                    color = colors.textSecondary.copy(alpha = CORNER_DECORATION_ALPHA),
                     fontSize = 8.sp,
                     fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.offset(x = (-tileSize.value * 0.38).dp, y = (-tileSize.value * 0.38).dp)
+                    modifier = Modifier.offset(x = (-tileSize.value * CORNER_OFFSET_RATIO).dp, y = (-tileSize.value * CORNER_OFFSET_RATIO).dp)
                 )
             }
         }

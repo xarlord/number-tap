@@ -304,12 +304,12 @@ private fun ConfettiAnimation(colors: ThemeColors) {
         particles.forEach { (bx, speed, ci) ->
             val x = bx * size.width
             val y = ((phase * speed * 3) % 1.2f) * size.height
-            val size = 4f + speed * 5f
+            val particleSize = 4f + speed * 5f
             // Mix rectangles and circles for variety
             if (ci % 2 == 0) {
-                drawRect(particleColors[ci], topLeft = Offset(x, y), size = Size(size, size), alpha = 0.7f)
+                drawRect(particleColors[ci], topLeft = Offset(x, y), size = Size(particleSize, particleSize), alpha = 0.7f)
             } else {
-                drawCircle(particleColors[ci], radius = size / 2, center = Offset(x + size / 2, y + size / 2), alpha = 0.7f)
+                drawCircle(particleColors[ci], radius = particleSize / 2, center = Offset(x + particleSize / 2, y + particleSize / 2), alpha = 0.7f)
             }
         }
     }
