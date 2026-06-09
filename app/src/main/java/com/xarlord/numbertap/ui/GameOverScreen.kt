@@ -12,14 +12,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,7 +39,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -57,6 +54,14 @@ import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeConfig
 import kotlin.random.Random
+
+// Animation & layout constants
+private const val SCORE_REVEAL_DELAY_MS = 300L
+private const val SCORE_REVEAL_DURATION_MS = 800
+private const val TITLE_INITIAL_SCALE = 0.5f
+private const val CONFETTI_PARTICLE_COUNT = 30
+private const val CONFETTI_DURATION_MS = 3000
+private const val CONFETTI_ALPHA = 0.7f
 
 @Composable
 fun GameOverScreen(
@@ -86,27 +91,25 @@ fun GameOverScreen(
 
     // Phase 3.5: Smooth animated score counter with spring
     var displayScore by remember { mutableIntStateOf(0) }
-    var scoreRevealProgress by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(score) {
         // Dramatic pause before reveal
-        kotlinx.coroutines.delay(300)
+        kotlinx.coroutines.delay(SCORE_REVEAL_DELAY_MS)
         animate(
             initialValue = 0f,
             targetValue = 1f,
-            animationSpec = tween(800, easing = LinearEasing)
+            animationSpec = tween(SCORE_REVEAL_DURATION_MS, easing = LinearEasing)
         ) { value, _ ->
-            scoreRevealProgress = value
             displayScore = (score * value).toInt()
         }
         displayScore = score
     }
 
     // Scale animation for "GAME OVER" text
-    var titleScale by remember { mutableFloatStateOf(0.5f) }
+    var titleScale by remember { mutableFloatStateOf(TITLE_INITIAL_SCALE) }
     LaunchedEffect(Unit) {
         animate(
-            initialValue = 0.5f,
+            initialValue = TITLE_INITIAL_SCALE,
             targetValue = 1f,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -288,9 +291,9 @@ fun GameOverScreen(
 @Composable
 private fun ConfettiAnimation(colors: ThemeColors) {
     val inf = rememberInfiniteTransition(label = "cf")
-    val phase by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "cf")
+    val phase by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(CONFETTI_DURATION_MS, easing = LinearEasing)), label = "cf")
     val particles = remember {
-        (0..30).map {
+        (0..CONFETTI_PARTICLE_COUNT).map {
             Triple(
                 Random(seed = 42 + it).nextFloat(),
                 Random(seed = 137 + it).nextFloat(),
@@ -307,9 +310,9 @@ private fun ConfettiAnimation(colors: ThemeColors) {
             val particleSize = 4f + speed * 5f
             // Mix rectangles and circles for variety
             if (ci % 2 == 0) {
-                drawRect(particleColors[ci], topLeft = Offset(x, y), size = Size(particleSize, particleSize), alpha = 0.7f)
+                drawRect(particleColors[ci], topLeft = Offset(x, y), size = Size(particleSize, particleSize), alpha = CONFETTI_ALPHA)
             } else {
-                drawCircle(particleColors[ci], radius = particleSize / 2, center = Offset(x + particleSize / 2, y + particleSize / 2), alpha = 0.7f)
+                drawCircle(particleColors[ci], radius = particleSize / 2, center = Offset(x + particleSize / 2, y + particleSize / 2), alpha = CONFETTI_ALPHA)
             }
         }
     }
