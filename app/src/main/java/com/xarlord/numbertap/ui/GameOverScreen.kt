@@ -63,6 +63,37 @@ private const val CONFETTI_PARTICLE_COUNT = 30
 private const val CONFETTI_DURATION_MS = 3000
 private const val CONFETTI_ALPHA = 0.7f
 
+// Background gradient
+private const val BG_GRADIENT_MID_ALPHA = 0.8f
+
+// Score card
+private const val SCORE_CARD_CORNER_DP = 16
+private const val SCORE_CARD_BG_ALPHA = 0.6f
+private const val SCORE_CARD_BORDER_ALPHA = 0.4f
+private const val SCORE_CARD_PADDING_H_DP = 48
+private const val SCORE_CARD_PADDING_V_DP = 24
+
+// Score text
+private const val SCORE_FONT_SIZE_SP = 56
+private const val BEST_LABEL_FONT_SIZE_SP = 18
+
+// New-best badge
+private const val NEW_BEST_GLOW_MIN = 0.6f
+private const val NEW_BEST_GLOW_DURATION_MS = 500
+private const val NEW_BEST_CORNER_DP = 20
+private const val NEW_BEST_BG_ALPHA = 0.15f
+private const val NEW_BEST_PADDING_H_DP = 24
+private const val NEW_BEST_PADDING_V_DP = 8
+private const val NEW_BEST_FONT_SIZE_SP = 18
+
+// Revive button
+private const val REVIVE_GLOW_MIN = 0.7f
+private const val REVIVE_GLOW_DURATION_MS = 400
+
+// Layout spacing
+private const val SECTION_SPACING_DP = 32
+private const val INTER_BUTTON_SPACING_DP = 12
+
 @Composable
 fun GameOverScreen(
     score: Int,
@@ -130,7 +161,7 @@ fun GameOverScreen(
                     Brush.verticalGradient(
                         colors = listOf(
                             colors.background,
-                            colors.panelBackground.copy(alpha = 0.8f),
+                            colors.panelBackground.copy(alpha = BG_GRADIENT_MID_ALPHA),
                             colors.background
                         )
                     )
@@ -152,22 +183,22 @@ fun GameOverScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(SECTION_SPACING_DP.dp))
 
             // Score in a card
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(colors.panelBackground.copy(alpha = 0.6f))
-                    .border(1.dp, colors.panelBorder.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
-                    .padding(horizontal = 48.dp, vertical = 24.dp),
+                    .clip(RoundedCornerShape(SCORE_CARD_CORNER_DP.dp))
+                    .background(colors.panelBackground.copy(alpha = SCORE_CARD_BG_ALPHA))
+                    .border(1.dp, colors.panelBorder.copy(alpha = SCORE_CARD_BORDER_ALPHA), RoundedCornerShape(SCORE_CARD_CORNER_DP.dp))
+                    .padding(horizontal = SCORE_CARD_PADDING_H_DP.dp, vertical = SCORE_CARD_PADDING_V_DP.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         "$displayScore",
                         color = colors.textPrimary,
-                        fontSize = 56.sp,
+                        fontSize = SCORE_FONT_SIZE_SP.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = style.tileFontFamily,
                         modifier = Modifier.semantics { contentDescription = finalScoreDesc }
@@ -176,7 +207,7 @@ fun GameOverScreen(
                     Text(
                         stringResource(R.string.best_label, highScore),
                         color = colors.tileTarget,
-                        fontSize = 18.sp,
+                        fontSize = BEST_LABEL_FONT_SIZE_SP.sp,
                         fontFamily = style.bodyFontFamily,
                         modifier = Modifier.semantics { contentDescription = bestScoreDesc }
                     )
@@ -184,21 +215,21 @@ fun GameOverScreen(
             }
 
             if (isNewBest) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(INTER_BUTTON_SPACING_DP.dp))
                 val inf = rememberInfiniteTransition(label = "nb")
-                val glow by inf.animateFloat(0.6f, 1.0f, infiniteRepeatable(tween(500), RepeatMode.Reverse), label = "g")
+                val glow by inf.animateFloat(NEW_BEST_GLOW_MIN, 1.0f, infiniteRepeatable(tween(NEW_BEST_GLOW_DURATION_MS), RepeatMode.Reverse), label = "g")
                 // New best badge
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(colors.tileTarget.copy(alpha = 0.15f))
-                        .border(1.dp, colors.tileTarget.copy(alpha = glow), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                        .clip(RoundedCornerShape(NEW_BEST_CORNER_DP.dp))
+                        .background(colors.tileTarget.copy(alpha = NEW_BEST_BG_ALPHA))
+                        .border(1.dp, colors.tileTarget.copy(alpha = glow), RoundedCornerShape(NEW_BEST_CORNER_DP.dp))
+                        .padding(horizontal = NEW_BEST_PADDING_H_DP.dp, vertical = NEW_BEST_PADDING_V_DP.dp)
                 ) {
                     Text(
                         stringResource(R.string.new_best),
                         color = colors.tileTarget.copy(alpha = glow),
-                        fontSize = 18.sp,
+                        fontSize = NEW_BEST_FONT_SIZE_SP.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = style.headerFontFamily,
                         modifier = Modifier.semantics { contentDescription = newBestDesc }
@@ -206,11 +237,11 @@ fun GameOverScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(SECTION_SPACING_DP.dp))
 
             if (isReviveEligible) {
                 val inf = rememberInfiniteTransition(label = "rv")
-                val rvGlow by inf.animateFloat(0.7f, 1.0f, infiniteRepeatable(tween(400), RepeatMode.Reverse), label = "rv")
+                val rvGlow by inf.animateFloat(REVIVE_GLOW_MIN, 1.0f, infiniteRepeatable(tween(REVIVE_GLOW_DURATION_MS), RepeatMode.Reverse), label = "rv")
                 Button(
                     onClick = onRevive,
                     colors = ButtonDefaults.buttonColors(
@@ -233,7 +264,7 @@ fun GameOverScreen(
                         fontFamily = style.bodyFontFamily
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(INTER_BUTTON_SPACING_DP.dp))
             }
 
             Button(
@@ -255,8 +286,8 @@ fun GameOverScreen(
                     fontFamily = style.headerFontFamily
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Spacer(modifier = Modifier.height(INTER_BUTTON_SPACING_DP.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(INTER_BUTTON_SPACING_DP.dp)) {
                 Button(
                     onClick = onShare,
                     colors = ButtonDefaults.buttonColors(

@@ -28,15 +28,30 @@ import com.xarlord.numbertap.R
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeStyle
 
+// Scanline overlay constants
+private const val SCANLINE_ALPHA = 0.08f
+private const val SCANLINE_HEIGHT_DP = 3
+private const val SCANLINE_GAP_DP = 2
+
+// Pause overlay constants
+private const val PAUSE_DIM_ALPHA = 0.7f
+private const val PAUSE_TITLE_FONT_SIZE_SP = 36
+private const val PAUSE_SUBTITLE_FONT_SIZE_SP = 16
+private const val PAUSE_SPACING_DP = 16
+
+// Urgency vignette constants
+private const val VIGNette_WIDTH_RATIO = 0.25f
+private const val VIGNETTE_ALPHA_BASE = 0.25f
+
 @Composable
 internal fun ScanlineOverlay() {
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val lineHeight = 3.dp.toPx()
-        val gap = 2.dp.toPx()
+        val lineHeight = SCANLINE_HEIGHT_DP.dp.toPx()
+        val gap = SCANLINE_GAP_DP.dp.toPx()
         var y = 0f
         while (y < size.height) {
             drawRect(
-                color = Color.Black.copy(alpha = 0.08f),
+                color = Color.Black.copy(alpha = SCANLINE_ALPHA),
                 topLeft = Offset(0f, y),
                 size = Size(size.width, lineHeight)
             )
@@ -56,7 +71,7 @@ internal fun PauseOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.7f))
+            .background(Color.Black.copy(alpha = PAUSE_DIM_ALPHA))
             .semantics {
                 contentDescription = pausedDesc
                 role = Role.Button
@@ -65,9 +80,9 @@ internal fun PauseOverlay(
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.paused), color = colors.textPrimary, fontSize = 36.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(stringResource(R.string.tap_to_resume), color = colors.textSecondary, fontSize = 16.sp, fontFamily = style.bodyFontFamily)
+            Text(stringResource(R.string.paused), color = colors.textPrimary, fontSize = PAUSE_TITLE_FONT_SIZE_SP.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
+            Spacer(modifier = Modifier.height(PAUSE_SPACING_DP.dp))
+            Text(stringResource(R.string.tap_to_resume), color = colors.textSecondary, fontSize = PAUSE_SUBTITLE_FONT_SIZE_SP.sp, fontFamily = style.bodyFontFamily)
         }
     }
 }
@@ -77,11 +92,11 @@ internal fun UrgencyVignette(vignetteColor: Color, pulse: Float) {
     Canvas(modifier = Modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
-        val vw = w * 0.25f * pulse
-        val vh = h * 0.25f * pulse
-        drawRect(Brush.horizontalGradient(listOf(vignetteColor.copy(alpha = 0.25f * pulse), Color.Transparent), 0f, vw))
-        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, vignetteColor.copy(alpha = 0.25f * pulse)), w - vw, w))
-        drawRect(Brush.verticalGradient(listOf(vignetteColor.copy(alpha = 0.25f * pulse), Color.Transparent), 0f, vh))
-        drawRect(Brush.verticalGradient(listOf(Color.Transparent, vignetteColor.copy(alpha = 0.25f * pulse)), h - vh, h))
+        val vw = w * VIGNette_WIDTH_RATIO * pulse
+        val vh = h * VIGNette_WIDTH_RATIO * pulse
+        drawRect(Brush.horizontalGradient(listOf(vignetteColor.copy(alpha = VIGNETTE_ALPHA_BASE * pulse), Color.Transparent), 0f, vw))
+        drawRect(Brush.horizontalGradient(listOf(Color.Transparent, vignetteColor.copy(alpha = VIGNETTE_ALPHA_BASE * pulse)), w - vw, w))
+        drawRect(Brush.verticalGradient(listOf(vignetteColor.copy(alpha = VIGNETTE_ALPHA_BASE * pulse), Color.Transparent), 0f, vh))
+        drawRect(Brush.verticalGradient(listOf(Color.Transparent, vignetteColor.copy(alpha = VIGNETTE_ALPHA_BASE * pulse)), h - vh, h))
     }
 }
