@@ -40,7 +40,7 @@ private const val PAUSE_SUBTITLE_FONT_SIZE_SP = 16
 private const val PAUSE_SPACING_DP = 16
 
 // Urgency vignette constants
-private const val VIGNette_WIDTH_RATIO = 0.25f
+private const val VIGNETTE_WIDTH_RATIO = 0.25f
 private const val VIGNETTE_ALPHA_BASE = 0.25f
 
 @Composable
@@ -92,8 +92,8 @@ internal fun UrgencyVignette(vignetteColor: Color, pulse: Float) {
     Canvas(modifier = Modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
-        val vw = w * VIGNette_WIDTH_RATIO * pulse
-        val vh = h * VIGNette_WIDTH_RATIO * pulse
+        val vw = w * VIGNETTE_WIDTH_RATIO * pulse
+        val vh = h * VIGNETTE_WIDTH_RATIO * pulse
         drawRect(Brush.horizontalGradient(listOf(vignetteColor.copy(alpha = VIGNETTE_ALPHA_BASE * pulse), Color.Transparent), 0f, vw))
         drawRect(Brush.horizontalGradient(listOf(Color.Transparent, vignetteColor.copy(alpha = VIGNETTE_ALPHA_BASE * pulse)), w - vw, w))
         drawRect(Brush.verticalGradient(listOf(vignetteColor.copy(alpha = VIGNETTE_ALPHA_BASE * pulse), Color.Transparent), 0f, vh))

@@ -76,6 +76,9 @@ private const val SCORE_CARD_PADDING_V_DP = 24
 // Score text
 private const val SCORE_FONT_SIZE_SP = 56
 private const val BEST_LABEL_FONT_SIZE_SP = 18
+private const val GAME_OVER_FONT_SIZE_SP = 32
+private const val SCORE_BEST_SPACER_DP = 8
+private const val BORDER_WIDTH_DP = 1
 
 // New-best badge
 private const val NEW_BEST_GLOW_MIN = 0.6f
@@ -87,12 +90,27 @@ private const val NEW_BEST_PADDING_V_DP = 8
 private const val NEW_BEST_FONT_SIZE_SP = 18
 
 // Revive button
+private const val REVIVE_BTN_WIDTH_DP = 260
+private const val REVIVE_BTN_HEIGHT_DP = 50
+private const val REVIVE_BTN_SHADOW_DP = 4
+private const val REVIVE_FONT_SIZE_SP = 14
 private const val REVIVE_GLOW_MIN = 0.7f
 private const val REVIVE_GLOW_DURATION_MS = 400
 
 // Layout spacing
 private const val SECTION_SPACING_DP = 32
 private const val INTER_BUTTON_SPACING_DP = 12
+
+// Play Again button
+private const val PLAY_AGAIN_BTN_WIDTH_DP = 220
+private const val PLAY_AGAIN_BTN_HEIGHT_DP = 54
+private const val PLAY_AGAIN_BTN_SHADOW_DP = 6
+private const val PLAY_AGAIN_FONT_SIZE_SP = 20
+
+// Share / Menu buttons
+private const val SECONDARY_BTN_WIDTH_DP = 104
+private const val SECONDARY_BTN_HEIGHT_DP = 46
+private const val SECONDARY_FONT_SIZE_SP = 13
 
 @Composable
 fun GameOverScreen(
@@ -173,7 +191,7 @@ fun GameOverScreen(
             Text(
                 stringResource(R.string.game_over),
                 color = colors.failure,
-                fontSize = 32.sp,
+                fontSize = GAME_OVER_FONT_SIZE_SP.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = style.headerFontFamily,
                 textAlign = TextAlign.Center,
@@ -190,7 +208,7 @@ fun GameOverScreen(
                 modifier = Modifier
                     .clip(RoundedCornerShape(SCORE_CARD_CORNER_DP.dp))
                     .background(colors.panelBackground.copy(alpha = SCORE_CARD_BG_ALPHA))
-                    .border(1.dp, colors.panelBorder.copy(alpha = SCORE_CARD_BORDER_ALPHA), RoundedCornerShape(SCORE_CARD_CORNER_DP.dp))
+                    .border(BORDER_WIDTH_DP.dp, colors.panelBorder.copy(alpha = SCORE_CARD_BORDER_ALPHA), RoundedCornerShape(SCORE_CARD_CORNER_DP.dp))
                     .padding(horizontal = SCORE_CARD_PADDING_H_DP.dp, vertical = SCORE_CARD_PADDING_V_DP.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -203,7 +221,7 @@ fun GameOverScreen(
                         fontFamily = style.tileFontFamily,
                         modifier = Modifier.semantics { contentDescription = finalScoreDesc }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(SCORE_BEST_SPACER_DP.dp))
                     Text(
                         stringResource(R.string.best_label, highScore),
                         color = colors.tileTarget,
@@ -223,7 +241,7 @@ fun GameOverScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(NEW_BEST_CORNER_DP.dp))
                         .background(colors.tileTarget.copy(alpha = NEW_BEST_BG_ALPHA))
-                        .border(1.dp, colors.tileTarget.copy(alpha = glow), RoundedCornerShape(NEW_BEST_CORNER_DP.dp))
+                        .border(BORDER_WIDTH_DP.dp, colors.tileTarget.copy(alpha = glow), RoundedCornerShape(NEW_BEST_CORNER_DP.dp))
                         .padding(horizontal = NEW_BEST_PADDING_H_DP.dp, vertical = NEW_BEST_PADDING_V_DP.dp)
                 ) {
                     Text(
@@ -250,8 +268,8 @@ fun GameOverScreen(
                     ),
                     shape = shape,
                     modifier = Modifier
-                        .size(width = 260.dp, height = 50.dp)
-                        .shadow(4.dp, shape)
+                        .size(width = REVIVE_BTN_WIDTH_DP.dp, height = REVIVE_BTN_HEIGHT_DP.dp)
+                        .shadow(REVIVE_BTN_SHADOW_DP.dp, shape)
                         .semantics {
                             contentDescription = reviveDesc
                             role = Role.Button
@@ -259,7 +277,7 @@ fun GameOverScreen(
                 ) {
                     Text(
                         stringResource(R.string.revive_button),
-                        fontSize = 14.sp,
+                        fontSize = REVIVE_FONT_SIZE_SP.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = style.bodyFontFamily
                     )
@@ -275,13 +293,13 @@ fun GameOverScreen(
                 ),
                 shape = shape,
                 modifier = Modifier
-                    .size(width = 220.dp, height = 54.dp)
-                    .shadow(6.dp, shape)
+                    .size(width = PLAY_AGAIN_BTN_WIDTH_DP.dp, height = PLAY_AGAIN_BTN_HEIGHT_DP.dp)
+                    .shadow(PLAY_AGAIN_BTN_SHADOW_DP.dp, shape)
                     .semantics { contentDescription = playAgainDesc; role = Role.Button }
             ) {
                 Text(
                     stringResource(R.string.play_again),
-                    fontSize = 20.sp,
+                    fontSize = PLAY_AGAIN_FONT_SIZE_SP.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = style.headerFontFamily
                 )
@@ -296,10 +314,10 @@ fun GameOverScreen(
                     ),
                     shape = shape,
                     modifier = Modifier
-                        .size(width = 104.dp, height = 46.dp)
+                        .size(width = SECONDARY_BTN_WIDTH_DP.dp, height = SECONDARY_BTN_HEIGHT_DP.dp)
                         .semantics { contentDescription = shareDesc; role = Role.Button }
                 ) {
-                    Text(stringResource(R.string.share), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
+                    Text(stringResource(R.string.share), fontSize = SECONDARY_FONT_SIZE_SP.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
                 }
                 Button(
                     onClick = onMenu,
@@ -309,10 +327,10 @@ fun GameOverScreen(
                     ),
                     shape = shape,
                     modifier = Modifier
-                        .size(width = 104.dp, height = 46.dp)
+                        .size(width = SECONDARY_BTN_WIDTH_DP.dp, height = SECONDARY_BTN_HEIGHT_DP.dp)
                         .semantics { contentDescription = menuDesc; role = Role.Button }
                 ) {
-                    Text(stringResource(R.string.menu), fontSize = 13.sp, fontFamily = style.bodyFontFamily)
+                    Text(stringResource(R.string.menu), fontSize = SECONDARY_FONT_SIZE_SP.sp, fontFamily = style.bodyFontFamily)
                 }
             }
         }
