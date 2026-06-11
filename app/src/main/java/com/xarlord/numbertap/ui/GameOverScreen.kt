@@ -63,6 +63,18 @@ private const val CONFETTI_PARTICLE_COUNT = 30
 private const val CONFETTI_DURATION_MS = 3000
 private const val CONFETTI_ALPHA = 0.7f
 
+// Confetti particle generation seeds
+private const val CONFETTI_SEED_X = 42
+private const val CONFETTI_SEED_SPEED = 137
+private const val CONFETTI_SEED_COLOR = 256
+private const val CONFETTI_COLOR_COUNT = 4
+
+// Confetti physics
+private const val CONFETTI_SPEED_MULTIPLIER = 3f
+private const val CONFETTI_WRAP_FACTOR = 1.2f
+private const val CONFETTI_BASE_SIZE = 4f
+private const val CONFETTI_SIZE_VARIANCE = 5f
+
 // Background gradient
 private const val BG_GRADIENT_MID_ALPHA = 0.8f
 
@@ -344,9 +356,9 @@ private fun ConfettiAnimation(colors: ThemeColors) {
     val particles = remember {
         (0..CONFETTI_PARTICLE_COUNT).map {
             Triple(
-                Random(seed = 42 + it).nextFloat(),
-                Random(seed = 137 + it).nextFloat(),
-                Random(seed = 256 + it).nextInt(0, 4)
+                Random(seed = CONFETTI_SEED_X + it).nextFloat(),
+                Random(seed = CONFETTI_SEED_SPEED + it).nextFloat(),
+                Random(seed = CONFETTI_SEED_COLOR + it).nextInt(0, CONFETTI_COLOR_COUNT)
             )
         }
     }
@@ -355,8 +367,8 @@ private fun ConfettiAnimation(colors: ThemeColors) {
     Canvas(modifier = Modifier.fillMaxSize()) {
         particles.forEach { (bx, speed, ci) ->
             val x = bx * size.width
-            val y = ((phase * speed * 3) % 1.2f) * size.height
-            val particleSize = 4f + speed * 5f
+            val y = ((phase * speed * CONFETTI_SPEED_MULTIPLIER) % CONFETTI_WRAP_FACTOR) * size.height
+            val particleSize = CONFETTI_BASE_SIZE + speed * CONFETTI_SIZE_VARIANCE
             // Mix rectangles and circles for variety
             if (ci % 2 == 0) {
                 drawRect(particleColors[ci], topLeft = Offset(x, y), size = Size(particleSize, particleSize), alpha = CONFETTI_ALPHA)
