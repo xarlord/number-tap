@@ -39,7 +39,7 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest --console=plain
 
-      - name: Verify coverage ≥ 90%
+      - name: Verify coverage ≥ 60%
         run: ./gradlew koverVerify --console=plain
 
       - name: Generate coverage report
