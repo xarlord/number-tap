@@ -11,6 +11,7 @@ import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,6 +46,7 @@ import kotlinx.coroutines.isActive
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()  // #198: explicit edge-to-edge with proper insets handling
         NotificationScheduler.createChannel(this)
 
         // Initialize AdMob SDK
@@ -110,7 +112,7 @@ private fun saveMusicEnabled(context: Context, enabled: Boolean) {
 }
 
 private fun loadHardMode(context: Context): Boolean =
-    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_HARD_MODE, false)
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_HARD_MODE, true)  // #197: default HARD
 
 private fun saveHardMode(context: Context, enabled: Boolean) {
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_HARD_MODE, enabled).apply()

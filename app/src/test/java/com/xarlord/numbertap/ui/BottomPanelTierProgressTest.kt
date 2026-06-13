@@ -31,62 +31,62 @@ class BottomPanelTierProgressTest {
     // --- Default-tier coverage ---
 
     @Test
-    fun `score 0 resolves to EASY tier (index 0)`() {
+    fun `score 0 resolves to NORMAL tier (index 0)`() {
         val info = computeTierProgress(0)
         assertEquals(0, info.tierIndex)
-        assertEquals(16, info.nextThreshold)
-        // At score 0, range is 16-0 = 16, progress = 0/16 = 0
+        assertEquals(20, info.nextThreshold)
+        // At score 0, range is 20-0 = 20, progress = 0/20 = 0
         assertEquals(0f, info.progress, 0.001f)
     }
 
     @Test
-    fun `score 8 is halfway through EASY tier`() {
-        val info = computeTierProgress(8)
+    fun `score 10 is halfway through NORMAL tier`() {
+        val info = computeTierProgress(10)
         assertEquals(0, info.tierIndex)
-        assertEquals(16, info.nextThreshold)
-        // progress = 8/16 = 0.5
+        assertEquals(20, info.nextThreshold)
+        // progress = 10/20 = 0.5
         assertEquals(0.5f, info.progress, 0.001f)
     }
 
     @Test
-    fun `score 16 at MEDIUM boundary resolves to tier 1`() {
-        val info = computeTierProgress(16)
+    fun `score 20 at FLIP boundary resolves to tier 1`() {
+        val info = computeTierProgress(20)
         assertEquals(1, info.tierIndex)
-        assertEquals(41, info.nextThreshold)
-        // progress = (16 - 16) / (41 - 16) = 0
+        assertEquals(50, info.nextThreshold)
+        // progress = (20 - 20) / (50 - 20) = 0
         assertEquals(0f, info.progress, 0.001f)
     }
 
     @Test
-    fun `score 28 is halfway through MEDIUM tier`() {
-        val info = computeTierProgress(28)
+    fun `score 35 is halfway through FLIP tier`() {
+        val info = computeTierProgress(35)
         assertEquals(1, info.tierIndex)
-        assertEquals(41, info.nextThreshold)
-        // progress = (28 - 16) / (41 - 16) = 12/25 = 0.48
-        assertEquals(0.48f, info.progress, 0.001f)
+        assertEquals(50, info.nextThreshold)
+        // progress = (35 - 20) / (50 - 20) = 15/30 = 0.5
+        assertEquals(0.5f, info.progress, 0.001f)
     }
 
     @Test
-    fun `score 41 at HARD boundary resolves to tier 2`() {
-        val info = computeTierProgress(41)
+    fun `score 50 at EXPERT boundary resolves to tier 2`() {
+        val info = computeTierProgress(50)
         assertEquals(2, info.tierIndex)
-        assertEquals(66, info.nextThreshold)
-        // progress = (41 - 41) / (66 - 41) = 0
+        assertEquals(100, info.nextThreshold)
+        // progress = (50 - 50) / (100 - 50) = 0
         assertEquals(0f, info.progress, 0.001f)
     }
 
     @Test
-    fun `score 53 is halfway through HARD tier`() {
-        val info = computeTierProgress(53)
+    fun `score 75 is halfway through EXPERT tier`() {
+        val info = computeTierProgress(75)
         assertEquals(2, info.tierIndex)
-        assertEquals(66, info.nextThreshold)
-        // progress = (53 - 41) / (66 - 41) = 12/25 = 0.48
-        assertEquals(0.48f, info.progress, 0.001f)
+        assertEquals(100, info.nextThreshold)
+        // progress = (75 - 50) / (100 - 50) = 25/50 = 0.5
+        assertEquals(0.5f, info.progress, 0.001f)
     }
 
     @Test
-    fun `score 66 at INSANE boundary resolves to max tier (index 3)`() {
-        val info = computeTierProgress(66)
+    fun `score 100 at INSANE boundary resolves to max tier (index 3)`() {
+        val info = computeTierProgress(100)
         assertEquals(3, info.tierIndex)
         assertNull(info.nextThreshold)
         assertEquals(1f, info.progress, 0.001f)
@@ -105,10 +105,10 @@ class BottomPanelTierProgressTest {
     @Test
     fun `custom thresholds produce correct tier index and progress`() {
         DifficultyConfig.tiers = listOf(
-            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
-            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 10),
-            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 20),
-            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 30, isChaosMode = true)
+            DifficultyTier(4, 4, 1.0, 1.5, "NORMAL", scoreThreshold = 0),
+            DifficultyTier(4, 4, 0.8, 2.0, "FLIP", scoreThreshold = 10, shouldFlipTiles = true),
+            DifficultyTier(5, 5, 0.6, 2.5, "EXPERT", scoreThreshold = 20, shouldFlipTiles = true),
+            DifficultyTier(6, 6, 0.5, 3.0, "INSANE", scoreThreshold = 30, shouldFlipTiles = true, isChaosMode = true)
         )
         val info = computeTierProgress(15)
         assertEquals(1, info.tierIndex)
@@ -120,25 +120,25 @@ class BottomPanelTierProgressTest {
     // --- Edge cases ---
 
     @Test
-    fun `progress is 0 at lower bound of EASY tier`() {
+    fun `progress is 0 at lower bound of NORMAL tier`() {
         val info = computeTierProgress(0)
         assertEquals(0f, info.progress, 0.001f)
     }
 
     @Test
     fun `progress never exceeds 1f within a tier`() {
-        // Score 15 in EASY tier: progress = 15/16, should be < 1
-        val info = computeTierProgress(15)
+        // Score 19 in NORMAL tier: progress = 19/20, should be < 1
+        val info = computeTierProgress(19)
         assertEquals(0, info.tierIndex)
-        assertEquals(0.9375f, info.progress, 0.001f)
+        assertEquals(0.95f, info.progress, 0.001f)
     }
 
     @Test
     fun `division-by-zero guard returns 1f when current and next thresholds are equal`() {
         // Degenerate config where two consecutive tiers share the same threshold
         DifficultyConfig.tiers = listOf(
-            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
-            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 0)  // same threshold!
+            DifficultyTier(4, 4, 1.0, 1.5, "NORMAL", scoreThreshold = 0),
+            DifficultyTier(4, 4, 0.8, 2.0, "FLIP", scoreThreshold = 0, shouldFlipTiles = true)  // same threshold!
         )
         val info = computeTierProgress(0)
         // range = 0 - 0 = 0, guard returns 1f
@@ -148,7 +148,7 @@ class BottomPanelTierProgressTest {
     @Test
     fun `single tier config has null next threshold and progress 1f`() {
         DifficultyConfig.tiers = listOf(
-            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0)
+            DifficultyTier(4, 4, 1.0, 1.5, "NORMAL", scoreThreshold = 0)
         )
         val info = computeTierProgress(0)
         assertEquals(0, info.tierIndex)

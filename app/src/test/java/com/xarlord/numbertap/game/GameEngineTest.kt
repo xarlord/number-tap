@@ -431,10 +431,10 @@ class GameEngineTest {
     // --- grid transition test ---
 
     @Test
-    fun `grid expands from 4x4 to 5x5 at score 41`() {
+    fun `grid expands from 4x4 to 5x5 at score 50`() {
         var currentState = state
         val time = System.currentTimeMillis()
-        for (i in 1..41) {
+        for (i in 1..50) {
             val pos = findTileWithValue(currentState, i)
             if (pos != null) {
                 val (newState, _) = engine.onTap(currentState, pos.first, pos.second, time + i * 100)
@@ -449,17 +449,17 @@ class GameEngineTest {
     fun `grid transition generates correct value range`() {
         var currentState = state
         val time = System.currentTimeMillis()
-        for (i in 1..41) {
+        for (i in 1..50) {
             val pos = findTileWithValue(currentState, i)
             if (pos != null) {
                 val (newState, _) = engine.onTap(currentState, pos.first, pos.second, time + i * 100)
                 currentState = newState
             }
         }
-        // Grid should contain values starting from target (42) to target+24 (66)
+        // Grid should contain values starting from target (51) to target+24 (75)
         val values = currentState.tiles.flatten().map { it.currentValue }.sorted()
-        assertEquals(42, values.first())
-        assertEquals(66, values.last())
+        assertEquals(51, values.first())
+        assertEquals(75, values.last())
     }
 
     // --- Fisher-Yates shuffle test ---
@@ -570,9 +570,9 @@ class GameEngineTest {
     }
 
     @Test
-    fun `chaosTick returns unchanged state when score is below INSANE tier`() {
-        // Score 65 is still HARD tier, not INSANE
-        val playingState = state.copy(isPlaying = true, score = 65)
+    fun `chaosTick returns unchanged state when score is below FLIP tier`() {
+        // Score 15 is still NORMAL tier, not FLIP
+        val playingState = state.copy(isPlaying = true, score = 15)
         val result = engine.chaosTick(playingState)
         assertTrue(result.hiddenTileIds.isEmpty())
     }
@@ -581,7 +581,7 @@ class GameEngineTest {
     fun `chaosTick reveals previously hidden tiles`() {
         val playingState = state.copy(
             isPlaying = true,
-            score = 66,
+            score = 100,
             hiddenTileIds = setOf(1, 2, 3)
         )
         val result = engine.chaosTick(playingState)
@@ -590,7 +590,7 @@ class GameEngineTest {
 
     @Test
     fun `chaosTick hides random non-target tiles in INSANE tier`() {
-        val playingState = state.copy(isPlaying = true, score = 66)
+        val playingState = state.copy(isPlaying = true, score = 100)
         val result = engine.chaosTick(playingState)
         // Should have hidden 2-3 tiles
         assertTrue("Should hide 2-3 tiles, got ${result.hiddenTileIds.size}", result.hiddenTileIds.size in 2..3)
@@ -601,7 +601,7 @@ class GameEngineTest {
 
     @Test
     fun `chaosTick alternates hide and reveal`() {
-        val playingState = state.copy(isPlaying = true, score = 66)
+        val playingState = state.copy(isPlaying = true, score = 100)
         // First call: hide tiles
         val hidden = engine.chaosTick(playingState)
         assertTrue(hidden.hiddenTileIds.isNotEmpty())
@@ -637,37 +637,37 @@ class GameEngineTest {
     }
 
     @Test
-    fun `INSANE_MODE tier announcement at score 66`() {
+    fun `INSANE_MODE tier announcement at score 100`() {
         var currentState = state
         val time = System.currentTimeMillis()
-        // Progress to score 66 to trigger INSANE_MODE announcement
-        for (i in 1..66) {
+        // Progress to score 100 to trigger INSANE_MODE announcement
+        for (i in 1..100) {
             val pos = findTileWithValue(currentState, i)
             if (pos != null) {
                 val (newState, _) = engine.onTap(currentState, pos.first, pos.second, time + i * 100)
                 currentState = newState
             }
         }
-        assertEquals(66, currentState.score)
+        assertEquals(100, currentState.score)
         assertEquals(TierAnnouncement.INSANE_MODE, currentState.tierAnnouncement)
     }
 
     // --- difficulty progression integration ---
 
     @Test
-    fun `medium tier reduces time gain`() {
+    fun `flip tier reduces time gain`() {
         var currentState = state
         val time = System.currentTimeMillis()
-        // Get to score 16 (medium tier)
-        for (i in 1..16) {
+        // Get to score 20 (flip tier)
+        for (i in 1..20) {
             val pos = findTileWithValue(currentState, i)
             if (pos != null) {
                 val (newState, _) = engine.onTap(currentState, pos.first, pos.second, time + i * 100)
                 currentState = newState
             }
         }
-        assertEquals(16, currentState.score)
-        // The 16th tap used medium tier config (0.7s gain)
+        assertEquals(20, currentState.score)
+        // The 20th tap used flip tier config (0.8s gain)
     }
 
     // --- helper ---

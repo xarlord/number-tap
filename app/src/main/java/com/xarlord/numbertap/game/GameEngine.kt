@@ -226,25 +226,40 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
     }
 
     /**
-     * Chaos mode tick: randomly hide non-target tiles in INSANE tier.
+     * Chaos/flip mode tick: randomly hide non-target tiles.
+     * - INSANE tier: 2-3 tiles hidden/revealed periodically
+     * - FLIP/EXPERT tiers: ~50% of non-target tiles are flipped to "?"
      * Called periodically from the game loop.
+     * #199: Progressive flip difficulty
      */
     fun chaosTick(state: GameState): GameState {
         val tier = DifficultyConfig.tierForScore(state.score)
-        if (!tier.isChaosMode || !state.isPlaying || state.isPaused) return state
+        if (!state.isPlaying || state.isPaused) return state
 
-        // If tiles are already hidden, reveal them
-        if (state.hiddenTileIds.isNotEmpty()) {
-            return state.copy(hiddenTileIds = emptySet())
+        if (tier.isChaosMode) {
+            // INSANE mode: hide/reveal 2-3 tiles every tick
+            if (state.hiddenTileIds.isNotEmpty()) {
+                return state.copy(hiddenTileIds = emptySet())
+            }
+            val allIds = state.tiles.flatten()
+                .filter { it.currentValue != state.targetNumber }
+                .map { it.id }
+            val count = (2..3).random()
+            val hidden = allIds.shuffled().take(minOf(count, allIds.size)).toSet()
+            return state.copy(hiddenTileIds = hidden)
         }
 
-        // Pick 2-3 random non-target tile IDs to hide
-        val allIds = state.tiles.flatten()
-            .filter { it.currentValue != state.targetNumber }
-            .map { it.id }
-        val count = (2..3).random()
-        val hidden = allIds.shuffled().take(minOf(count, allIds.size)).toSet()
-        return state.copy(hiddenTileIds = hidden)
+        // #199: Flip mode — ~50% of non-target tiles show "?"
+        if (tier.shouldFlipTiles) {
+            val nonTargetIds = state.tiles.flatten()
+                .filter { it.currentValue != state.targetNumber }
+                .map { it.id }
+            val flipCount = nonTargetIds.size / 2
+            val flipped = nonTargetIds.shuffled().take(flipCount).toSet()
+            return state.copy(hiddenTileIds = flipped)
+        }
+
+        return state.copy(hiddenTileIds = emptySet())
     }
 
     fun pause(state: GameState): GameState {

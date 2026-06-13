@@ -27,7 +27,13 @@ internal fun GridContainer(
     colors: ThemeColors,
     style: ThemeStyle
 ) {
-    val tileSize = if (isTutorial) 88.dp else if (tiles.size <= 4) 78.dp else 64.dp
+    // #199: Dynamic tile sizes for 4x4, 5x5, and 6x6 grids
+    val tileSize = when {
+        isTutorial -> 88.dp
+        tiles.size <= 4 -> 78.dp
+        tiles.size == 5 -> 64.dp
+        else -> 52.dp  // 6x6 grid
+    }
 
     Column(
         modifier = Modifier.offset { IntOffset(shakeOffsetPx.first.toInt(), shakeOffsetPx.second.toInt()) },

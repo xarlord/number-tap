@@ -11,19 +11,26 @@ data class DifficultyTier(
     val timePenaltySeconds: Double,
     val label: String = "",
     val scoreThreshold: Int = 0,
-    val isChaosMode: Boolean = false  // #194: type-safe chaos mode flag
+    val isChaosMode: Boolean = false,  // #194: type-safe chaos mode flag
+    val shouldFlipTiles: Boolean = false  // #199: flip non-target tiles to "?"
 ) {
     val gridSize: Int get() = gridRows * gridCols
 }
 
 object DifficultyConfig {
 
-    /** Default tiers per GDD §5.1 — can be overridden for tuning */
+    /**
+     * Difficulty tiers per GDD §5.1 (#199).
+     * - 0–20:   4×4 normal
+     * - 20–50:  4×4 with flipped tiles
+     * - 50–100: 5×5 with flipped tiles
+     * - 100+:   6×6 with flipped tiles
+     */
     var tiers: List<DifficultyTier> = listOf(
-        DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
-        DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
-        DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
-        DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
+        DifficultyTier(4, 4, 1.0, 1.5, "NORMAL", scoreThreshold = 0),
+        DifficultyTier(4, 4, 0.8, 2.0, "FLIP", scoreThreshold = 20, shouldFlipTiles = true),
+        DifficultyTier(5, 5, 0.6, 2.5, "EXPERT", scoreThreshold = 50, shouldFlipTiles = true),
+        DifficultyTier(6, 6, 0.5, 3.0, "INSANE", scoreThreshold = 100, shouldFlipTiles = true, isChaosMode = true)
     )
 
     /** Starting countdown time in seconds */
@@ -52,10 +59,10 @@ object DifficultyConfig {
     /** Reset to GDD defaults */
     fun resetDefaults() {
         tiers = listOf(
-            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
-            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
-            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
-            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
+            DifficultyTier(4, 4, 1.0, 1.5, "NORMAL", scoreThreshold = 0),
+            DifficultyTier(4, 4, 0.8, 2.0, "FLIP", scoreThreshold = 20, shouldFlipTiles = true),
+            DifficultyTier(5, 5, 0.6, 2.5, "EXPERT", scoreThreshold = 50, shouldFlipTiles = true),
+            DifficultyTier(6, 6, 0.5, 3.0, "INSANE", scoreThreshold = 100, shouldFlipTiles = true, isChaosMode = true)
         )
         startingTime = 30.0
         tickIntervalMs = 16L

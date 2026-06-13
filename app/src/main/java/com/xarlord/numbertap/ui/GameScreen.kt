@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -63,6 +65,8 @@ fun GameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(colors.background)
+                .statusBarsPadding()  // #198: respect status bar / camera island
+                .navigationBarsPadding()  // #198: respect navigation bar
         ) {
             // === TOP: Stats Bar (fixed height) ===
             TopBar(gameState, colors, style, onPauseClick, urgentPulse)
