@@ -21,6 +21,7 @@
     <!-- Tier labels -->
     <string name="round_2">ROUND 2!</string>
     <string name="hard_mode">HARD MODE!</string>
+    <string name="insane_mode">INSANE MODE!</string>
     <string name="nice">NICE!</string>
     <string name="great">GREAT!</string>
     <string name="amazing">AMAZING!</string>
@@ -28,6 +29,7 @@
     <string name="easy">EASY</string>
     <string name="medium">MEDIUM</string>
     <string name="hard">HARD</string>
+    <string name="insane">INSANE</string>
     <string name="max">MAX</string>
 
     <!-- Tutorial -->
@@ -56,6 +58,9 @@
     <string name="start">START</string>
     <string name="how_to_play">HOW TO PLAY</string>
     <string name="style_label">STYLE</string>
+    <string name="mode_normal">NORMAL</string>
+    <string name="mode_hard">HARD</string>
+    <string name="mode_hard_desc">No target highlights</string>
 
     <!-- Share -->
     <string name="share_text">Number Tap - The Ordered Grid\n\nScore: %1$d\nPersonal Best: %2$d\n\nCan you beat my score?</string>

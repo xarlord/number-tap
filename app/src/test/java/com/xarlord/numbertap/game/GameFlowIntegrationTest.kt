@@ -48,8 +48,8 @@ class GameFlowIntegrationTest {
         var state = engine.startNewGame(0)
         val time = System.currentTimeMillis()
 
-        // Each correct tap adds 1.0s, each tick removes 0.016s
-        // With rapid tapping, time should stay relatively stable
+        // Each correct tap adds 1.0s (clamped to max 30s), each tick removes 0.016s
+        // Time is clamped to max 30s (#186), so rapid tapping stays at 30
         for (i in 1..10) {
             val pos = findTileWithValue(state, i)!!
             val (newState, _) = engine.onTap(state, pos.first, pos.second, time + i * 100)
@@ -57,8 +57,8 @@ class GameFlowIntegrationTest {
             state = engine.tick(state, 0.016)
         }
 
-        // Time should be around 30 + (10 * 1.0) - (10 * 0.016) ≈ 39.84
-        assertTrue("Time should be > 30 with correct taps: ${state.timeRemaining}", state.timeRemaining > 30.0)
+        // Time should be clamped near 30 since time cannot exceed max
+        assertTrue("Time should be around 30 with clamping: ${state.timeRemaining}", state.timeRemaining >= 29.0)
     }
 
     @Test

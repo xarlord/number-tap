@@ -35,6 +35,7 @@ fun GameScreen(
     gameState: GameState,
     onTileTap: (row: Int, col: Int) -> Unit,
     onPauseClick: () -> Unit = {},
+    onMenuClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val theme = gameState.currentTheme
@@ -68,6 +69,35 @@ fun GameScreen(
 
             // Timer bar
             TimerBar(gameState.timeRemaining, 30.0, colors)
+
+            // Tier announcement — shown above grid, not over it (#185)
+            gameState.tierAnnouncement?.let { ann ->
+                val announcementText = when (ann) {
+                    TierAnnouncement.ROUND_2 -> strRound2
+                    TierAnnouncement.HARD_MODE -> strHardMode
+                    TierAnnouncement.INSANE_MODE -> stringResource(R.string.insane_mode)
+                    TierAnnouncement.NICE -> stringResource(R.string.nice)
+                    TierAnnouncement.GREAT -> stringResource(R.string.great)
+                    TierAnnouncement.AMAZING -> stringResource(R.string.amazing)
+                    TierAnnouncement.LEGENDARY -> stringResource(R.string.legendary)
+                }
+                Text(
+                    announcementText,
+                    color = when (ann) {
+                        TierAnnouncement.ROUND_2 -> colors.timerWarning
+                        TierAnnouncement.HARD_MODE -> colors.timerUrgent
+                        TierAnnouncement.INSANE_MODE -> colors.failure
+                        else -> colors.tileTarget
+                    },
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = style.headerFontFamily,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
+            }
 
             // === CENTER: Game Grid (takes remaining space) ===
             Box(
@@ -108,35 +138,15 @@ fun GameScreen(
                         shakeOffsetPx = gameState.shakeOffset,
                         onTileTap = onTileTap,
                         isTutorial = gameState.isTutorial,
+                        isHardMode = gameState.isHardMode,
+                        hiddenTileIds = gameState.hiddenTileIds,
                         theme = theme,
                         colors = colors,
                         style = style
                     )
                 }
 
-                // Tier announcement overlay
-                gameState.tierAnnouncement?.let { ann ->
-                    val announcementText = when (ann) {
-                        TierAnnouncement.ROUND_2 -> strRound2
-                        TierAnnouncement.HARD_MODE -> strHardMode
-                        TierAnnouncement.NICE -> stringResource(R.string.nice)
-                        TierAnnouncement.GREAT -> stringResource(R.string.great)
-                        TierAnnouncement.AMAZING -> stringResource(R.string.amazing)
-                        TierAnnouncement.LEGENDARY -> stringResource(R.string.legendary)
-                    }
-                    Text(
-                        announcementText,
-                        color = when (ann) {
-                            TierAnnouncement.ROUND_2 -> colors.timerWarning
-                            TierAnnouncement.HARD_MODE -> colors.timerUrgent
-                            else -> colors.tileTarget
-                        },
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = style.headerFontFamily,
-                        textAlign = TextAlign.Center
-                    )
-                }
+
 
                 // Tutorial overlay
                 if (gameState.isTutorial) {
@@ -165,7 +175,7 @@ fun GameScreen(
 
         // Pause overlay
         if (gameState.isPaused) {
-            PauseOverlay(colors, style, onResume = onPauseClick)
+            PauseOverlay(colors, style, onResume = onPauseClick, onMenu = onMenuClick)
         }
 
         // Urgency vignette
@@ -173,14 +183,6 @@ fun GameScreen(
             UrgencyVignette(colors.vignetteColor, urgentPulse)
         }
 
-        // Debug overlay (debug builds only, toggled via BuildConfig)
-        if (com.xarlord.numbertap.BuildConfig.DEBUG) {
-            DebugOverlay(
-                gameState = gameState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-            )
-        }
+
     }
 }

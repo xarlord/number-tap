@@ -66,12 +66,14 @@ import com.xarlord.numbertap.data.ThemeStyle
 fun MenuScreen(
     highScore: Int,
     currentTheme: GameTheme,
+    isHardMode: Boolean = false,
     coins: Int = 0,
     streak: Int = 0,
     onStartClick: () -> Unit,
     onTutorialClick: () -> Unit = {},
     onThemeChange: (GameTheme) -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    onHardModeToggle: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
@@ -269,6 +271,45 @@ fun MenuScreen(
                     Text(stringResource(R.string.how_to_play), fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = style.bodyFontFamily)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Normal / Hard mode toggle (#188)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.mode_normal),
+                    color = if (!isHardMode) colors.tileTarget else colors.textSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = if (!isHardMode) FontWeight.Bold else FontWeight.Normal,
+                    fontFamily = style.bodyFontFamily,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (!isHardMode) colors.tileTarget.copy(alpha = 0.15f) else Color.Transparent)
+                        .clickable { onHardModeToggle(false) }
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+                Text(
+                    stringResource(R.string.mode_hard),
+                    color = if (isHardMode) colors.failure else colors.textSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = if (isHardMode) FontWeight.Bold else FontWeight.Normal,
+                    fontFamily = style.bodyFontFamily,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isHardMode) colors.failure.copy(alpha = 0.15f) else Color.Transparent)
+                        .clickable { onHardModeToggle(true) }
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
+            if (isHardMode) {
+                Text(
+                    stringResource(R.string.mode_hard_desc),
+                    color = colors.textSecondary.copy(alpha = 0.6f),
+                    fontSize = 10.sp,
+                    fontFamily = style.bodyFontFamily
+                )
             }
 
             // Theme selector

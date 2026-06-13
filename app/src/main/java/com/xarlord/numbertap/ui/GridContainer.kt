@@ -21,6 +21,8 @@ internal fun GridContainer(
     shakeOffsetPx: Pair<Float, Float>,
     onTileTap: (row: Int, col: Int) -> Unit,
     isTutorial: Boolean,
+    isHardMode: Boolean,
+    hiddenTileIds: Set<Int>,
     theme: GameTheme,
     colors: ThemeColors,
     style: ThemeStyle
@@ -39,6 +41,8 @@ internal fun GridContainer(
                         tile = tile,
                         isTarget = tile.currentValue == targetNumber,
                         isTutorial = isTutorial,
+                        isHardMode = isHardMode,
+                        isHidden = tile.id in hiddenTileIds && tile.currentValue != targetNumber,
                         tileSize = tileSize,
                         theme = theme,
                         colors = colors,

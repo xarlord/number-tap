@@ -47,10 +47,26 @@ class DifficultyConfigTest {
     }
 
     @Test
-    fun `tier for score 100 returns 5x5 hard`() {
-        val tier = DifficultyConfig.tierForScore(100)
+    fun `tier for score 65 returns 5x5 hard`() {
+        val tier = DifficultyConfig.tierForScore(65)
         assertEquals(5, tier.gridRows)
         assertEquals(0.5, tier.timeGainSeconds, 0.01)
+    }
+
+    @Test
+    fun `tier for score 66 returns 5x5 insane`() {
+        val tier = DifficultyConfig.tierForScore(66)
+        assertEquals(5, tier.gridRows)
+        assertEquals(5, tier.gridCols)
+        assertEquals(0.4, tier.timeGainSeconds, 0.01)
+        assertEquals(3.5, tier.timePenaltySeconds, 0.01)
+    }
+
+    @Test
+    fun `tier for score 100 returns 5x5 insane`() {
+        val tier = DifficultyConfig.tierForScore(100)
+        assertEquals(5, tier.gridRows)
+        assertEquals(0.4, tier.timeGainSeconds, 0.01)
     }
 
     @Test
@@ -58,19 +74,22 @@ class DifficultyConfigTest {
         val easy = DifficultyConfig.tierForScore(0)
         val medium = DifficultyConfig.tierForScore(16)
         val hard = DifficultyConfig.tierForScore(41)
+        val insane = DifficultyConfig.tierForScore(66)
 
         // Time gain decreases as difficulty increases
         assertTrue(easy.timeGainSeconds > medium.timeGainSeconds)
         assertTrue(medium.timeGainSeconds > hard.timeGainSeconds)
+        assertTrue(hard.timeGainSeconds > insane.timeGainSeconds)
 
         // Time penalty increases as difficulty increases
         assertTrue(easy.timePenaltySeconds < medium.timePenaltySeconds)
         assertTrue(medium.timePenaltySeconds < hard.timePenaltySeconds)
+        assertTrue(hard.timePenaltySeconds < insane.timePenaltySeconds)
     }
 
     @Test
     fun `all tiers have square grids`() {
-        for (score in listOf(0, 15, 16, 40, 41, 100)) {
+        for (score in listOf(0, 15, 16, 40, 41, 65, 66, 100)) {
             val tier = DifficultyConfig.tierForScore(score)
             assertEquals("Grid should be square at score $score", tier.gridRows, tier.gridCols)
         }

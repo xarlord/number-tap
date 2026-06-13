@@ -106,7 +106,24 @@ class GameEngineTest {
     fun `correct tap adds time for easy tier`() {
         val (row, col) = findTileWithValue(state, 1)!!
         val (newState, _) = engine.onTap(state, row, col)
-        assertEquals(31.0, newState.timeRemaining, 0.01)
+        // Time gain is clamped to max INITIAL_TIME_SECONDS (#186)
+        assertEquals(30.0, newState.timeRemaining, 0.01)
+    }
+
+    @Test
+    fun `correct tap adds time when below max time`() {
+        val lowTimeState = state.copy(timeRemaining = 25.0)
+        val (row, col) = findTileWithValue(lowTimeState, 1)!!
+        val (newState, _) = engine.onTap(lowTimeState, row, col)
+        assertEquals(26.0, newState.timeRemaining, 0.01) // 25 + 1.0 = 26
+    }
+
+    @Test
+    fun `correct tap clamps time to max 30 seconds`() {
+        val nearMaxState = state.copy(timeRemaining = 29.5)
+        val (row, col) = findTileWithValue(nearMaxState, 1)!!
+        val (newState, _) = engine.onTap(nearMaxState, row, col)
+        assertEquals(30.0, newState.timeRemaining, 0.01) // 29.5 + 1.0 = 30.5, clamped to 30
     }
 
     @Test

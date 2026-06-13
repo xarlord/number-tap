@@ -36,6 +36,7 @@ internal fun BottomPanel(
     val strEasy = stringResource(R.string.easy)
     val strMedium = stringResource(R.string.medium)
     val strHard = stringResource(R.string.hard)
+    val strInsane = stringResource(R.string.insane)
     val strMax = stringResource(R.string.max)
     val strAcc = stringResource(R.string.stat_acc)
     val strAvg = stringResource(R.string.stat_avg)
@@ -45,17 +46,20 @@ internal fun BottomPanel(
     val tier = when {
         state.score <= 15 -> strEasy
         state.score <= 40 -> strMedium
-        else -> strHard
+        state.score <= 65 -> strHard
+        else -> strInsane
     }
     val nextTierAt = when {
         state.score <= 15 -> 16
         state.score <= 40 -> 41
+        state.score <= 65 -> 66
         else -> null
     }
     val tierProgress = if (nextTierAt != null) {
         when {
             state.score <= 15 -> state.score.toFloat() / 15
             state.score <= 40 -> (state.score - 15).toFloat() / 25
+            state.score <= 65 -> (state.score - 40).toFloat() / 25
             else -> 1f
         }
     } else 1f
@@ -78,7 +82,8 @@ internal fun BottomPanel(
                 color = when (tier) {
                     strEasy -> colors.timerSafe
                     strMedium -> colors.timerWarning
-                    else -> colors.timerUrgent
+                    strHard -> colors.timerUrgent
+                    else -> colors.failure
                 },
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,

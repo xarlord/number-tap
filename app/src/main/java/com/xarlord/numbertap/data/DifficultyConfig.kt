@@ -21,7 +21,8 @@ object DifficultyConfig {
     var tiers: List<DifficultyTier> = listOf(
         DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
         DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
-        DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41)
+        DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
+        DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66)
     )
 
     /** Starting countdown time in seconds */
@@ -52,7 +53,8 @@ object DifficultyConfig {
         tiers = listOf(
             DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
             DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
-            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41)
+            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
+            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66)
         )
         startingTime = 30.0
         tickIntervalMs = 16L
