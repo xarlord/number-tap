@@ -1,10 +1,13 @@
 package com.xarlord.numbertap.game
 
+import com.xarlord.numbertap.data.DifficultyConfig
+import com.xarlord.numbertap.data.DifficultyTier
 import com.xarlord.numbertap.data.FloatingText
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.TierAnnouncement
 import com.xarlord.numbertap.data.TileState
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -619,6 +622,97 @@ class GameEngineTierAnnouncementTest {
     fun `score 1 has no announcement`() {
         val state = playToScore(1)
         assertNull(state.tierAnnouncement)
+    }
+
+    private fun playToScore(targetScore: Int): GameState {
+        var state = engine.startNewGame(0)
+        val time = System.currentTimeMillis()
+        for (i in 1..targetScore) {
+            val pos = findTile(state, i) ?: return state
+            val (newState, _) = engine.onTap(state, pos.first, pos.second, time + i * 100)
+            state = newState
+        }
+        return state
+    }
+
+    private fun findTile(state: GameState, value: Int): Pair<Int, Int>? {
+        state.tiles.forEachIndexed { row, rowTiles ->
+            rowTiles.forEachIndexed { col, tile ->
+                if (tile.currentValue == value) return Pair(row, col)
+            }
+        }
+        return null
+    }
+}
+
+/**
+ * #195: Verify tier transition announcements use DifficultyConfig dynamically
+ * instead of hardcoded score values.
+ */
+class GameEngineDynamicTierAnnouncementTest {
+
+    private val engine = GameEngine()
+
+    @Before
+    fun setUp() {
+        DifficultyConfig.resetDefaults()
+    }
+
+    @After
+    fun tearDown() {
+        DifficultyConfig.resetDefaults()
+    }
+
+    @Test
+    fun `tier transition announcement fires at custom MEDIUM threshold`() {
+        // Set MEDIUM threshold to 8 instead of 16
+        DifficultyConfig.tiers = listOf(
+            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
+            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 8),
+            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
+            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
+        )
+        val state = playToScore(8)
+        assertEquals(TierAnnouncement.ROUND_2, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `tier transition announcement fires at custom HARD threshold`() {
+        DifficultyConfig.tiers = listOf(
+            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
+            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
+            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 30),
+            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
+        )
+        val state = playToScore(30)
+        assertEquals(TierAnnouncement.HARD_MODE, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `tier transition announcement fires at custom INSANE threshold`() {
+        DifficultyConfig.tiers = listOf(
+            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
+            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
+            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
+            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 50, isChaosMode = true)
+        )
+        val state = playToScore(50)
+        assertEquals(TierAnnouncement.INSANE_MODE, state.tierAnnouncement)
+    }
+
+    @Test
+    fun `no tier announcement at old threshold when DifficultyConfig changed`() {
+        // MEDIUM now at score 8, not 16 — score 16 should NOT trigger ROUND_2
+        // (it's already in MEDIUM tier, so no transition)
+        DifficultyConfig.tiers = listOf(
+            DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
+            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 8),
+            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
+            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
+        )
+        val state = playToScore(16)
+        // At score 16 we're still in MEDIUM (threshold 8), so no tier transition
+        assertNotEquals(TierAnnouncement.ROUND_2, state.tierAnnouncement)
     }
 
     private fun playToScore(targetScore: Int): GameState {

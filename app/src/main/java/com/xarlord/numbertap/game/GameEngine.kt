@@ -100,11 +100,16 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
         val timeSinceLastTap = if (state.lastCorrectTapTime > 0) currentTime - state.lastCorrectTapTime else Long.MAX_VALUE
         val newCombo = if (timeSinceLastTap < GameConfig.COMBO_WINDOW_MS) state.comboCount + 1 else 1
 
-        // Tier announcement
-        val tierAnnouncement = when {
-            newScore == 16 && !state.isTutorial -> TierAnnouncement.ROUND_2
-            newScore == 41 && !state.isTutorial -> TierAnnouncement.HARD_MODE
-            newScore == 66 && !state.isTutorial -> TierAnnouncement.INSANE_MODE
+        // Tier announcement (#195: tier transitions use DifficultyConfig, milestones are fixed)
+        val oldTierIndex = DifficultyConfig.currentTierIndex(state.score)
+        val newTierIndex = DifficultyConfig.currentTierIndex(newScore)
+        val tierTransitionAnnouncement = when {
+            newTierIndex >= 3 && oldTierIndex < 3 && !state.isTutorial -> TierAnnouncement.INSANE_MODE
+            newTierIndex >= 2 && oldTierIndex < 2 && !state.isTutorial -> TierAnnouncement.HARD_MODE
+            newTierIndex >= 1 && oldTierIndex < 1 && !state.isTutorial -> TierAnnouncement.ROUND_2
+            else -> null
+        }
+        val tierAnnouncement = tierTransitionAnnouncement ?: when {
             newScore == 5 && !state.isTutorial -> TierAnnouncement.NICE
             newScore == 10 && !state.isTutorial -> TierAnnouncement.GREAT
             newScore == 25 && !state.isTutorial -> TierAnnouncement.AMAZING
