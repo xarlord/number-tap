@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.R
+import com.xarlord.numbertap.data.DifficultyConfig
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeStyle
@@ -43,25 +44,16 @@ internal fun BottomPanel(
     val strBest = stringResource(R.string.stat_best)
     val strTaps = stringResource(R.string.stat_taps)
 
-    val tier = when {
-        state.score <= 15 -> strEasy
-        state.score <= 40 -> strMedium
-        state.score <= 65 -> strHard
-        else -> strInsane
-    }
-    val nextTierAt = when {
-        state.score <= 15 -> 16
-        state.score <= 40 -> 41
-        state.score <= 65 -> 66
-        else -> null
-    }
+    // Resolve tier dynamically from DifficultyConfig (#193)
+    val tierIndex = DifficultyConfig.currentTierIndex(state.score)
+    val currentTierConfig = DifficultyConfig.tiers[tierIndex]
+    val tierLabelMap = listOf(strEasy, strMedium, strHard, strInsane)
+    val tier = tierLabelMap.getOrElse(tierIndex) { strInsane }
+
+    val nextTierAt = DifficultyConfig.tiers.getOrNull(tierIndex + 1)?.scoreThreshold
     val tierProgress = if (nextTierAt != null) {
-        when {
-            state.score <= 15 -> state.score.toFloat() / 15
-            state.score <= 40 -> (state.score - 15).toFloat() / 25
-            state.score <= 65 -> (state.score - 40).toFloat() / 25
-            else -> 1f
-        }
+        val range = nextTierAt - currentTierConfig.scoreThreshold
+        if (range > 0) (state.score - currentTierConfig.scoreThreshold).toFloat() / range else 1f
     } else 1f
 
     Column(

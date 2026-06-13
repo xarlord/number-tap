@@ -326,6 +326,28 @@ class DifficultyTierTest {
         assertEquals(5, modified.gridCols)
         assertEquals(4, tier.gridRows) // original unchanged
     }
+
+    // --- #194: isChaosMode tests ---
+
+    @Test
+    fun `difficulty tier isChaosMode defaults to false`() {
+        val tier = DifficultyTier(4, 4, 1.0, 1.5)
+        assertFalse(tier.isChaosMode)
+    }
+
+    @Test
+    fun `difficulty tier isChaosMode can be set`() {
+        val tier = DifficultyTier(5, 5, 0.4, 3.5, "INSANE", isChaosMode = true)
+        assertTrue(tier.isChaosMode)
+    }
+
+    @Test
+    fun `only INSANE tier has isChaosMode true in defaults`() {
+        DifficultyConfig.resetDefaults()
+        val chaosTiers = DifficultyConfig.tiers.filter { it.isChaosMode }
+        assertEquals("Exactly one tier should have isChaosMode=true", 1, chaosTiers.size)
+        assertEquals("INSANE", chaosTiers[0].label)
+    }
 }
 
 class TileStateTest {

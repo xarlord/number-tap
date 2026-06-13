@@ -226,7 +226,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
      */
     fun chaosTick(state: GameState): GameState {
         val tier = DifficultyConfig.tierForScore(state.score)
-        if (tier.label != "INSANE" || !state.isPlaying || state.isPaused) return state
+        if (!tier.isChaosMode || !state.isPlaying || state.isPaused) return state
 
         // If tiles are already hidden, reveal them
         if (state.hiddenTileIds.isNotEmpty()) {

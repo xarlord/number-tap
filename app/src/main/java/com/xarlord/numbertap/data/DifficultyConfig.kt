@@ -10,7 +10,8 @@ data class DifficultyTier(
     val timeGainSeconds: Double,
     val timePenaltySeconds: Double,
     val label: String = "",
-    val scoreThreshold: Int = 0
+    val scoreThreshold: Int = 0,
+    val isChaosMode: Boolean = false  // #194: type-safe chaos mode flag
 ) {
     val gridSize: Int get() = gridRows * gridCols
 }
@@ -22,7 +23,7 @@ object DifficultyConfig {
         DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
         DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
         DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
-        DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66)
+        DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
     )
 
     /** Starting countdown time in seconds */
@@ -54,7 +55,7 @@ object DifficultyConfig {
             DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
             DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
             DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
-            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66)
+            DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
         )
         startingTime = 30.0
         tickIntervalMs = 16L
