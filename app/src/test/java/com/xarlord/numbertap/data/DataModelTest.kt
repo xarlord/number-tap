@@ -203,6 +203,52 @@ class GameStateTest {
         assertTrue(state.isGameOver)
         assertEquals(42, state.score)
     }
+
+    // --- #192: isHardMode / hiddenTileIds / INSANE_MODE tests ---
+
+    @Test
+    fun `game state isHardMode defaults to false`() {
+        val state = GameState()
+        assertFalse(state.isHardMode)
+    }
+
+    @Test
+    fun `game state hiddenTileIds defaults to empty`() {
+        val state = GameState()
+        assertTrue(state.hiddenTileIds.isEmpty())
+    }
+
+    @Test
+    fun `game state isHardMode can be set`() {
+        val state = GameState(isHardMode = true)
+        assertTrue(state.isHardMode)
+    }
+
+    @Test
+    fun `game state hiddenTileIds can be set`() {
+        val state = GameState(hiddenTileIds = setOf(1, 2, 3))
+        assertEquals(setOf(1, 2, 3), state.hiddenTileIds)
+    }
+
+    @Test
+    fun `hiddenTileIds can be cleared via copy`() {
+        val state = GameState(hiddenTileIds = setOf(5, 6))
+        val cleared = state.copy(hiddenTileIds = emptySet())
+        assertTrue(cleared.hiddenTileIds.isEmpty())
+    }
+
+    @Test
+    fun `TierAnnouncement enum includes INSANE_MODE`() {
+        assertTrue(
+            "INSANE_MODE should be in TierAnnouncement enum",
+            TierAnnouncement.entries.contains(TierAnnouncement.INSANE_MODE)
+        )
+    }
+
+    @Test
+    fun `TierAnnouncement enum has expected count`() {
+        assertEquals(7, TierAnnouncement.entries.size)
+    }
 }
 
 class GameActionTest {

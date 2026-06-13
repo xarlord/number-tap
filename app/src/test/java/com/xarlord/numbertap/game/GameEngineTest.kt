@@ -2,6 +2,7 @@ package com.xarlord.numbertap.game
 
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.TileState
+import com.xarlord.numbertap.data.TierAnnouncement
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -550,6 +551,105 @@ class GameEngineTest {
         val wrongPos = findTileWithValue(currentState, currentState.targetNumber + 1)!!
         val (afterWrong, _) = engine.onTap(currentState, wrongPos.first, wrongPos.second, time + 400)
         assertEquals(0, afterWrong.comboCount)
+    }
+
+    // --- chaosTick tests (#191) ---
+
+    @Test
+    fun `chaosTick returns unchanged state when not playing`() {
+        val pausedState = state.copy(isPlaying = false)
+        val result = engine.chaosTick(pausedState)
+        assertEquals(pausedState, result)
+    }
+
+    @Test
+    fun `chaosTick returns unchanged state when paused`() {
+        val pausedState = state.copy(isPlaying = true, isPaused = true)
+        val result = engine.chaosTick(pausedState)
+        assertEquals(pausedState, result)
+    }
+
+    @Test
+    fun `chaosTick returns unchanged state when score is below INSANE tier`() {
+        // Score 65 is still HARD tier, not INSANE
+        val playingState = state.copy(isPlaying = true, score = 65)
+        val result = engine.chaosTick(playingState)
+        assertTrue(result.hiddenTileIds.isEmpty())
+    }
+
+    @Test
+    fun `chaosTick reveals previously hidden tiles`() {
+        val playingState = state.copy(
+            isPlaying = true,
+            score = 66,
+            hiddenTileIds = setOf(1, 2, 3)
+        )
+        val result = engine.chaosTick(playingState)
+        assertTrue("Hidden tiles should be cleared", result.hiddenTileIds.isEmpty())
+    }
+
+    @Test
+    fun `chaosTick hides random non-target tiles in INSANE tier`() {
+        val playingState = state.copy(isPlaying = true, score = 66)
+        val result = engine.chaosTick(playingState)
+        // Should have hidden 2-3 tiles
+        assertTrue("Should hide 2-3 tiles, got ${result.hiddenTileIds.size}", result.hiddenTileIds.size in 2..3)
+        // None of the hidden tiles should be the target
+        val hiddenValues = result.tiles.flatten().filter { it.id in result.hiddenTileIds }.map { it.currentValue }
+        assertTrue("Hidden tiles should not include target", hiddenValues.none { it == playingState.targetNumber })
+    }
+
+    @Test
+    fun `chaosTick alternates hide and reveal`() {
+        val playingState = state.copy(isPlaying = true, score = 66)
+        // First call: hide tiles
+        val hidden = engine.chaosTick(playingState)
+        assertTrue(hidden.hiddenTileIds.isNotEmpty())
+        // Second call: reveal tiles
+        val revealed = engine.chaosTick(hidden)
+        assertTrue(revealed.hiddenTileIds.isEmpty())
+    }
+
+    // --- isHardMode / startNewGame tests (#192) ---
+
+    @Test
+    fun `startNewGame with isHardMode true sets isHardMode in state`() {
+        val hardState = engine.startNewGame(0, isHardMode = true)
+        assertTrue(hardState.isHardMode)
+    }
+
+    @Test
+    fun `startNewGame with isHardMode false sets isHardMode false`() {
+        val normalState = engine.startNewGame(0, isHardMode = false)
+        assertFalse(normalState.isHardMode)
+    }
+
+    @Test
+    fun `startNewGame default isHardMode is false`() {
+        val defaultState = engine.startNewGame(0)
+        assertFalse(defaultState.isHardMode)
+    }
+
+    @Test
+    fun `startNewGame hiddenTileIds is empty`() {
+        val newState = engine.startNewGame(0)
+        assertTrue(newState.hiddenTileIds.isEmpty())
+    }
+
+    @Test
+    fun `INSANE_MODE tier announcement at score 66`() {
+        var currentState = state
+        val time = System.currentTimeMillis()
+        // Progress to score 66 to trigger INSANE_MODE announcement
+        for (i in 1..66) {
+            val pos = findTileWithValue(currentState, i)
+            if (pos != null) {
+                val (newState, _) = engine.onTap(currentState, pos.first, pos.second, time + i * 100)
+                currentState = newState
+            }
+        }
+        assertEquals(66, currentState.score)
+        assertEquals(TierAnnouncement.INSANE_MODE, currentState.tierAnnouncement)
     }
 
     // --- difficulty progression integration ---
