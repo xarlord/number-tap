@@ -51,6 +51,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 class MainActivity : ComponentActivity() {
+
+    // Reused across lifecycle — avoids creating a new AppUpdateManager each onResume (#201)
+    private val updateManager by lazy { InAppUpdateManager(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         NotificationScheduler.createChannel(this)
@@ -62,7 +66,6 @@ class MainActivity : ComponentActivity() {
         adManager.preloadRewarded()
 
         // Check for Play Store updates (#203)
-        val updateManager = InAppUpdateManager(this)
         updateManager.checkForUpdate()
 
         setContent { NumberTapApp(adManager) }
@@ -71,7 +74,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // Check if a flexible update was downloaded and ready to install
-        InAppUpdateManager(this).checkForPendingInstall()
+        updateManager.checkForPendingInstall()
     }
 }
 

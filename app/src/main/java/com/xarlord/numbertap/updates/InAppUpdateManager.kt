@@ -6,7 +6,6 @@ import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.AppUpdateType
-import com.google.android.play.core.install.model.UpdateAvailability
 
 /**
  * In-App Update manager using Google Play Core library.
@@ -33,22 +32,21 @@ class InAppUpdateManager(
     fun checkForUpdate() {
         Log.d(TAG, "Checking for app updates...")
         appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
-            when (appUpdateInfo.updateAvailability()) {
-                UpdateAvailability.UPDATE_AVAILABLE -> {
-                    val versionCode = appUpdateInfo.availableVersionCode()
-                    Log.d(TAG, "Update available! Version code: $versionCode")
-
-                    if (appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
-                        startFlexibleUpdate(appUpdateInfo)
-                    } else {
-                        Log.d(TAG, "Flexible update not allowed for this device/config")
-                    }
+            // Pure decision logic (testable, issue #201)
+            val decision = resolveUpdateDecision(
+                appUpdateInfo.updateAvailability(),
+                appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+            )
+            when (decision) {
+                UpdateDecision.START_FLEXIBLE_UPDATE -> {
+                    Log.d(TAG, "Update available! Version code: ${appUpdateInfo.availableVersionCode()}")
+                    startFlexibleUpdate(appUpdateInfo)
                 }
-                UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> {
+                UpdateDecision.RESUME_UPDATE -> {
                     Log.d(TAG, "Update already in progress, resuming...")
                     resumeUpdate(appUpdateInfo)
                 }
-                else -> {
+                UpdateDecision.NO_ACTION -> {
                     Log.d(TAG, "No update available (availability=${appUpdateInfo.updateAvailability()})")
                 }
             }
@@ -97,7 +95,8 @@ class InAppUpdateManager(
      */
     fun checkForPendingInstall() {
         appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
-            if (appUpdateInfo.installStatus() == com.google.android.play.core.install.model.InstallStatus.DOWNLOADED) {
+            // Pure decision logic (testable, issue #201)
+            if (shouldShowInstallPrompt(appUpdateInfo.installStatus())) {
                 Log.d(TAG, "Update downloaded — prompting user to install")
                 showInstallPrompt()
             }
@@ -108,7 +107,6 @@ class InAppUpdateManager(
      * Show the "Update downloaded — restart to install" prompt.
      */
     private fun showInstallPrompt() {
-        com.google.android.play.core.install.model.InstallStatus.DOWNLOADED
         appUpdateManager.completeUpdate()
         Log.d(TAG, "Install prompt shown")
     }
@@ -118,7 +116,8 @@ class InAppUpdateManager(
      */
     fun cleanup() {
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
-            if (info.installStatus() == com.google.android.play.core.install.model.InstallStatus.DOWNLOADED) {
+            // Pure decision logic (testable, issue #201)
+            if (shouldShowInstallPrompt(info.installStatus())) {
                 appUpdateManager.completeUpdate()
             }
         }
