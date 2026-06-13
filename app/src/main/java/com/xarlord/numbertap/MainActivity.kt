@@ -16,7 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.xarlord.numbertap.ads.AdManagerImpl
@@ -296,10 +303,16 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         )
     }
 
-    // Banner ad always visible at bottom across all screens.
-    // Game content sits in a Column that fills remaining space above the banner.
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (currentScreen) {
+    // Layout: Column with content on top (respects status bar inset) + banner ad at bottom.
+    // This prevents content from being hidden behind camera island and banner from being covered.
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars)
+        ) {
+            when (currentScreen) {
         is Screen.Menu -> {
             MenuScreen(
             highScore = highScore,
@@ -507,11 +520,10 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
             }
         )
         }
-        // Banner ad always pinned to bottom across ALL screens (menu, game, game over, settings)
-        BannerAd(
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
-    }
+        } // end Box (content area)
+        // Banner ad at bottom — always visible across ALL screens
+        BannerAd()
+    } // end Column
 }
 
 private fun shareScore(context: Context, score: Int, highScore: Int) {

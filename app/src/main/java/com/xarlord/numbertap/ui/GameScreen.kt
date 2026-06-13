@@ -70,35 +70,6 @@ fun GameScreen(
             // Timer bar
             TimerBar(gameState.timeRemaining, 30.0, colors)
 
-            // Tier announcement — shown above grid, not over it (#185)
-            gameState.tierAnnouncement?.let { ann ->
-                val announcementText = when (ann) {
-                    TierAnnouncement.ROUND_2 -> strRound2
-                    TierAnnouncement.HARD_MODE -> strHardMode
-                    TierAnnouncement.INSANE_MODE -> stringResource(R.string.insane_mode)
-                    TierAnnouncement.NICE -> stringResource(R.string.nice)
-                    TierAnnouncement.GREAT -> stringResource(R.string.great)
-                    TierAnnouncement.AMAZING -> stringResource(R.string.amazing)
-                    TierAnnouncement.LEGENDARY -> stringResource(R.string.legendary)
-                }
-                Text(
-                    announcementText,
-                    color = when (ann) {
-                        TierAnnouncement.ROUND_2 -> colors.timerWarning
-                        TierAnnouncement.HARD_MODE -> colors.timerUrgent
-                        TierAnnouncement.INSANE_MODE -> colors.failure
-                        else -> colors.tileTarget
-                    },
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = style.headerFontFamily,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                )
-            }
-
             // === CENTER: Game Grid (takes remaining space) ===
             Box(
                 modifier = Modifier
@@ -181,6 +152,36 @@ fun GameScreen(
         // Urgency vignette
         if (gameState.timeRemaining < 5 && gameState.isPlaying && !gameState.isPaused) {
             UrgencyVignette(colors.vignetteColor, urgentPulse)
+        }
+
+        // Tier announcement — overlaid on top of grid, does NOT push content
+        gameState.tierAnnouncement?.let { ann ->
+            val announcementText = when (ann) {
+                TierAnnouncement.ROUND_2 -> strRound2
+                TierAnnouncement.HARD_MODE -> strHardMode
+                TierAnnouncement.INSANE_MODE -> stringResource(R.string.insane_mode)
+                TierAnnouncement.NICE -> stringResource(R.string.nice)
+                TierAnnouncement.GREAT -> stringResource(R.string.great)
+                TierAnnouncement.AMAZING -> stringResource(R.string.amazing)
+                TierAnnouncement.LEGENDARY -> stringResource(R.string.legendary)
+            }
+            Text(
+                announcementText,
+                color = when (ann) {
+                    TierAnnouncement.ROUND_2 -> colors.timerWarning
+                    TierAnnouncement.HARD_MODE -> colors.timerUrgent
+                    TierAnnouncement.INSANE_MODE -> colors.failure
+                    else -> colors.tileTarget
+                },
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = style.headerFontFamily,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
+                    .offset(y = (-80).dp)
+            )
         }
 
 
