@@ -296,11 +296,12 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         )
     }
 
-    // Banner ad below menu (not during gameplay to prevent accidental taps)
-    when (currentScreen) {
+    // Banner ad always visible at bottom across all screens.
+    // Game content sits in a Column that fills remaining space above the banner.
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (currentScreen) {
         is Screen.Menu -> {
-            Box(modifier = Modifier.fillMaxSize()) {
-                MenuScreen(
+            MenuScreen(
             highScore = highScore,
             currentTheme = selectedTheme,
             isHardMode = hardMode,
@@ -330,11 +331,6 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 saveHardMode(context, enabled)
             }
         )
-                // Banner ad at bottom of menu screen
-                BannerAd(
-                    modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
-                )
-            }
         }
 
         is Screen.Game -> GameScreen(
@@ -509,6 +505,11 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
             onBack = {
                 currentScreen = Screen.Menu
             }
+        )
+        }
+        // Banner ad always pinned to bottom across ALL screens (menu, game, game over, settings)
+        BannerAd(
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
