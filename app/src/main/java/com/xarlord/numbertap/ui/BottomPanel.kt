@@ -45,16 +45,12 @@ internal fun BottomPanel(
     val strTaps = stringResource(R.string.stat_taps)
 
     // Resolve tier dynamically from DifficultyConfig (#193)
-    val tierIndex = DifficultyConfig.currentTierIndex(state.score)
-    val currentTierConfig = DifficultyConfig.tiers[tierIndex]
+    // #196: Pure logic extracted into computeTierProgress() for unit-test coverage
+    val tierInfo = computeTierProgress(state.score)
     val tierLabelMap = listOf(strEasy, strMedium, strHard, strInsane)
-    val tier = tierLabelMap.getOrElse(tierIndex) { strInsane }
-
-    val nextTierAt = DifficultyConfig.tiers.getOrNull(tierIndex + 1)?.scoreThreshold
-    val tierProgress = if (nextTierAt != null) {
-        val range = nextTierAt - currentTierConfig.scoreThreshold
-        if (range > 0) (state.score - currentTierConfig.scoreThreshold).toFloat() / range else 1f
-    } else 1f
+    val tier = tierLabelMap.getOrElse(tierInfo.tierIndex) { strInsane }
+    val nextTierAt = tierInfo.nextThreshold
+    val tierProgress = tierInfo.progress
 
     Column(
         modifier = Modifier
@@ -143,3 +139,38 @@ internal fun StatLabel(
         Text(value, color = colors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = style.tileFontFamily)
     }
 }
+
+/**
+ * Pure function resolving the current tier index, next-tier threshold, and progress
+ * fraction for a given score. Extracted from the [BottomPanel] composable (#196) so
+ * the logic is unit-testable without an Android/Compose context.
+ *
+ * @param score current player score
+ * @return [TierProgress] with tierIndex (0-based), nextThreshold (null at max tier),
+ *         and progress (0f–1f, coerced).
+ */
+internal fun computeTierProgress(score: Int): TierProgress {
+    val tierIndex = DifficultyConfig.currentTierIndex(score)
+    val currentTierConfig = DifficultyConfig.tiers[tierIndex]
+    val nextThreshold = DifficultyConfig.tiers.getOrNull(tierIndex + 1)?.scoreThreshold
+    val progress = if (nextThreshold != null) {
+        val range = nextThreshold - currentTierConfig.scoreThreshold
+        if (range > 0) {
+            (score - currentTierConfig.scoreThreshold).toFloat() / range
+        } else 1f
+    } else 1f
+    return TierProgress(tierIndex, nextThreshold, progress)
+}
+
+/**
+ * Result of [computeTierProgress] — holds the tier display state.
+ *
+ * @property tierIndex 0-based index into [DifficultyConfig.tiers]
+ * @property nextThreshold score needed for the next tier, or null if at max tier
+ * @property progress progress fraction toward next tier (0f–1f)
+ */
+internal data class TierProgress(
+    val tierIndex: Int,
+    val nextThreshold: Int?,
+    val progress: Float
+)
