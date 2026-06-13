@@ -45,7 +45,7 @@ private const val BOUNCE_SCALE = 0.85f
 private const val FADE_STEP_DURATION_MS = 120L
 private const val ENTRY_INITIAL_SCALE = 0.6f
 private const val TUTORIAL_TARGET_ALPHA = 0.3f
-private const val TARGET_GLOW_ALPHA = 0.12f
+private const val TARGET_GLOW_ALPHA = 0.25f
 private const val TARGET_BORDER_ALPHA = 0.4f
 private const val CORNER_DECORATION_ALPHA = 0.3f
 private const val CORNER_OFFSET_RATIO = 0.38f
@@ -55,6 +55,8 @@ internal fun ThemedTile(
     tile: Tile,
     isTarget: Boolean,
     isTutorial: Boolean,
+    isHardMode: Boolean,
+    isHidden: Boolean,
     tileSize: Dp,
     theme: GameTheme,
     colors: ThemeColors,
@@ -110,7 +112,7 @@ internal fun ThemedTile(
         tile.state == TileState.TAPPED_WRONG && fadeFrame == 0 -> colors.failure
         tile.state == TileState.TAPPED_WRONG && fadeFrame == 1 -> colors.failureFade
         isTarget && isTutorial -> colors.tileTarget.copy(alpha = TUTORIAL_TARGET_ALPHA)
-        isTarget -> colors.tileTargetGlow.copy(alpha = TARGET_GLOW_ALPHA)
+        isTarget && !isHardMode -> colors.tileTargetGlow.copy(alpha = TARGET_GLOW_ALPHA)
         else -> colors.tileBackground
     }
 
@@ -118,15 +120,15 @@ internal fun ThemedTile(
     val shape = RoundedCornerShape(cornerRadius.dp)
     val borderModifier = if (style.showTileBorder) {
         val borderColor = when {
-            isTarget -> colors.tileTarget
+            isTarget && !isHardMode -> colors.tileTarget
             tile.state == TileState.TAPPED_WRONG -> colors.failure
             else -> colors.panelBorder
         }
         Modifier.border(1.dp, borderColor, shape)
     } else Modifier
 
-    // Subtle glow for target tile
-    val glowModifier = if (isTarget && tile.state == TileState.ACTIVE) {
+    // Subtle glow for target tile (hidden in hard mode)
+    val glowModifier = if (isTarget && tile.state == TileState.ACTIVE && !isHardMode) {
         Modifier.border(2.dp, colors.tileTarget.copy(alpha = TARGET_BORDER_ALPHA), shape)
     } else Modifier
 
@@ -168,10 +170,11 @@ internal fun ThemedTile(
         }
 
         Text(
-            tile.currentValue.toString(),
+            if (isHidden) "?" else tile.currentValue.toString(),
             color = when {
+                isHidden -> colors.textSecondary.copy(alpha = 0.4f)
                 tile.state == TileState.TAPPED_WRONG -> colors.failure
-                isTarget -> if (tile.state == TileState.ACTIVE) colors.tileTarget else colors.textPrimary
+                isTarget && !isHardMode -> if (tile.state == TileState.ACTIVE) colors.tileTarget else colors.textPrimary
                 else -> colors.textPrimary
             },
             fontSize = style.tileFontSize,

@@ -101,7 +101,7 @@ object ThemeConfig {
             background = Color(0xFF000000),
             tileBackground = Color(0xFF001a00),
             tileTarget = Color(0xFF00FF00),
-            tileTargetGlow = Color(0xFF00FF00),
+            tileTargetGlow = Color(0xFF88FFAA),
             success = Color(0xFF00FF00),
             successFade = Color(0xFF003a00),
             failure = Color(0xFFFF0000),

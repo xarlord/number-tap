@@ -10,7 +10,8 @@ enum class TierAnnouncement {
     ROUND_2,
     AMAZING,
     HARD_MODE,
-    LEGENDARY
+    LEGENDARY,
+    INSANE_MODE
 }
 
 data class GameState(
@@ -38,6 +39,8 @@ data class GameState(
     val wrongTaps: Int = 0,
     val totalTapTimeNs: Long = 0L, // cumulative time between taps
     val currentTheme: GameTheme = GameTheme.DEFAULT,
+    val isHardMode: Boolean = false,
+    val hiddenTileIds: Set<Int> = emptySet(),
     val nextFloatingTextId: Int = 0
 ) {
     val accuracy: Float get() = if (totalTaps == 0) 0f else correctTaps.toFloat() / totalTaps

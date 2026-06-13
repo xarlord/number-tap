@@ -70,6 +70,7 @@ private const val KEY_HAS_PLAYED = "has_played"
 private const val KEY_THEME = "selected_theme"
 private const val KEY_SOUND_ENABLED = "sound_enabled"
 private const val KEY_MUSIC_ENABLED = "music_enabled"
+private const val KEY_HARD_MODE = "hard_mode"
 
 private fun loadHighScore(context: Context) =
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getInt(KEY_HIGH_SCORE, 0)
@@ -108,6 +109,13 @@ private fun saveMusicEnabled(context: Context, enabled: Boolean) {
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_MUSIC_ENABLED, enabled).apply()
 }
 
+private fun loadHardMode(context: Context): Boolean =
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_HARD_MODE, false)
+
+private fun saveHardMode(context: Context, enabled: Boolean) {
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(KEY_HARD_MODE, enabled).apply()
+}
+
 @Composable
 fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Menu) }
@@ -118,8 +126,10 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
     var soundEnabled by remember { mutableStateOf(loadSoundEnabled(context)) }
     var musicEnabled by remember { mutableStateOf(loadMusicEnabled(context)) }
+    var hardMode by remember { mutableStateOf(loadHardMode(context)) }
     var lastTickTime by remember { mutableLongStateOf(0L) }
     var lastCountdownTickSecond by remember { mutableIntStateOf(-1) }
+    var lastChaosTickTime by remember { mutableLongStateOf(0L) }
 
     // --- Retention state ---
     val profileRepository = remember { ProfileRepository(context) }
@@ -197,6 +207,12 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         val delta = (now - lastTickTime) / 1000.0
                         lastTickTime = now
                         gameState = engine.tick(gameState, delta)
+
+                        // Chaos mode: flip tiles every ~1 second (#187)
+                        if (now - lastChaosTickTime >= 1000L) {
+                            gameState = engine.chaosTick(gameState)
+                            lastChaosTickTime = now
+                        }
 
                         val currentSecond = gameState.timeRemaining.toInt()
                         if (soundEnabled && gameState.timeRemaining < 5.0 && gameState.timeRemaining > 0.0 && currentSecond != lastCountdownTickSecond) {
@@ -287,10 +303,11 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 MenuScreen(
             highScore = highScore,
             currentTheme = selectedTheme,
+            isHardMode = hardMode,
             coins = playerProfile.coins,
             streak = playerProfile.currentStreak,
             onStartClick = {
-                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
+                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme, isHardMode = hardMode)
                 ActionLogger.logGameStart(0, highScore)
                 AnalyticsTracker.gameStart(score = 0, highScore = highScore)
                 if (musicEnabled) soundManager.startBGMusic()
@@ -307,6 +324,10 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
             },
             onSettingsClick = {
                 currentScreen = Screen.Settings
+            },
+            onHardModeToggle = { enabled ->
+                hardMode = enabled
+                saveHardMode(context, enabled)
             }
         )
                 // Banner ad at bottom of menu screen
@@ -383,6 +404,10 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 } else {
                     gameState = engine.pause(gameState)
                 }
+            },
+            onMenuClick = {
+                soundManager.stopBGMusic()
+                currentScreen = Screen.Menu
             }
         )
 
@@ -393,7 +418,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
             isReviveEligible = engine.isReviveEligible(gameState),
             currentTheme = selectedTheme,
             onPlayAgain = {
-                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme)
+                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme, isHardMode = hardMode)
                 ActionLogger.logGameStart(0, highScore)
                 AnalyticsTracker.gameStart(score = 0, highScore = highScore)
                 if (musicEnabled) soundManager.startBGMusic()

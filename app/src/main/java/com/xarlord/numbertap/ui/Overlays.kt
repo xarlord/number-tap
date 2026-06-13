@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -64,7 +66,8 @@ internal fun ScanlineOverlay() {
 internal fun PauseOverlay(
     colors: ThemeColors,
     style: ThemeStyle,
-    onResume: () -> Unit
+    onResume: () -> Unit,
+    onMenu: () -> Unit = {}
 ) {
     val pausedDesc = stringResource(R.string.a11y_paused)
 
@@ -76,13 +79,32 @@ internal fun PauseOverlay(
                 contentDescription = pausedDesc
                 role = Role.Button
             }
-            .clickable(onClick = onResume),
+            .clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = onResume
+            ),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(R.string.paused), color = colors.textPrimary, fontSize = PAUSE_TITLE_FONT_SIZE_SP.sp, fontWeight = FontWeight.Bold, fontFamily = style.headerFontFamily)
             Spacer(modifier = Modifier.height(PAUSE_SPACING_DP.dp))
             Text(stringResource(R.string.tap_to_resume), color = colors.textSecondary, fontSize = PAUSE_SUBTITLE_FONT_SIZE_SP.sp, fontFamily = style.bodyFontFamily)
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = stringResource(R.string.menu),
+                color = colors.textSecondary.copy(alpha = 0.7f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = style.bodyFontFamily,
+                modifier = Modifier
+                    .semantics {
+                        contentDescription = "Go to main menu"
+                        role = Role.Button
+                    }
+                    .clickable { onMenu() }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
     }
 }

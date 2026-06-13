@@ -20,7 +20,7 @@ import kotlin.random.Random
  */
 class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
 
-    fun startNewGame(highScore: Int, isTutorial: Boolean = false, currentTheme: GameTheme = GameTheme.DEFAULT): GameState {
+    fun startNewGame(highScore: Int, isTutorial: Boolean = false, currentTheme: GameTheme = GameTheme.DEFAULT, isHardMode: Boolean = false): GameState {
         val tier = DifficultyConfig.tierForScore(0)
         val tiles = if (isTutorial) {
             generateTutorialGrid()
@@ -41,7 +41,8 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
             lastCorrectTapTime = 0L,
             isTutorial = isTutorial,
             tutorialStep = if (isTutorial) 0 else -1,
-            currentTheme = currentTheme
+            currentTheme = currentTheme,
+            isHardMode = isHardMode
         )
     }
 
@@ -67,7 +68,8 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
     private fun handleCorrectTap(state: GameState, row: Int, col: Int, tile: Tile, tier: DifficultyTier, currentTime: Long): Pair<GameState, TapResult.Correct> {
         val newScore = state.score + 1
         val timeGain = if (state.isTutorial) 0.0 else tier.timeGainSeconds
-        val newTimeRemaining = state.timeRemaining + timeGain
+        val unclampedTime = state.timeRemaining + timeGain
+        val newTimeRemaining = if (state.isTutorial) unclampedTime else unclampedTime.coerceAtMost(GameConfig.INITIAL_TIME_SECONDS)
         val newTarget = state.targetNumber + 1
 
         // GDD: tile replacement value = currentValue + gridSize
@@ -102,6 +104,7 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
         val tierAnnouncement = when {
             newScore == 16 && !state.isTutorial -> TierAnnouncement.ROUND_2
             newScore == 41 && !state.isTutorial -> TierAnnouncement.HARD_MODE
+            newScore == 66 && !state.isTutorial -> TierAnnouncement.INSANE_MODE
             newScore == 5 && !state.isTutorial -> TierAnnouncement.NICE
             newScore == 10 && !state.isTutorial -> TierAnnouncement.GREAT
             newScore == 25 && !state.isTutorial -> TierAnnouncement.AMAZING
@@ -215,6 +218,28 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
         } else {
             state.copy(timeRemaining = newTime)
         }
+    }
+
+    /**
+     * Chaos mode tick: randomly hide non-target tiles in INSANE tier.
+     * Called periodically from the game loop.
+     */
+    fun chaosTick(state: GameState): GameState {
+        val tier = DifficultyConfig.tierForScore(state.score)
+        if (tier.label != "INSANE" || !state.isPlaying || state.isPaused) return state
+
+        // If tiles are already hidden, reveal them
+        if (state.hiddenTileIds.isNotEmpty()) {
+            return state.copy(hiddenTileIds = emptySet())
+        }
+
+        // Pick 2-3 random non-target tile IDs to hide
+        val allIds = state.tiles.flatten()
+            .filter { it.currentValue != state.targetNumber }
+            .map { it.id }
+        val count = (2..3).random()
+        val hidden = allIds.shuffled().take(minOf(count, allIds.size)).toSet()
+        return state.copy(hiddenTileIds = hidden)
     }
 
     fun pause(state: GameState): GameState {
