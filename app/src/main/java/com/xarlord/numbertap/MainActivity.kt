@@ -41,6 +41,7 @@ import com.xarlord.numbertap.retention.PlayerProfile
 import com.xarlord.numbertap.retention.ProfileRepository
 import com.xarlord.numbertap.retention.RetentionLogic
 import com.xarlord.numbertap.retention.StreakRewards
+import com.xarlord.numbertap.updates.InAppUpdateManager
 import com.xarlord.numbertap.ui.GameOverScreen
 import com.xarlord.numbertap.ui.GameScreen
 import com.xarlord.numbertap.ui.HapticFeedback
@@ -60,7 +61,17 @@ class MainActivity : ComponentActivity() {
         adManager.preloadInterstitial()
         adManager.preloadRewarded()
 
+        // Check for Play Store updates (#203)
+        val updateManager = InAppUpdateManager(this)
+        updateManager.checkForUpdate()
+
         setContent { NumberTapApp(adManager) }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Check if a flexible update was downloaded and ready to install
+        InAppUpdateManager(this).checkForPendingInstall()
     }
 }
 

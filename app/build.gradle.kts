@@ -21,8 +21,8 @@ android {
         applicationId = "com.xarlord.numbertap"
         minSdk = 24
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.3.1"
+        versionCode = 8
+        versionName = "1.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -105,6 +105,8 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation("org.json:json:20231013")
     implementation(libs.play.services.ads)
+    implementation(libs.app.update)
+    implementation(libs.app.update.ktx)
 }
 
 kover {
