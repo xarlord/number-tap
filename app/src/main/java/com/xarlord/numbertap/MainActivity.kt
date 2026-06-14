@@ -327,213 +327,213 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
             when (currentScreen) {
-        is Screen.Menu -> {
-            MenuScreen(
-            highScore = highScore,
-            currentTheme = selectedTheme,
-            isHardMode = hardMode,
-            coins = playerProfile.coins,
-            streak = playerProfile.currentStreak,
-            onStartClick = {
-                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme, isHardMode = hardMode)
-                ActionLogger.logGameStart(0, highScore)
-                AnalyticsTracker.gameStart(score = 0, highScore = highScore)
-                if (musicEnabled) soundManager.startBGMusic()
-                currentScreen = Screen.Game
-            },
-            onTutorialClick = {
-                gameState = engine.startTutorial(highScore)
-                ActionLogger.logTutorialStart()
-                currentScreen = Screen.Game
-            },
-            onThemeChange = { theme ->
-                selectedTheme = theme
-                saveTheme(context, theme)
-            },
-            onSettingsClick = {
-                currentScreen = Screen.Settings
-            },
-            onHardModeToggle = { enabled ->
-                hardMode = enabled
-                saveHardMode(context, enabled)
-            }
-        )
-        }
-
-        is Screen.Game -> GameScreen(
-            gameState = gameState,
-            onTileTap = { row, col ->
-                try {
-                    val tile = gameState.tiles.getOrNull(row)?.getOrNull(col)
-                    val (newState, result) = engine.onTap(gameState, row, col)
-                    gameState = newState
-                    when (result) {
-                        is TapResult.Correct -> {
-                            ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
-                            AnalyticsTracker.tapCorrect(score = gameState.score, combo = result.combo)
-
-                            // Phase 3.5: Haptic feedback
-                            if (result.combo >= 3) HapticFeedback.comboBuzz(context)
-                            else HapticFeedback.lightClick(context)
-
-                            // Award coins for correct tap
-                            playerProfile = playerProfile.copy(
-                                coins = RetentionLogic.awardTapCoins(playerProfile.coins)
-                            )
-
-                            // Award combo bonus
-                            if (result.combo >= 3) {
-                                playerProfile = playerProfile.copy(
-                                    coins = RetentionLogic.awardComboBonus(playerProfile.coins, result.combo)
-                                )
-                            }
-
-                            // Track total correct taps
-                            playerProfile = playerProfile.copy(
-                                totalCorrectTaps = playerProfile.totalCorrectTaps + 1
-                            )
-
-                            // #139: Profile saved at game-over only, not every tap
-
-                            if (soundEnabled) {
-                                soundManager.playSuccess(result.combo)
-                                if (gameState.score % 10 == 0 && gameState.score > 0) {
-                                    soundManager.playMilestone()
-                                    HapticFeedback.mediumClick(context)
-                                    AnalyticsTracker.milestone(gameState.score)
-                                }
-                            }
-                        }
-                        is TapResult.Wrong -> {
-                            ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
-                            AnalyticsTracker.tapWrong(score = gameState.score)
-                            // Phase 3.5: Haptic feedback for wrong tap
-                            HapticFeedback.errorBuzz(context)
-                            if (soundEnabled) {
-                                soundManager.playFailure()
-                                if (gameState.comboCount > 1) soundManager.playComboBreak()
-                            }
-                        }
-                        is TapResult.Invalid -> {}
+                is Screen.Menu -> {
+                    MenuScreen(
+                    highScore = highScore,
+                    currentTheme = selectedTheme,
+                    isHardMode = hardMode,
+                    coins = playerProfile.coins,
+                    streak = playerProfile.currentStreak,
+                    onStartClick = {
+                        gameState = engine.startNewGame(highScore, currentTheme = selectedTheme, isHardMode = hardMode)
+                        ActionLogger.logGameStart(0, highScore)
+                        AnalyticsTracker.gameStart(score = 0, highScore = highScore)
+                        if (musicEnabled) soundManager.startBGMusic()
+                        currentScreen = Screen.Game
+                    },
+                    onTutorialClick = {
+                        gameState = engine.startTutorial(highScore)
+                        ActionLogger.logTutorialStart()
+                        currentScreen = Screen.Game
+                    },
+                    onThemeChange = { theme ->
+                        selectedTheme = theme
+                        saveTheme(context, theme)
+                    },
+                    onSettingsClick = {
+                        currentScreen = Screen.Settings
+                    },
+                    onHardModeToggle = { enabled ->
+                        hardMode = enabled
+                        saveHardMode(context, enabled)
                     }
-                } catch (e: Exception) {
-                    ActionLogger.logError("tile_tap", e.message ?: "unknown")
+                )
                 }
-            },
-            onPauseClick = {
-                if (gameState.isPaused) {
-                    gameState = engine.resume(gameState)
-                    lastTickTime = SystemClock.elapsedRealtime()
-                } else {
-                    gameState = engine.pause(gameState)
-                }
-            },
-            onMenuClick = {
-                soundManager.stopBGMusic()
-                currentScreen = Screen.Menu
-            }
-        )
 
-        is Screen.GameOver -> GameOverScreen(
-            score = gameState.score,
-            highScore = gameState.highScore,
-            isNewHighScore = gameState.isNewHighScore,
-            isReviveEligible = engine.isReviveEligible(gameState),
-            currentTheme = selectedTheme,
-            onPlayAgain = {
-                gameState = engine.startNewGame(highScore, currentTheme = selectedTheme, isHardMode = hardMode)
-                ActionLogger.logGameStart(0, highScore)
-                AnalyticsTracker.gameStart(score = 0, highScore = highScore)
-                if (musicEnabled) soundManager.startBGMusic()
-                currentScreen = Screen.Game
-            },
-            onMenu = {
-                soundManager.stopBGMusic()
-                currentScreen = Screen.Menu
-            },
-            onShare = {
-                ActionLogger.logShare(gameState.score)
-                shareScore(context, gameState.score, gameState.highScore)
-            },
-            onRevive = {
-                // Show rewarded ad for revive — issue #16
-                if (adManager is AdManagerImpl && context is Activity) {
-                    adManager.showRewardedWithCallbacks(
-                        activity = context,
-                        onReward = {
+                is Screen.Game -> GameScreen(
+                    gameState = gameState,
+                    onTileTap = { row, col ->
+                        try {
+                            val tile = gameState.tiles.getOrNull(row)?.getOrNull(col)
+                            val (newState, result) = engine.onTap(gameState, row, col)
+                            gameState = newState
+                            when (result) {
+                                is TapResult.Correct -> {
+                                    ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber - 1, true, gameState.score, gameState.timeRemaining)
+                                    AnalyticsTracker.tapCorrect(score = gameState.score, combo = result.combo)
+
+                                    // Phase 3.5: Haptic feedback
+                                    if (result.combo >= 3) HapticFeedback.comboBuzz(context)
+                                    else HapticFeedback.lightClick(context)
+
+                                    // Award coins for correct tap
+                                    playerProfile = playerProfile.copy(
+                                        coins = RetentionLogic.awardTapCoins(playerProfile.coins)
+                                    )
+
+                                    // Award combo bonus
+                                    if (result.combo >= 3) {
+                                        playerProfile = playerProfile.copy(
+                                            coins = RetentionLogic.awardComboBonus(playerProfile.coins, result.combo)
+                                        )
+                                    }
+
+                                    // Track total correct taps
+                                    playerProfile = playerProfile.copy(
+                                        totalCorrectTaps = playerProfile.totalCorrectTaps + 1
+                                    )
+
+                                    // #139: Profile saved at game-over only, not every tap
+
+                                    if (soundEnabled) {
+                                        soundManager.playSuccess(result.combo)
+                                        if (gameState.score % 10 == 0 && gameState.score > 0) {
+                                            soundManager.playMilestone()
+                                            HapticFeedback.mediumClick(context)
+                                            AnalyticsTracker.milestone(gameState.score)
+                                        }
+                                    }
+                                }
+                                is TapResult.Wrong -> {
+                                    ActionLogger.logTap(row, col, tile?.currentValue ?: -1, gameState.targetNumber, false, gameState.score, gameState.timeRemaining)
+                                    AnalyticsTracker.tapWrong(score = gameState.score)
+                                    // Phase 3.5: Haptic feedback for wrong tap
+                                    HapticFeedback.errorBuzz(context)
+                                    if (soundEnabled) {
+                                        soundManager.playFailure()
+                                        if (gameState.comboCount > 1) soundManager.playComboBreak()
+                                    }
+                                }
+                                is TapResult.Invalid -> {}
+                            }
+                        } catch (e: Exception) {
+                            ActionLogger.logError("tile_tap", e.message ?: "unknown")
+                        }
+                    },
+                    onPauseClick = {
+                        if (gameState.isPaused) {
+                            gameState = engine.resume(gameState)
+                            lastTickTime = SystemClock.elapsedRealtime()
+                        } else {
+                            gameState = engine.pause(gameState)
+                        }
+                    },
+                    onMenuClick = {
+                        soundManager.stopBGMusic()
+                        currentScreen = Screen.Menu
+                    }
+                )
+
+                is Screen.GameOver -> GameOverScreen(
+                    score = gameState.score,
+                    highScore = gameState.highScore,
+                    isNewHighScore = gameState.isNewHighScore,
+                    isReviveEligible = engine.isReviveEligible(gameState),
+                    currentTheme = selectedTheme,
+                    onPlayAgain = {
+                        gameState = engine.startNewGame(highScore, currentTheme = selectedTheme, isHardMode = hardMode)
+                        ActionLogger.logGameStart(0, highScore)
+                        AnalyticsTracker.gameStart(score = 0, highScore = highScore)
+                        if (musicEnabled) soundManager.startBGMusic()
+                        currentScreen = Screen.Game
+                    },
+                    onMenu = {
+                        soundManager.stopBGMusic()
+                        currentScreen = Screen.Menu
+                    },
+                    onShare = {
+                        ActionLogger.logShare(gameState.score)
+                        shareScore(context, gameState.score, gameState.highScore)
+                    },
+                    onRevive = {
+                        // Show rewarded ad for revive — issue #16
+                        if (adManager is AdManagerImpl && context is Activity) {
+                            adManager.showRewardedWithCallbacks(
+                                activity = context,
+                                onReward = {
+                                    gameState = engine.revive(gameState)
+                                    lastTickTime = SystemClock.elapsedRealtime()
+                                    if (musicEnabled) soundManager.startBGMusic()
+                                    currentScreen = Screen.Game
+                                    ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                                },
+                                onFailure = {
+                                    ActionLogger.logError("revive_failed", "Ad not ready")
+                                }
+                            )
+                        } else {
+                            // Stub fallback — just revive without ad
                             gameState = engine.revive(gameState)
                             lastTickTime = SystemClock.elapsedRealtime()
                             if (musicEnabled) soundManager.startBGMusic()
                             currentScreen = Screen.Game
-                            ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
-                        },
-                        onFailure = {
-                            ActionLogger.logError("revive_failed", "Ad not ready")
                         }
-                    )
-                } else {
-                    // Stub fallback — just revive without ad
-                    gameState = engine.revive(gameState)
-                    lastTickTime = SystemClock.elapsedRealtime()
-                    if (musicEnabled) soundManager.startBGMusic()
-                    currentScreen = Screen.Game
-                }
-            }
-        )
+                    }
+                )
 
-        is Screen.Settings -> SettingsScreen(
-            currentTheme = selectedTheme,
-            soundEnabled = soundEnabled,
-            musicEnabled = musicEnabled,
-            notificationsEnabled = playerProfile.notificationEnabled,
-            onThemeChange = { theme ->
-                selectedTheme = theme
-                saveTheme(context, theme)
-            },
-            onSoundToggle = { enabled ->
-                soundEnabled = enabled
-                saveSoundEnabled(context, enabled)
-            },
-            onMusicToggle = { enabled ->
-                musicEnabled = enabled
-                saveMusicEnabled(context, enabled)
-            },
-            onNotificationsToggle = { enabled ->
-                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // #140: Request runtime permission on Android 13+
-                    val hasPermission = ContextCompat.checkSelfPermission(
-                        context, Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-                    if (hasPermission) {
-                        playerProfile = playerProfile.copy(notificationEnabled = true)
-                        profileRepository.saveProfile(playerProfile)
-                        NotificationScheduler.scheduleStreakReminder(context)
-                        NotificationScheduler.scheduleMissionsReminder(context)
-                    } else {
-                        pendingNotificationEnable = true
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                is Screen.Settings -> SettingsScreen(
+                    currentTheme = selectedTheme,
+                    soundEnabled = soundEnabled,
+                    musicEnabled = musicEnabled,
+                    notificationsEnabled = playerProfile.notificationEnabled,
+                    onThemeChange = { theme ->
+                        selectedTheme = theme
+                        saveTheme(context, theme)
+                    },
+                    onSoundToggle = { enabled ->
+                        soundEnabled = enabled
+                        saveSoundEnabled(context, enabled)
+                    },
+                    onMusicToggle = { enabled ->
+                        musicEnabled = enabled
+                        saveMusicEnabled(context, enabled)
+                    },
+                    onNotificationsToggle = { enabled ->
+                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            // #140: Request runtime permission on Android 13+
+                            val hasPermission = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.POST_NOTIFICATIONS
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) {
+                                playerProfile = playerProfile.copy(notificationEnabled = true)
+                                profileRepository.saveProfile(playerProfile)
+                                NotificationScheduler.scheduleStreakReminder(context)
+                                NotificationScheduler.scheduleMissionsReminder(context)
+                            } else {
+                                pendingNotificationEnable = true
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        } else {
+                            // Below Android 13 or disabling — no permission needed
+                            playerProfile = playerProfile.copy(notificationEnabled = enabled)
+                            profileRepository.saveProfile(playerProfile)
+                            if (enabled) {
+                                NotificationScheduler.scheduleStreakReminder(context)
+                                NotificationScheduler.scheduleMissionsReminder(context)
+                            } else {
+                                NotificationScheduler.cancelAll(context)
+                            }
+                        }
+                    },
+                    onResetHighScore = {
+                        highScore = 0
+                        saveHighScore(context, 0)
+                    },
+                    onBack = {
+                        currentScreen = Screen.Menu
                     }
-                } else {
-                    // Below Android 13 or disabling — no permission needed
-                    playerProfile = playerProfile.copy(notificationEnabled = enabled)
-                    profileRepository.saveProfile(playerProfile)
-                    if (enabled) {
-                        NotificationScheduler.scheduleStreakReminder(context)
-                        NotificationScheduler.scheduleMissionsReminder(context)
-                    } else {
-                        NotificationScheduler.cancelAll(context)
-                    }
-                }
-            },
-            onResetHighScore = {
-                highScore = 0
-                saveHighScore(context, 0)
-            },
-            onBack = {
-                currentScreen = Screen.Menu
+                )
             }
-        )
-        }
         } // end Box (content area)
         // Banner ad at bottom — always visible across ALL screens
         BannerAd()
