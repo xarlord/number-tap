@@ -309,7 +309,7 @@ fun GameOverScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Button(
-                onClick = if (canAffordRevive) onSpendCoins else {},
+                onClick = onSpendCoins,
                 enabled = canAffordRevive,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (canAffordRevive) colors.comboGlow else colors.panelBackground,
