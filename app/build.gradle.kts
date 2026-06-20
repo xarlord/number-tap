@@ -15,14 +15,14 @@ plugins {
 
 android {
     namespace = "com.xarlord.numbertap"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.xarlord.numbertap"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 8
-        versionName = "1.3.2"
+        targetSdk = 36
+        versionCode = 9
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
