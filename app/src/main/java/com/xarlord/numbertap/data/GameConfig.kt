@@ -22,4 +22,10 @@ object GameConfig {
 
     /** Time given to the player during the tutorial (effectively unlimited). */
     const val TUTORIAL_TIME_SECONDS = 999.0
+
+    /** Coin cost to purchase a revive (5 extra seconds after game over). */
+    const val COIN_COST_FOR_REVIVE = 50
+
+    /** Duration of the tile flip animation when a correct number is tapped (#207). */
+    const val TILE_FLIP_DURATION_MS = 300
 }

@@ -61,7 +61,8 @@ internal fun ThemedTile(
     theme: GameTheme,
     colors: ThemeColors,
     style: ThemeStyle,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isAnimating: Boolean = false  // #207: flip animation flag
 ) {
     // --- Phase 3.5: Smooth fade animation ---
     var fadeFrame by remember(tile.id) { mutableIntStateOf(if (tile.state != TileState.ACTIVE) 0 else -1) }
@@ -106,6 +107,25 @@ internal fun ThemedTile(
         }
     }
 
+    // #207: 3D flip animation when correct tap changes tile value
+    var flipRotation by remember(tile.id) { mutableFloatStateOf(0f) }
+    LaunchedEffect(isAnimating) {
+        if (isAnimating) {
+            animate(
+                initialValue = 0f,
+                targetValue = 180f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            ) { value, _ ->
+                flipRotation = value
+            }
+        } else {
+            flipRotation = 0f
+        }
+    }
+
     val bg = when {
         tile.state == TileState.TAPPED_CORRECT && fadeFrame == 0 -> colors.success
         tile.state == TileState.TAPPED_CORRECT && fadeFrame == 1 -> colors.successFade
@@ -147,6 +167,9 @@ internal fun ThemedTile(
                 val s = entryScale * scale
                 scaleX = s
                 scaleY = s
+                // #207: 3D flip rotation
+                rotationY = flipRotation
+                cameraDistance = 8 * density
             }
             .semantics {
                 contentDescription = tileDesc

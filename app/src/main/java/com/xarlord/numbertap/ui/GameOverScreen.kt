@@ -131,10 +131,12 @@ fun GameOverScreen(
     isNewHighScore: Boolean,
     isReviveEligible: Boolean,
     currentTheme: GameTheme,
+    coinBalance: Int = 0,
     onPlayAgain: () -> Unit,
     onMenu: () -> Unit,
     onShare: () -> Unit = {},
     onRevive: () -> Unit = {},
+    onSpendCoins: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
@@ -296,6 +298,38 @@ fun GameOverScreen(
                 }
                 Spacer(modifier = Modifier.height(INTER_BUTTON_SPACING_DP.dp))
             }
+
+            // Coin balance display + spend coins for revive
+            val canAffordRevive = coinBalance >= com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
+            Text(
+                "🪙 $coinBalance",
+                color = colors.textSecondary,
+                fontSize = 16.sp,
+                fontFamily = style.bodyFontFamily
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onSpendCoins,
+                enabled = canAffordRevive,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (canAffordRevive) colors.comboGlow else colors.panelBackground,
+                    contentColor = if (canAffordRevive) colors.textTarget else colors.textSecondary,
+                    disabledContainerColor = colors.panelBackground,
+                    disabledContentColor = colors.textSecondary
+                ),
+                shape = shape,
+                modifier = Modifier
+                    .size(width = REVIVE_BTN_WIDTH_DP.dp, height = REVIVE_BTN_HEIGHT_DP.dp)
+                    .shadow(REVIVE_BTN_SHADOW_DP.dp, shape)
+            ) {
+                Text(
+                    "Spend ${com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE} Coins (+${com.xarlord.numbertap.data.GameConfig.REVIVE_BONUS_SECONDS.toInt()}s)",
+                    fontSize = REVIVE_FONT_SIZE_SP.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = style.bodyFontFamily
+                )
+            }
+            Spacer(modifier = Modifier.height(INTER_BUTTON_SPACING_DP.dp))
 
             Button(
                 onClick = onPlayAgain,

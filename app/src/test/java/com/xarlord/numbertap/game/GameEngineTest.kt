@@ -570,11 +570,12 @@ class GameEngineTest {
     }
 
     @Test
-    fun `chaosTick returns unchanged state when score is below INSANE tier`() {
-        // Score 65 is still HARD tier, not INSANE
+    fun `#204 - chaosTick hides tiles at HARD tier (score 65)`() {
+        // #204: Fix for "flip not working after pass 20" - HARD tier now has chaosMode
         val playingState = state.copy(isPlaying = true, score = 65)
         val result = engine.chaosTick(playingState)
-        assertTrue(result.hiddenTileIds.isEmpty())
+        // HARD tier (score 41-65) has chaosMode, so tiles SHOULD be hidden
+        assertFalse("chaosTick should hide tiles at HARD tier (score 65)", result.hiddenTileIds.isEmpty())
     }
 
     @Test

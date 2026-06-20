@@ -342,11 +342,14 @@ class DifficultyTierTest {
     }
 
     @Test
-    fun `only INSANE tier has isChaosMode true in defaults`() {
+    fun `#204 - MEDIUM, HARD, and INSANE tiers have isChaosMode true in defaults`() {
+        // #204: Fix for "flip not working after pass 20" - enable chaos mode for MEDIUM+ tiers
         DifficultyConfig.resetDefaults()
         val chaosTiers = DifficultyConfig.tiers.filter { it.isChaosMode }
-        assertEquals("Exactly one tier should have isChaosMode=true", 1, chaosTiers.size)
-        assertEquals("INSANE", chaosTiers[0].label)
+        assertEquals("Three tiers should have isChaosMode=true (MEDIUM, HARD, INSANE)", 3, chaosTiers.size)
+        assertEquals("MEDIUM", chaosTiers[0].label)
+        assertEquals("HARD", chaosTiers[1].label)
+        assertEquals("INSANE", chaosTiers[2].label)
     }
 }
 

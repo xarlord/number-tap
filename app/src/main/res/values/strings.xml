@@ -147,4 +147,7 @@
     <string name="ad_loading">Loading ad…</string>
     <string name="ad_not_ready">Ad not ready yet. Try again later.</string>
     <string name="revive_watch_ad">Watch Ad for +5s</string>
+
+    <!-- Coin spend (#206) -->
+    <string name="spend_coins_revive">Spend %1$d Coins (+%2$ds)</string>
 </resources>

@@ -147,7 +147,8 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
             totalTaps = state.totalTaps + 1,
             correctTaps = state.correctTaps + 1,
             totalTapTimeNs = if (state.lastCorrectTapTime > 0) state.totalTapTimeNs + (currentTime - state.lastCorrectTapTime) * 1_000_000 else state.totalTapTimeNs,
-            nextFloatingTextId = if (floatingText != null) state.nextFloatingTextId + 1 else state.nextFloatingTextId
+            nextFloatingTextId = if (floatingText != null) state.nextFloatingTextId + 1 else state.nextFloatingTextId,
+            animatingTileId = tile.id  // #207: trigger flip animation
         )
 
         // Tutorial step advance
@@ -213,6 +214,11 @@ class GameEngine(private val logger: ActionLoggerProvider = ActionLogger) {
 
     fun clearTierAnnouncement(state: GameState): GameState {
         return state.copy(tierAnnouncement = null)
+    }
+
+    /** #207: Clear the tile flip animation flag after animation completes. */
+    fun clearAnimatingTile(state: GameState): GameState {
+        return state.copy(animatingTileId = null)
     }
 
     fun tick(state: GameState, deltaSeconds: Double): GameState {

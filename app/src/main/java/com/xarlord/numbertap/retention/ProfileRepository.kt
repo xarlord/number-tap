@@ -182,6 +182,15 @@ class ProfileRepository(context: Context) {
     }
 
     /**
+     * Spend coins to purchase a revive (extra time after game over).
+     * Returns null if insufficient coins.
+     */
+    fun purchaseRevive(profile: PlayerProfile, cost: Int): PlayerProfile? {
+        if (profile.coins < cost) return null
+        return profile.copy(coins = profile.coins - cost)
+    }
+
+    /**
      * Use a power-up. Returns null if none owned.
      */
     fun usePowerUp(profile: PlayerProfile, type: PowerUpType): PlayerProfile? {
