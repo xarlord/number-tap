@@ -47,12 +47,12 @@ class IssueFixTest {
 
     @Test
     fun `#204 - chaosTick hides tiles at score 20 (MEDIUM tier)`() {
+        // #204: MEDIUM tier (score 16-40) now has isChaosMode=true
         val state = engine.startNewGame(0)
         var currentState = state.copy(score = 20)
         val chaosState = engine.chaosTick(currentState)
-        // chaosTick should either hide tiles or reveal them (toggles)
-        // Since initial hiddenTileIds is empty, it should hide tiles
-        assertTrue("chaosTick should hide tiles at score 20", chaosState.hiddenTileIds.isNotEmpty())
+        // chaosTick should hide tiles because MEDIUM tier has chaosMode
+        assertTrue("chaosTick should hide tiles at score 20 (MEDIUM tier)", chaosState.hiddenTileIds.isNotEmpty())
     }
 
     // ============================================================
