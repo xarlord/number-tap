@@ -553,6 +553,87 @@ class ProfileRepositoryTest {
         assertEquals(3, result.ownedPowerUps[PowerUpType.EXTRA_TIME])
     }
 
+    // ── purchaseRevive (#210) ────────────────────────────────────────────
+
+    @Test
+    fun purchaseRevive_insufficientCoins_returnsNull() {
+        val profile = PlayerProfile(coins = 10)
+        val result = repo.purchaseRevive(profile, cost = 50)
+
+        assertNull(result)
+    }
+
+    @Test
+    fun purchaseRevive_insufficientCoins_leavesProfileUnchanged() {
+        val profile = PlayerProfile(coins = 49)
+        val result = repo.purchaseRevive(profile, cost = 50)
+
+        assertNull(result)
+        assertEquals(49, profile.coins) // original untouched
+    }
+
+    @Test
+    fun purchaseRevive_exactCoins_succeeds() {
+        val profile = PlayerProfile(coins = 50)
+        val result = repo.purchaseRevive(profile, cost = 50)!!
+
+        assertEquals(0, result.coins)
+    }
+
+    @Test
+    fun purchaseRevive_ampleCoins_deductsCost() {
+        val profile = PlayerProfile(coins = 120)
+        val result = repo.purchaseRevive(profile, cost = 50)!!
+
+        assertEquals(70, result.coins) // 120 - 50
+    }
+
+    @Test
+    fun purchaseRevive_preservesOtherProfileFields() {
+        val profile = PlayerProfile(
+            coins = 200,
+            highScore = 555,
+            currentStreak = 3,
+            ownedPowerUps = mapOf(PowerUpType.SLOW_MOTION to 2)
+        )
+        val result = repo.purchaseRevive(profile, cost = 50)!!
+
+        assertEquals(150, result.coins)
+        assertEquals(555, result.highScore)
+        assertEquals(3, result.currentStreak)
+        assertEquals(2, result.ownedPowerUps[PowerUpType.SLOW_MOTION])
+    }
+
+    @Test
+    fun purchaseRevive_doesNotMutateOriginalProfile() {
+        val profile = PlayerProfile(coins = 200)
+        repo.purchaseRevive(profile, cost = 50)
+
+        assertEquals(200, profile.coins) // original untouched (immutability)
+    }
+
+    @Test
+    fun purchaseRevive_zeroCost_succeedsAndDeductsNothing() {
+        val profile = PlayerProfile(coins = 0)
+        val result = repo.purchaseRevive(profile, cost = 0)!!
+
+        assertEquals(0, result.coins)
+    }
+
+    @Test
+    fun purchaseRevive_usesGameConfigDefaultCost() {
+        // The real revive flow uses GameConfig.COIN_COST_FOR_REVIVE (50).
+        // This guards against accidental drift between the constant and usage.
+        val profile = PlayerProfile(coins = 50)
+        val result = repo.purchaseRevive(
+            profile,
+            cost = com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
+        )
+
+        assertNotNull(result)
+        assertEquals(0, result!!.coins)
+    }
+
     // ── usePowerUp ───────────────────────────────────────────────────────
 
     @Test

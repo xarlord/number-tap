@@ -490,10 +490,11 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         }
                     },
                     onSpendCoins = {
-                        // #206: Spend coins for revive
+                        // #206/#211: Spend coins for revive via the tested repository method
                         val cost = com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
-                        if (playerProfile.coins >= cost) {
-                            playerProfile = playerProfile.copy(coins = playerProfile.coins - cost)
+                        val updated = profileRepository.purchaseRevive(playerProfile, cost)
+                        if (updated != null) {
+                            playerProfile = updated
                             profileRepository.saveProfile(playerProfile)
                             gameState = engine.revive(gameState)
                             lastTickTime = SystemClock.elapsedRealtime()
