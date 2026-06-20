@@ -215,6 +215,12 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         lastTickTime = SystemClock.elapsedRealtime()
                     }
 
+                    // #207: Clear flip animation after duration
+                    if (gameState.animatingTileId != null) {
+                        delay(com.xarlord.numbertap.data.GameConfig.TILE_FLIP_DURATION_MS.toLong())
+                        gameState = engine.clearAnimatingTile(gameState)
+                    }
+
                     gameState = engine.clearExpiredFloatingTexts(gameState, now)
 
                     if (gameState.tierAnnouncement != null) {
@@ -440,6 +446,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                     isNewHighScore = gameState.isNewHighScore,
                     isReviveEligible = engine.isReviveEligible(gameState),
                     currentTheme = selectedTheme,
+                    coinBalance = playerProfile.coins,
                     onPlayAgain = {
                         gameState = engine.startNewGame(highScore, currentTheme = selectedTheme, isHardMode = hardMode)
                         ActionLogger.logGameStart(0, highScore)
@@ -477,6 +484,19 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             lastTickTime = SystemClock.elapsedRealtime()
                             if (musicEnabled) soundManager.startBGMusic()
                             currentScreen = Screen.Game
+                        }
+                    },
+                    onSpendCoins = {
+                        // #206: Spend coins for revive
+                        val cost = com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
+                        if (playerProfile.coins >= cost) {
+                            playerProfile = playerProfile.copy(coins = playerProfile.coins - cost)
+                            profileRepository.saveProfile(playerProfile)
+                            gameState = engine.revive(gameState)
+                            lastTickTime = SystemClock.elapsedRealtime()
+                            if (musicEnabled) soundManager.startBGMusic()
+                            currentScreen = Screen.Game
+                            ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
                         }
                     }
                 )

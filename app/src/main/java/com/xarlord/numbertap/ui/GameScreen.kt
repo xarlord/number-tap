@@ -90,16 +90,6 @@ fun GameScreen(
                         isTutorial = gameState.isTutorial
                     )
 
-                    if (gameState.comboCount > 1) {
-                        Text(
-                            stringResource(R.string.combo_format, gameState.comboCount),
-                            color = colors.comboGlow.copy(alpha = pulseAlpha),
-                            fontSize = (16 + gameState.comboCount * 2).coerceAtMost(28).sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = style.headerFontFamily
-                        )
-                    }
-
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Grid
@@ -111,6 +101,7 @@ fun GameScreen(
                         isTutorial = gameState.isTutorial,
                         isHardMode = gameState.isHardMode,
                         hiddenTileIds = gameState.hiddenTileIds,
+                        animatingTileId = gameState.animatingTileId,
                         theme = theme,
                         colors = colors,
                         style = style
@@ -181,6 +172,22 @@ fun GameScreen(
                     .fillMaxWidth()
                     .align(Alignment.Center)
                     .offset(y = (-80).dp)
+            )
+        }
+
+        // Combo text — overlaid on top of grid, below timer, does NOT push content
+        if (gameState.comboCount > 1) {
+            Text(
+                stringResource(R.string.combo_format, gameState.comboCount),
+                color = colors.comboGlow.copy(alpha = pulseAlpha),
+                fontSize = (16 + gameState.comboCount * 2).coerceAtMost(28).sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = style.headerFontFamily,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
+                    .offset(y = (-130).dp)
             )
         }
 

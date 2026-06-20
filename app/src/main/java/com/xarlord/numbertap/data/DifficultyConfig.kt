@@ -21,8 +21,8 @@ object DifficultyConfig {
     /** Default tiers per GDD §5.1 — can be overridden for tuning */
     var tiers: List<DifficultyTier> = listOf(
         DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
-        DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
-        DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
+        DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16, isChaosMode = true),
+        DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41, isChaosMode = true),
         DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
     )
 
@@ -53,8 +53,8 @@ object DifficultyConfig {
     fun resetDefaults() {
         tiers = listOf(
             DifficultyTier(4, 4, 1.0, 1.5, "EASY", scoreThreshold = 0),
-            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16),
-            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41),
+            DifficultyTier(4, 4, 0.7, 2.0, "MEDIUM", scoreThreshold = 16, isChaosMode = true),
+            DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41, isChaosMode = true),
             DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
         )
         startingTime = 30.0

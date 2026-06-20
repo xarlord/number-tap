@@ -41,7 +41,8 @@ data class GameState(
     val currentTheme: GameTheme = GameTheme.DEFAULT,
     val isHardMode: Boolean = false,
     val hiddenTileIds: Set<Int> = emptySet(),
-    val nextFloatingTextId: Int = 0
+    val nextFloatingTextId: Int = 0,
+    val animatingTileId: Int? = null  // #207: ID of tile currently doing flip animation
 ) {
     val accuracy: Float get() = if (totalTaps == 0) 0f else correctTaps.toFloat() / totalTaps
     val avgTapTimeMs: Double get() = if (correctTaps <= 1) 0.0 else (totalTapTimeNs / 1_000_000.0) / (correctTaps - 1)

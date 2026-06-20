@@ -23,6 +23,7 @@ internal fun GridContainer(
     isTutorial: Boolean,
     isHardMode: Boolean,
     hiddenTileIds: Set<Int>,
+    animatingTileId: Int?,
     theme: GameTheme,
     colors: ThemeColors,
     style: ThemeStyle
@@ -47,7 +48,8 @@ internal fun GridContainer(
                         theme = theme,
                         colors = colors,
                         style = style,
-                        onClick = { onTileTap(row, col) }
+                        onClick = { onTileTap(row, col) },
+                        isAnimating = tile.id == animatingTileId
                     )
                 }
             }
