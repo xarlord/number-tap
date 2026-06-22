@@ -131,13 +131,13 @@ fun GameOverScreen(
     isNewHighScore: Boolean,
     isReviveEligible: Boolean,
     currentTheme: GameTheme,
-    coinBalance: Int = 0,
     onPlayAgain: () -> Unit,
     onMenu: () -> Unit,
+    modifier: Modifier = Modifier,
+    coinBalance: Int = 0,
     onShare: () -> Unit = {},
     onRevive: () -> Unit = {},
-    onSpendCoins: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onSpendCoins: () -> Unit = {}
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
     val style = ThemeConfig.styleFor(currentTheme)
