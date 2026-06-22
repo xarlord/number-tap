@@ -66,11 +66,11 @@ import com.xarlord.numbertap.data.ThemeStyle
 fun MenuScreen(
     highScore: Int,
     currentTheme: GameTheme,
+    modifier: Modifier = Modifier,
     isHardMode: Boolean = false,
     coins: Int = 0,
     streak: Int = 0,
     onStartClick: () -> Unit,
-    modifier: Modifier = Modifier,
     onTutorialClick: () -> Unit = {},
     onThemeChange: (GameTheme) -> Unit = {},
     onSettingsClick: () -> Unit = {},

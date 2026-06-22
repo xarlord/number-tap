@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Number Tap</string>
-    <string name="game_over_title">Game Over</string>
     <string name="play_again">Play Again</string>
-    <string name="start_game">Start</string>
-    <string name="high_score_label">Best</string>
-    <string name="score_label">Score</string>
-    <string name="time_label">Time</string>
-    <string name="target_label">Find</string>
 
     <!-- Game Screen -->
     <string name="score_format">SCORE: %1$04d</string>
@@ -66,12 +60,6 @@
     <string name="share_text">Number Tap - The Ordered Grid\n\nScore: %1$d\nPersonal Best: %2$d\n\nCan you beat my score?</string>
     <string name="share_chooser">Share Score</string>
 
-    <!-- Theme names -->
-    <string name="theme_terminal">Terminal</string>
-    <string name="theme_chalkboard">Chalkboard</string>
-    <string name="theme_matrix">Matrix</string>
-    <string name="theme_default">Default</string>
-
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_sound">Sound Effects</string>
@@ -87,7 +75,6 @@
     <string name="settings_back">Back</string>
     <string name="settings_cancel">Cancel</string>
     <string name="settings_confirm">Reset</string>
-    <string name="settings_disabled">Disabled</string>
     <string name="settings_button">⚙ Settings</string>
 
     <!-- Accessibility -->
@@ -117,37 +104,33 @@
     <string name="notif_streak_title">Streak at risk! 🔥</string>
     <string name="notif_streak_body">Your %1$d-day streak is about to break! Tap to keep it going.</string>
     <string name="notif_missions_title">New missions ready!</string>
-    <string name="notif_missions_body">%1$d coins await! Complete today\'s challenges.</string>
     <string name="notif_near_achievement_title">So close! 🏆</string>
-    <string name="notif_near_achievement_body">Only %1$d points away from your high score!</string>
+
+    <!-- Plurals (#226): quantity strings for correct i18n -->
+    <plurals name="notif_missions_body">
+        <item quantity="one">%1$d coin awaits! Complete today\'s challenges.</item>
+        <item quantity="other">%1$d coins await! Complete today\'s challenges.</item>
+    </plurals>
+    <plurals name="notif_near_achievement_body">
+        <item quantity="one">Only %1$d point away from your high score!</item>
+        <item quantity="other">Only %1$d points away from your high score!</item>
+    </plurals>
 
     <!-- Retention: Profile (#89) -->
     <string name="coins_display">🪙 %1$d</string>
     <string name="streak_display">🔥 %1$d</string>
-    <string name="missions_title">DAILY MISSIONS</string>
-    <string name="mission_progress">%1$d / %2$d</string>
-    <string name="mission_claim">CLAIM %1$d 🪙</string>
-    <string name="mission_completed">✅ DONE</string>
-    <string name="mission_type_score">Score %1$d</string>
-    <string name="mission_type_combo">Reach x%1$d combo</string>
-    <string name="mission_type_games">Play %1$d games</string>
-    <string name="mission_type_taps">Tap %1$d correctly</string>
-    <string name="powerups_title">POWER-UPS</string>
-    <string name="powerup_buy">BUY %1$d 🪙</string>
-    <string name="powerup_owned">x%1$d</string>
-    <string name="powerup_locked">🔒 Unlock @ %1$d</string>
-    <string name="daily_login_reward">+%1$d 🪙 Day %2$d streak!</string>
     <string name="settings_notifications">Notifications</string>
     <string name="a11y_notifications_toggle">Notifications %1$s</string>
     <string name="daily_login_popup_title">Daily Reward!</string>
-    <string name="daily_login_popup_body">+%1$d coins for your %2$d-day streak!</string>
     <string name="daily_login_popup_dismiss">Nice!</string>
 
-    <!-- Ads (#90) -->
-    <string name="ad_loading">Loading ad…</string>
-    <string name="ad_not_ready">Ad not ready yet. Try again later.</string>
-    <string name="revive_watch_ad">Watch Ad for +5s</string>
-
-    <!-- Coin spend (#206) -->
-    <string name="spend_coins_revive">Spend %1$d Coins (+%2$ds)</string>
+    <!-- Plurals (#226): daily login popup body + coin-spend revive -->
+    <plurals name="daily_login_popup_body">
+        <item quantity="one">+%1$d coin for your %2$d-day streak!</item>
+        <item quantity="other">+%1$d coins for your %2$d-day streak!</item>
+    </plurals>
+    <plurals name="spend_coins_revive">
+        <item quantity="one">Spend %1$d Coin (+%2$ds)</item>
+        <item quantity="other">Spend %1$d Coins (+%2$ds)</item>
+    </plurals>
 </resources>

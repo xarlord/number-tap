@@ -40,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -303,10 +304,14 @@ fun GameOverScreen(
             val canAffordRevive = coinBalance >= com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
             // #215: use localized string resources instead of hardcoded English
             val coinBalanceStr = stringResource(R.string.coins_display, coinBalance)
-            val spendCoinsStr = stringResource(
-                R.string.spend_coins_revive,
-                com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE,
-                com.xarlord.numbertap.data.GameConfig.REVIVE_BONUS_SECONDS.toInt()
+            // #226: use plural resource for correct i18n of "Coin(s)"
+            val coinCost = com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
+            val reviveBonus = com.xarlord.numbertap.data.GameConfig.REVIVE_BONUS_SECONDS.toInt()
+            val spendCoinsStr = pluralStringResource(
+                R.plurals.spend_coins_revive,
+                coinCost,
+                coinCost,
+                reviveBonus
             )
             Text(
                 coinBalanceStr,

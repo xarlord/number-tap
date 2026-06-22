@@ -146,7 +146,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var gameState by remember { mutableStateOf(GameState()) }
     val engine = remember { GameEngine() }
     val context = LocalContext.current
-    var highScore by remember { mutableStateOf(loadHighScore(context)) }
+    var highScore by remember { mutableIntStateOf(loadHighScore(context)) }
     var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
     var soundEnabled by remember { mutableStateOf(loadSoundEnabled(context)) }
     var musicEnabled by remember { mutableStateOf(loadMusicEnabled(context)) }
@@ -313,7 +313,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
             },
             text = {
                 androidx.compose.material3.Text(
-                    text = context.getString(R.string.daily_login_popup_body, dailyLoginCoins, dailyLoginStreak)
+                    text = context.resources.getQuantityString(R.plurals.daily_login_popup_body, dailyLoginCoins, dailyLoginCoins, dailyLoginStreak)
                 )
             },
             confirmButton = {

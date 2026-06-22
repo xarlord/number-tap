@@ -39,6 +39,10 @@ class NotificationSchedulerTest {
         every { mockContext.getSystemService(Context.NOTIFICATION_SERVICE) } returns mockNotificationManager
         every { mockContext.getString(any()) } returns "mocked"
         every { mockContext.getString(any(), *anyVararg()) } returns "mocked"
+        // #226: mock resources for getQuantityString (plurals)
+        val mockResources = mockk<android.content.res.Resources>(relaxed = true)
+        every { mockContext.resources } returns mockResources
+        every { mockResources.getQuantityString(any(), any(), *anyVararg()) } returns "mocked"
 
         // Mock NotificationCompat.Builder to avoid real Android notification chain
         mockkConstructor(NotificationCompat.Builder::class)
