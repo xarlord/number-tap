@@ -70,11 +70,12 @@ class ComposeUiTest {
     }
 
     @Test
-    fun menuScreen_zeroHighScore_showsBestZero() {
+    fun menuScreen_zeroHighScore_doesNotShowBestBadge() {
         composeTestRule.setContent {
             MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, onStartClick = {})
         }
-        composeTestRule.onNodeWithText("BEST: 0").assertIsDisplayed()
+        // When highScore is 0, the BEST badge is intentionally hidden (#229)
+        composeTestRule.onNodeWithText("BEST: 0").assertDoesNotExist()
     }
 
     // === GameScreen — rendering ===
@@ -145,11 +146,12 @@ class ComposeUiTest {
     }
 
     @Test
-    fun gameScreen_showsHighScore() {
+    fun gameScreen_showsScoreInsteadOfHighScore() {
+        // GameScreen does not render a "BEST:" label; it shows SCORE (#229)
         composeTestRule.setContent {
-            GameScreen(gameState = GameState(isPlaying = true, highScore = 50), onTileTap = { _, _ -> })
+            GameScreen(gameState = GameState(isPlaying = true, highScore = 50, score = 7), onTileTap = { _, _ -> })
         }
-        composeTestRule.onNodeWithText("BEST: 50").assertIsDisplayed()
+        composeTestRule.onNodeWithText("SCORE: 0007").assertIsDisplayed()
     }
 
     // === GameScreen — not playing state ===
@@ -185,6 +187,8 @@ class ComposeUiTest {
                 onPlayAgain = {}, onMenu = {}
             )
         }
+        // The score animates from 0 to final value; wait for idle (#229)
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("42").assertIsDisplayed()
     }
 
@@ -210,7 +214,8 @@ class ComposeUiTest {
                 onPlayAgain = {}, onMenu = {}
             )
         }
-        composeTestRule.onNodeWithText("+5 SECONDS").assertIsDisplayed()
+        // Revive button text is "+5 SECONDS  (Watch Ad)" (#229)
+        composeTestRule.onNodeWithText("+5 SECONDS", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -222,7 +227,7 @@ class ComposeUiTest {
                 onPlayAgain = {}, onMenu = {}
             )
         }
-        composeTestRule.onNodeWithText("+5 SECONDS").assertDoesNotExist()
+        composeTestRule.onNodeWithText("+5 SECONDS", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -302,7 +307,8 @@ class ComposeUiTest {
                 onResetHighScore = {}, onBack = {}
             )
         }
-        composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
+        // Back button contentDescription is "Go back" (#229)
+        composeTestRule.onNodeWithContentDescription("Go back", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -314,7 +320,8 @@ class ComposeUiTest {
                 onResetHighScore = {}, onBack = {}
             )
         }
-        composeTestRule.onNodeWithText("Version", substring = true).assertIsDisplayed()
+        // Version text is "Number Tap v{version}" (#229)
+        composeTestRule.onNodeWithText("Number Tap v", substring = true).assertIsDisplayed()
     }
 
     // === Theme rendering — all 4 themes ===

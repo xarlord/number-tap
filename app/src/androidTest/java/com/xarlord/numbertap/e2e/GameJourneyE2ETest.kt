@@ -193,8 +193,9 @@ class GameJourneyE2ETest {
     @Test
     fun journey_reviveEligible_whenScoreAboveThreshold() {
         var state = engine.startNewGame(highScore = 100)
-        // Tap a few correct tiles to get score above threshold
-        repeat(3) {
+        // REVIVE_ELIGIBILITY_THRESHOLD = 0.9; need score >= 90 to be eligible
+        // Tap 90 correct tiles to exceed the 90% threshold
+        repeat(90) {
             val target = state.targetNumber
             var found = false
             for (row in state.tiles.indices) {
@@ -208,6 +209,7 @@ class GameJourneyE2ETest {
                 }
                 if (found) break
             }
+            assertTrue("Should find target tile in round ${it + 1}", found)
         }
         // Force game over
         state = engine.tick(state, state.timeRemaining + 1.0)
