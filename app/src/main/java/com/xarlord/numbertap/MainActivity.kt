@@ -30,6 +30,7 @@ import androidx.core.content.ContextCompat
 import com.xarlord.numbertap.ads.AdManagerImpl
 import com.xarlord.numbertap.ads.BannerAd
 import com.xarlord.numbertap.analytics.AnalyticsTracker
+import com.xarlord.numbertap.analytics.AnalyticsEvent
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.TileState
@@ -78,6 +79,14 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Check if a flexible update was downloaded and ready to install
         updateManager.checkForPendingInstall()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // #234: Clean up Play Core update listeners to prevent leaks
+        updateManager.cleanup()
+        // #232: Fire session_end analytics event
+        AnalyticsTracker.sessionEnd()
     }
 }
 
@@ -476,6 +485,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                                     if (musicEnabled) soundManager.startBGMusic()
                                     currentScreen = Screen.Game
                                     ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                                    // #232: Track revive used
+                                    AnalyticsTracker.track(AnalyticsEvent.REVIVE_USED)
                                 },
                                 onFailure = {
                                     ActionLogger.logError("revive_failed", "Ad not ready")
@@ -487,6 +498,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             lastTickTime = SystemClock.elapsedRealtime()
                             if (musicEnabled) soundManager.startBGMusic()
                             currentScreen = Screen.Game
+                            // #232: Track revive used
+                            AnalyticsTracker.track(AnalyticsEvent.REVIVE_USED)
                         }
                     },
                     onSpendCoins = {
@@ -501,6 +514,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             if (musicEnabled) soundManager.startBGMusic()
                             currentScreen = Screen.Game
                             ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                            // #232: Track revive used
+                            AnalyticsTracker.track(AnalyticsEvent.REVIVE_USED)
                         }
                     }
                 )

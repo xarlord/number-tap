@@ -133,6 +133,10 @@ class AdManagerImpl(
         if (ad != null) {
             ad.show(activity)
             Log.d(TAG, "Showing interstitial ad")
+            // #232: Track interstitial shown
+            com.xarlord.numbertap.analytics.AnalyticsTracker.track(
+                com.xarlord.numbertap.analytics.AnalyticsEvent.AD_INTERSTITIAL_SHOWN
+            )
             return true
         }
         Log.d(TAG, "No interstitial ad ready")
@@ -226,11 +230,23 @@ class AdManagerImpl(
         if (ad != null) {
             ad.show(activity) { rewardItem ->
                 Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
+                // #232: Track reward earned
+                com.xarlord.numbertap.analytics.AnalyticsTracker.track(
+                    com.xarlord.numbertap.analytics.AnalyticsEvent.AD_REWARDED_EARNED
+                )
                 onReward()
             }
             Log.d(TAG, "Showing rewarded ad")
+            // #232: Track rewarded ad shown
+            com.xarlord.numbertap.analytics.AnalyticsTracker.track(
+                com.xarlord.numbertap.analytics.AnalyticsEvent.AD_REWARDED_SHOWN
+            )
         } else {
             Log.d(TAG, "No rewarded ad ready for revive")
+            // #232: Track rewarded ad failure
+            com.xarlord.numbertap.analytics.AnalyticsTracker.track(
+                com.xarlord.numbertap.analytics.AnalyticsEvent.AD_REWARDED_FAILED
+            )
             onFailure()
         }
     }

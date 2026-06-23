@@ -128,4 +128,21 @@ class AnalyticsTrackerTest {
         val largeParams = (1..50).associate { "key_$it" to it }
         AnalyticsTracker.track(AnalyticsEvent.GAME_OVER, largeParams)
     }
+
+    // ── #232: Verify ad/revive/session-end events are tracked ──────────────
+
+    @Test
+    fun `ad and revive analytics events can be tracked without throwing`() {
+        // These events should now be wired into AdManagerImpl and MainActivity
+        AnalyticsTracker.track(AnalyticsEvent.AD_INTERSTITIAL_SHOWN)
+        AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_SHOWN)
+        AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_EARNED)
+        AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_FAILED)
+        AnalyticsTracker.track(AnalyticsEvent.REVIVE_USED)
+    }
+
+    @Test
+    fun `session end event can be tracked`() {
+        AnalyticsTracker.sessionEnd()
+    }
 }
