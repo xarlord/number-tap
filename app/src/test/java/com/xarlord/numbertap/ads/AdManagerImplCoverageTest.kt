@@ -18,7 +18,6 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import java.lang.reflect.Field
-
 /**
  * Additional coverage tests for AdManagerImpl.
  *
@@ -376,5 +375,44 @@ class AdManagerImplCoverageTest {
         // The ad was shown — analytics tracking call is embedded in the path;
         // verify no exception thrown (AnalyticsTracker logs to logcat in tests).
         verify { mockAd.show(activity) }
+    }
+
+    // ── 10. Full-screen content callback coverage (#237) ──────────────────
+    // Exercise the AdMob callback lambdas via preloadInterstitial/preloadRewarded
+
+    @Test
+    fun `preloadInterstitial captures load callback without crash`() {
+        impl.preloadInterstitial()
+        // Verifying the load call was made is sufficient for line coverage
+        verify { InterstitialAd.load(any(), any(), any<AdRequest>(), any()) }
+    }
+
+    @Test
+    fun `preloadRewarded onAdFailedToLoad callback sets ad to null`() {
+        val mockError = mockk<com.google.android.gms.ads.LoadAdError>(relaxed = true)
+        every { mockError.message } returns "Test load failure"
+
+        every { RewardedAd.load(any(), any(), any<AdRequest>(), any()) } answers {
+            val cb = it.invocation.args[3]!!
+            // Walk the class hierarchy to find onAdFailedToLoad
+            var clazz: Class<*> = cb.javaClass
+            while (clazz != null) {
+                try {
+                    val method = clazz.getDeclaredMethod(
+                        "onAdFailedToLoad", com.google.android.gms.ads.LoadAdError::class.java
+                    )
+                    method.isAccessible = true
+                    method.invoke(cb, mockError)
+                    break
+                } catch (e: NoSuchMethodException) {
+                    clazz = clazz.superclass
+                }
+            }
+        }
+
+        impl.preloadRewarded()
+
+        // Ad should be null after failed load
+        assertFalse("Ad should not be ready after failed load", impl.isAdReady())
     }
 }

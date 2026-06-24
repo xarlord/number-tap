@@ -94,6 +94,66 @@ class DifficultyConfigTest {
             assertEquals("Grid should be square at score $score", tier.gridRows, tier.gridCols)
         }
     }
+
+    // #239: Tests for currentTierIndex() and gridSize — previously untested
+
+    @Test
+    fun `currentTierIndex returns 0 for EASY scores`() {
+        DifficultyConfig.resetDefaults()
+        assertEquals(0, DifficultyConfig.currentTierIndex(0))
+        assertEquals(0, DifficultyConfig.currentTierIndex(15))
+    }
+
+    @Test
+    fun `currentTierIndex returns 1 for MEDIUM scores`() {
+        DifficultyConfig.resetDefaults()
+        assertEquals(1, DifficultyConfig.currentTierIndex(16))
+        assertEquals(1, DifficultyConfig.currentTierIndex(40))
+    }
+
+    @Test
+    fun `currentTierIndex returns 2 for HARD scores`() {
+        DifficultyConfig.resetDefaults()
+        assertEquals(2, DifficultyConfig.currentTierIndex(41))
+        assertEquals(2, DifficultyConfig.currentTierIndex(65))
+    }
+
+    @Test
+    fun `currentTierIndex returns 3 for INSANE scores`() {
+        DifficultyConfig.resetDefaults()
+        assertEquals(3, DifficultyConfig.currentTierIndex(66))
+        assertEquals(3, DifficultyConfig.currentTierIndex(999))
+    }
+
+    @Test
+    fun `tierForScore and currentTierIndex agree`() {
+        DifficultyConfig.resetDefaults()
+        for (score in listOf(0, 1, 15, 16, 40, 41, 65, 66, 100, 500)) {
+            val tier = DifficultyConfig.tierForScore(score)
+            val idx = DifficultyConfig.currentTierIndex(score)
+            assertEquals(tier, DifficultyConfig.tiers[idx])
+        }
+    }
+
+    @Test
+    fun `DifficultyTier gridSize equals rows times cols`() {
+        val tier = DifficultyTier(gridRows = 4, gridCols = 4, 1.0, 1.0)
+        assertEquals(16, tier.gridSize)
+
+        val tier2 = DifficultyTier(gridRows = 5, gridCols = 5, 0.5, 3.0)
+        assertEquals(25, tier2.gridSize)
+    }
+
+    @Test
+    fun `resetDefaults restores all 4 tiers`() {
+        DifficultyConfig.tiers = listOf(DifficultyTier(3, 3, 1.0, 1.0, "TEST"))
+        assertEquals(1, DifficultyConfig.tiers.size)
+
+        DifficultyConfig.resetDefaults()
+        assertEquals(4, DifficultyConfig.tiers.size)
+        assertEquals("EASY", DifficultyConfig.tiers[0].label)
+        assertEquals("INSANE", DifficultyConfig.tiers[3].label)
+    }
 }
 
 class TileTest {
