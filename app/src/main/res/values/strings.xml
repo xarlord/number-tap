@@ -150,4 +150,7 @@
 
     <!-- Coin spend (#206) -->
     <string name="spend_coins_revive">Spend %1$d Coins (+%2$ds)</string>
+
+    <!-- Share fallback (#238) -->
+    <string name="share_not_available">No app available to share.</string>
 </resources>

@@ -45,10 +45,12 @@ class AdManagerImpl(
         const val INTERSTITIAL_FREQUENCY = 3
     }
 
-    private var interstitialAd: InterstitialAd? = null
-    private var rewardedAd: RewardedAd? = null
-    private var gameOverCount = 0
-    private var isInitialized = false
+    // #237: @Volatile for cross-thread visibility — AdMob callbacks run on background threads,
+    // while show*() methods are called from the UI thread.
+    @Volatile private var interstitialAd: InterstitialAd? = null
+    @Volatile private var rewardedAd: RewardedAd? = null
+    @Volatile private var gameOverCount = 0
+    @Volatile private var isInitialized = false
 
     /**
      * Initialize the Mobile Ads SDK. Call once in Application.onCreate() or Activity.onCreate().
@@ -178,38 +180,7 @@ class AdManagerImpl(
     }
 
     override fun showRewardedAd(): Boolean {
-        Log.d(TAG, "Use showRewardedAd(activity) overload for proper Activity context")
-        return false
-    }
-
-    /**
-     * Show rewarded ad with Activity context — DISPLAY ONLY, does NOT grant rewards.
-     * #138 fix: Activity passed at show-time, not stored.
-     * #151 fix: Must return true when ad IS available — onReward is async and won't fire
-     * before this method returns, so we cannot capture its result synchronously.
-     *
-     * #153: The reward callback is a no-op (only logs). Callers that need to know
-     * the reward outcome (e.g., +5s revive mechanic) MUST use [showRewardedWithCallbacks]
-     * instead. This method is unsuitable for game mechanics.
-     *
-     * @param activity Activity context for full-screen ad display
-     * @return true if ad was shown, false if no ad ready
-     */
-    @Deprecated(
-        message = "Use showRewardedWithCallbacks(activity, onReward, onFailure) to handle reward outcomes. " +
-            "This method silently discards the reward (issue #153).",
-        replaceWith = ReplaceWith("showRewardedWithCallbacks(activity, onReward = {}, onFailure = {})")
-    )
-    fun showRewardedAd(activity: Activity): Boolean {
-        val ad = rewardedAd
-        if (ad != null) {
-            ad.show(activity) { rewardItem ->
-                Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
-            }
-            Log.d(TAG, "Showing rewarded ad")
-            return true
-        }
-        Log.d(TAG, "No rewarded ad ready")
+        Log.d(TAG, "Use showRewardedWithCallbacks(activity, ...) for rewarded ads")
         return false
     }
 
@@ -218,8 +189,8 @@ class AdManagerImpl(
     /**
      * Show rewarded ad with callbacks for success/failure.
      * Issue #16: Used for the +5s revive mechanic.
-     * Note: showRewardedAd(activity) does NOT delegate here — it has its own
-     * ad.show() call. Use THIS method when you need to know the reward outcome.
+     * This is the only production entry point for rewarded ads (#241 removed
+     * the deprecated display-only showRewardedAd(activity) overload).
      */
     fun showRewardedWithCallbacks(
         activity: Activity,

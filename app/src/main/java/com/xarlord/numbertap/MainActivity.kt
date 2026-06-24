@@ -586,5 +586,14 @@ private fun shareScore(context: Context, score: Int, highScore: Int) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    // #238: Guard against ActivityNotFoundException when no share-capable app is installed
+    try {
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    } catch (e: android.content.ActivityNotFoundException) {
+        android.widget.Toast.makeText(
+            context,
+            context.getString(R.string.share_not_available),
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
 }

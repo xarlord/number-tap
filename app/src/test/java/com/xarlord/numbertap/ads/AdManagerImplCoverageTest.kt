@@ -224,18 +224,8 @@ class AdManagerImplCoverageTest {
         assertFalse("onFailure should not be called when ad is loaded", failureCalled)
     }
 
-    @Test
-    @Suppress("DEPRECATION")
-    fun `showRewardedAd activity overload with ad loaded calls ad show`() {
-        val activity = mockk<Activity>(relaxed = true)
-        val mockAd = mockk<RewardedAd>(relaxed = true)
-        injectRewardedAd(mockAd)
-
-        val result = impl.showRewardedAd(activity)
-
-        assertTrue("Should return true when ad is loaded", result)
-        verify { mockAd.show(activity, any()) }
-    }
+    // showRewardedAd(activity) was removed in #241 (deprecated dead code).
+    // Production exclusively uses showRewardedWithCallbacks(), which is tested above.
 
     // ── 5. Companion object constants ────────────────────────────────────
 

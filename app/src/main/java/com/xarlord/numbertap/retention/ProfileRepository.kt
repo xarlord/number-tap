@@ -108,69 +108,6 @@ class ProfileRepository(context: Context) {
     }
 
     /**
-     * Award coins for correct tap (1 coin per correct tap).
-     */
-    fun awardTapCoins(profile: PlayerProfile, tapCount: Int = 1): PlayerProfile {
-        return profile.copy(coins = profile.coins + tapCount)
-    }
-
-    /**
-     * Award combo bonus coins.
-     */
-    fun awardComboBonus(profile: PlayerProfile, combo: Int): PlayerProfile {
-        val bonus = when {
-            combo >= 10 -> 5
-            combo >= 5 -> 3
-            combo >= 3 -> 1
-            else -> 0
-        }
-        return if (bonus > 0) profile.copy(coins = profile.coins + bonus) else profile
-    }
-
-    /**
-     * Update mission progress.
-     */
-    fun updateMissionProgress(
-        profile: PlayerProfile,
-        gameScore: Int = 0,
-        maxCombo: Int = 0,
-        correctTaps: Int = 0
-    ): PlayerProfile {
-        val updatedMissions = profile.todayMissions.map { mission ->
-            if (mission.isCompleted) return@map mission
-            val newProgress = when (mission.type) {
-                MissionType.SCORE_TARGET -> maxOf(mission.progress, gameScore)
-                MissionType.COMBO_TARGET -> maxOf(mission.progress, maxCombo)
-                MissionType.GAMES_PLAYED -> mission.progress + 1
-                MissionType.TOTAL_TAPS -> mission.progress + correctTaps
-            }
-            mission.copy(
-                progress = newProgress,
-                isCompleted = newProgress >= mission.target
-            )
-        }
-        return profile.copy(todayMissions = updatedMissions)
-    }
-
-    /**
-     * Claim completed mission reward.
-     */
-    fun claimMission(profile: PlayerProfile, missionId: String): PlayerProfile {
-        val updatedMissions = profile.todayMissions.map { mission ->
-            if (mission.id == missionId && mission.isCompleted && !mission.isClaimed) {
-                mission.copy(isClaimed = true)
-            } else mission
-        }
-        val claimedCoins = profile.todayMissions
-            .filter { it.id == missionId && it.isCompleted && !it.isClaimed }
-            .sumOf { it.coinReward }
-        return profile.copy(
-            todayMissions = updatedMissions,
-            coins = profile.coins + claimedCoins
-        )
-    }
-
-    /**
      * Purchase a power-up. Returns null if insufficient coins.
      */
     fun purchasePowerUp(profile: PlayerProfile, type: PowerUpType, tierMultiplier: Float = 1f): PlayerProfile? {
