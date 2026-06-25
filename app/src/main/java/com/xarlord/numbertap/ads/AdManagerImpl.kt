@@ -48,6 +48,8 @@ class AdManagerImpl(
     private var interstitialAd: InterstitialAd? = null
     private var rewardedAd: RewardedAd? = null
     private var gameOverCount = 0
+    // #245: Volatile so loadBanner() sees the value written by the async init callback
+    @Volatile
     private var isInitialized = false
 
     /**
@@ -70,9 +72,10 @@ class AdManagerImpl(
     }
 
     override fun loadBanner(): Boolean {
-        // Banner is loaded inline in Compose via AndroidView + AdView
-        // This method confirms the SDK is initialized
-        return isInitialized
+        // #245: AdView.loadAd() handles its own initialization internally, so we don't
+        // gate on isInitialized — this avoids a race where the banner silently fails
+        // to load if loadBanner() is called before the async MobileAds callback fires.
+        return true
     }
 
     /**

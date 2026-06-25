@@ -10,6 +10,7 @@ import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -68,8 +69,8 @@ class MainActivity : ComponentActivity() {
         adManager.preloadInterstitial()
         adManager.preloadRewarded()
 
-        // Check for Play Store updates (#203)
-        updateManager.checkForUpdate()
+        // Check for Play Store updates (#203, #248: pass Activity for update flow UI)
+        updateManager.checkForUpdate(this)
 
         setContent { NumberTapApp(adManager) }
     }
@@ -78,6 +79,18 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Check if a flexible update was downloaded and ready to install
         updateManager.checkForPendingInstall()
+    }
+
+    // #244: Track session end when the user leaves the app
+    override fun onStop() {
+        super.onStop()
+        AnalyticsTracker.sessionEnd()
+    }
+
+    // #248: Clean up Play Core update listeners to prevent Activity leak
+    override fun onDestroy() {
+        super.onDestroy()
+        updateManager.cleanup()
     }
 }
 
@@ -154,6 +167,22 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var lastTickTime by remember { mutableLongStateOf(0L) }
     var lastCountdownTickSecond by remember { mutableIntStateOf(-1) }
     var lastChaosTickTime by remember { mutableLongStateOf(0L) }
+
+    // #243: Handle hardware back button per-screen for standard Android navigation
+    BackHandler(enabled = currentScreen != Screen.Menu) {
+        when (currentScreen) {
+            is Screen.Game -> {
+                // Pause the game instead of exiting
+                if (!gameState.isPaused && gameState.isPlaying) {
+                    gameState = engine.pause(gameState)
+                }
+            }
+            is Screen.GameOver, is Screen.Settings -> {
+                currentScreen = Screen.Menu
+            }
+            else -> {}
+        }
+    }
 
     // --- Retention state ---
     val profileRepository = remember { ProfileRepository(context) }

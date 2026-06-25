@@ -14,22 +14,33 @@ import com.google.android.play.core.install.model.AppUpdateType
  * update prompt (download in background → prompt to install).
  *
  * Issue #203: Notify users when a new Play Store version is available.
+ * #248: Uses applicationContext for AppUpdateManager to avoid Activity leaks;
+ *       Activity is passed only at startUpdateFlowForResult() time.
  */
 class InAppUpdateManager(
-    private val activity: Activity
+    context: android.content.Context
 ) {
     companion object {
         private const val TAG = "NumberTap:Update"
         private const val UPDATE_REQUEST_CODE = 7777
     }
 
-    private val appUpdateManager: AppUpdateManager = AppUpdateManagerFactory.create(activity)
+    // #248: Use applicationContext so the manager doesn't retain an Activity reference
+    private val appContext: android.content.Context = context.applicationContext
+    private val appUpdateManager: AppUpdateManager = AppUpdateManagerFactory.create(appContext)
+
+    // #248: Activity is passed only at flow-start time to avoid leaking it
+    private var currentActivity: android.app.Activity? = null
 
     /**
      * Check for updates. If an update is available, start a flexible update
      * (downloads in background, shows consent dialog).
+     *
+     * @param activity Activity context for launching the update flow UI.
+     *                 #248: Passed here so it isn't retained for the Activity lifetime.
      */
-    fun checkForUpdate() {
+    fun checkForUpdate(activity: android.app.Activity? = null) {
+        activity?.let { currentActivity = it }
         Log.d(TAG, "Checking for app updates...")
         appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
             // Pure decision logic (testable, issue #201)
@@ -60,6 +71,10 @@ class InAppUpdateManager(
      * to download and install the update. Downloads happen in background.
      */
     private fun startFlexibleUpdate(appUpdateInfo: AppUpdateInfo) {
+        val activity = currentActivity ?: run {
+            Log.w(TAG, "Cannot start update flow — no Activity available")
+            return
+        }
         try {
             appUpdateManager.startUpdateFlowForResult(
                 appUpdateInfo,
@@ -77,6 +92,10 @@ class InAppUpdateManager(
      * Resume an update that was already in progress.
      */
     private fun resumeUpdate(appUpdateInfo: AppUpdateInfo) {
+        val activity = currentActivity ?: run {
+            Log.w(TAG, "Cannot resume update flow — no Activity available")
+            return
+        }
         try {
             appUpdateManager.startUpdateFlowForResult(
                 appUpdateInfo,
@@ -85,7 +104,7 @@ class InAppUpdateManager(
                 UPDATE_REQUEST_CODE
             )
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to resume update: ${e.message}")
+            Log.w(TAG, "Failed to resume update flow: ${e.message}")
         }
     }
 
@@ -112,9 +131,11 @@ class InAppUpdateManager(
     }
 
     /**
-     * Call from onDestroy to clean up listeners.
+     * Call from onDestroy to clean up listeners and release the Activity reference.
+     * #248: Clears currentActivity so it can be garbage-collected.
      */
     fun cleanup() {
+        currentActivity = null
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
             // Pure decision logic (testable, issue #201)
             if (shouldShowInstallPrompt(info.installStatus())) {

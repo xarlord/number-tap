@@ -84,9 +84,12 @@ class AdManagerImplTest {
     }
 
     @Test
-    fun `loadBanner returns false when not initialized`() {
+    fun `loadBanner returns true immediately - no init race (#245)`() {
         val impl = AdManagerImpl(mockk(relaxed = true))
-        assertFalse("loadBanner should return false before initialization", impl.loadBanner())
+        // #245: loadBanner() no longer gates on the async isInitialized flag.
+        // AdView.loadAd() handles initialization internally, so loadBanner() returns true
+        // even before MobileAds.initialize() callback fires.
+        assertTrue("loadBanner should return true regardless of init state", impl.loadBanner())
     }
 
     /**

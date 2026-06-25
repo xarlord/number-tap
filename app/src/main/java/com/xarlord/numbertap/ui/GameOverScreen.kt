@@ -302,7 +302,7 @@ fun GameOverScreen(
             // Coin balance display + spend coins for revive
             val canAffordRevive = coinBalance >= com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
             Text(
-                "🪙 $coinBalance",
+                stringResource(R.string.coins_display, coinBalance),
                 color = colors.textSecondary,
                 fontSize = 16.sp,
                 fontFamily = style.bodyFontFamily
@@ -323,7 +323,7 @@ fun GameOverScreen(
                     .shadow(REVIVE_BTN_SHADOW_DP.dp, shape)
             ) {
                 Text(
-                    "Spend ${com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE} Coins (+${com.xarlord.numbertap.data.GameConfig.REVIVE_BONUS_SECONDS.toInt()}s)",
+                    stringResource(R.string.spend_coins_revive, com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE, com.xarlord.numbertap.data.GameConfig.REVIVE_BONUS_SECONDS.toInt()),
                     fontSize = REVIVE_FONT_SIZE_SP.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = style.bodyFontFamily
