@@ -100,12 +100,14 @@ class AdManagerImplCoverageTest {
     }
 
     @Test
-    fun `initialize with callback that does not fire — isInitialized stays false`() {
+    fun `initialize with callback that does not fire — loadBanner still returns true (#245 fix)`() {
         // Override: don't invoke callback
         every { MobileAds.initialize(any(), any<OnInitializationCompleteListener>()) } returns Unit
         val impl2 = AdManagerImpl(context)
         impl2.initialize()
-        assertFalse("isInitialized should stay false when callback doesn't fire", impl2.loadBanner())
+        // #245: loadBanner() no longer gates on isInitialized — AdView.loadAd() handles
+        // its own initialization, so loadBanner returns true regardless of init state.
+        assertTrue("loadBanner should return true even when init callback hasn't fired", impl2.loadBanner())
     }
 
     @Test
