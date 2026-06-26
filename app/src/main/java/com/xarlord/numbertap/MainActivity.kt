@@ -52,7 +52,6 @@ import com.xarlord.numbertap.ui.MenuScreen
 import com.xarlord.numbertap.ui.SettingsScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import android.os.Build
 
 class MainActivity : ComponentActivity() {
 

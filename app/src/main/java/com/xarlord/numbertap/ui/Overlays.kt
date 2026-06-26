@@ -91,15 +91,16 @@ internal fun PauseOverlay(
             Spacer(modifier = Modifier.height(PAUSE_SPACING_DP.dp))
             Text(stringResource(R.string.tap_to_resume), color = colors.textSecondary, fontSize = PAUSE_SUBTITLE_FONT_SIZE_SP.sp, fontFamily = style.bodyFontFamily)
             Spacer(modifier = Modifier.height(24.dp))
+            val goMenuText = stringResource(R.string.a11y_go_menu)
             Text(
-                text = stringResource(R.string.a11y_go_menu),
+                text = goMenuText,
                 color = colors.textSecondary.copy(alpha = 0.7f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = style.bodyFontFamily,
                 modifier = Modifier
                     .semantics {
-                        contentDescription = stringResource(R.string.a11y_go_menu)
+                        contentDescription = goMenuText
                         role = Role.Button
                     }
                     .clickable { onMenu() }
