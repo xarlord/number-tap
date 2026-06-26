@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.R
+import com.xarlord.numbertap.data.GameConfig
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.ThemeColors
 import com.xarlord.numbertap.data.ThemeConfig
@@ -300,9 +301,9 @@ fun GameOverScreen(
             }
 
             // Coin balance display + spend coins for revive
-            val canAffordRevive = coinBalance >= com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
+            val canAffordRevive = coinBalance >= GameConfig.COIN_COST_FOR_REVIVE
             Text(
-                "🪙 $coinBalance",
+                text = stringResource(R.string.coins_display, coinBalance),
                 color = colors.textSecondary,
                 fontSize = 16.sp,
                 fontFamily = style.bodyFontFamily
@@ -323,7 +324,11 @@ fun GameOverScreen(
                     .shadow(REVIVE_BTN_SHADOW_DP.dp, shape)
             ) {
                 Text(
-                    "Spend ${com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE} Coins (+${com.xarlord.numbertap.data.GameConfig.REVIVE_BONUS_SECONDS.toInt()}s)",
+                    text = stringResource(
+                        R.string.spend_coins_revive,
+                        GameConfig.COIN_COST_FOR_REVIVE,
+                        GameConfig.REVIVE_BONUS_SECONDS.toInt()
+                    ),
                     fontSize = REVIVE_FONT_SIZE_SP.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = style.bodyFontFamily

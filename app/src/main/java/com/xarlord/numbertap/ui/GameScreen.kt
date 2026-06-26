@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xarlord.numbertap.R
+import com.xarlord.numbertap.data.GameConfig
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.TierAnnouncement
 import com.xarlord.numbertap.data.ThemeConfig
@@ -67,8 +68,8 @@ fun GameScreen(
             // === TOP: Stats Bar (fixed height) ===
             TopBar(gameState, colors, style, onPauseClick, urgentPulse)
 
-            // Timer bar
-            TimerBar(gameState.timeRemaining, 30.0, colors)
+            // #233 fix: Use GameConfig.INITIAL_TIME_SECONDS instead of hardcoded 30.0
+            TimerBar(gameState.timeRemaining, GameConfig.INITIAL_TIME_SECONDS, colors)
 
             // === CENTER: Game Grid (takes remaining space) ===
             Box(

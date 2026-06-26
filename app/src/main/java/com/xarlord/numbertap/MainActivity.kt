@@ -27,9 +27,11 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.activity.compose.BackHandler
 import com.xarlord.numbertap.ads.AdManagerImpl
 import com.xarlord.numbertap.ads.BannerAd
 import com.xarlord.numbertap.analytics.AnalyticsTracker
+import com.xarlord.numbertap.analytics.AnalyticsEvent
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.TileState
@@ -50,6 +52,7 @@ import com.xarlord.numbertap.ui.MenuScreen
 import com.xarlord.numbertap.ui.SettingsScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import android.os.Build
 
 class MainActivity : ComponentActivity() {
 
@@ -78,6 +81,14 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Check if a flexible update was downloaded and ready to install
         updateManager.checkForPendingInstall()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up InAppUpdateManager listeners to prevent memory leaks
+        updateManager.cleanup()
+        // Track session end when app is destroyed
+        AnalyticsTracker.sessionEnd()
     }
 }
 
@@ -200,6 +211,31 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         AnalyticsTracker.sessionStart()
     }
 
+    // #243: Handle back button navigation
+    BackHandler(enabled = true) {
+        when (currentScreen) {
+            is Screen.Game -> {
+                if (gameState.isPaused) {
+                    // Resume if paused
+                    gameState = engine.resume(gameState)
+                    lastTickTime = SystemClock.elapsedRealtime()
+                } else {
+                    // Pause the game
+                    gameState = engine.pause(gameState)
+                }
+            }
+            is Screen.GameOver, is Screen.Settings -> {
+                // Go back to menu
+                soundManager.stopBGMusic()
+                currentScreen = Screen.Menu
+            }
+            is Screen.Menu -> {
+                // #243: Exit app on back button from menu (expected behavior)
+                (context as? Activity)?.finish()
+            }
+        }
+    }
+
     // Game loop
     LaunchedEffect(currentScreen) {
         if (currentScreen == Screen.Game) {
@@ -287,6 +323,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             // Show interstitial ad every N game overs
                             if (adManager is AdManagerImpl && context is Activity) {
                                 adManager.showInterstitial(context)
+                                // #232 fix: Track interstitial ad shown event
+                                AnalyticsTracker.track(AnalyticsEvent.AD_INTERSTITIAL_SHOWN)
                             }
 
                             currentScreen = Screen.GameOver
@@ -471,16 +509,24 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             adManager.showRewardedWithCallbacks(
                                 activity = context,
                                 onReward = {
+                                    // #232 fix: Track rewarded ad earned
+                                    AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_EARNED)
                                     gameState = engine.revive(gameState)
                                     lastTickTime = SystemClock.elapsedRealtime()
                                     if (musicEnabled) soundManager.startBGMusic()
                                     currentScreen = Screen.Game
                                     ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                                    // #232 fix: Track revive usage
+                                    AnalyticsTracker.track(AnalyticsEvent.REVIVE_USED)
                                 },
                                 onFailure = {
+                                    // #232 fix: Track rewarded ad failed
+                                    AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_FAILED)
                                     ActionLogger.logError("revive_failed", "Ad not ready")
                                 }
                             )
+                            // #232 fix: Track rewarded ad shown
+                            AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_SHOWN)
                         } else {
                             // Stub fallback — just revive without ad
                             gameState = engine.revive(gameState)
@@ -571,5 +617,10 @@ private fun shareScore(context: Context, score: Int, highScore: Int) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    try {
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    } catch (e: Exception) {
+        // #238 fix: Handle ActivityNotFoundException when no share app is installed
+        ActionLogger.logError("share_score", e.message ?: "unknown")
+    }
 }

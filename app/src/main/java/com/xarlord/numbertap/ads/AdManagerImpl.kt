@@ -54,10 +54,11 @@ class AdManagerImpl(
      * Initialize the Mobile Ads SDK. Call once in Application.onCreate() or Activity.onCreate().
      */
     fun initialize() {
-        if (isInitialized) return
+        // #245 fix: MobileAds.initialize is idempotent and async is safe to call multiple times
+        // Remove isInitialized guard to prevent race condition where loadBanner() returns false
+        // while initialization is in progress
         MobileAds.initialize(appContext) {
             Log.d(TAG, "AdMob SDK initialized")
-            isInitialized = true
             // #142: Auto-register emulator as test device in debug builds
             if (com.xarlord.numbertap.BuildConfig.DEBUG) {
                 val config = RequestConfiguration.Builder()
@@ -67,6 +68,9 @@ class AdManagerImpl(
                 Log.d(TAG, "Debug build: registered emulator test device")
             }
         }
+        // #245 fix: Mark initialized immediately since MobileAds.initialize is safe
+        // and we don't need to wait for the callback
+        isInitialized = true
     }
 
     override fun loadBanner(): Boolean {
