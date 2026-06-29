@@ -294,6 +294,9 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                     } else {
                         lastTickTime = now
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    // #258: Re-throw to honour structured-concurrency cancellation.
+                    throw e
                 } catch (e: Exception) {
                     ActionLogger.logError("game_loop", e.message ?: "unknown")
                     lastTickTime = SystemClock.elapsedRealtime()
