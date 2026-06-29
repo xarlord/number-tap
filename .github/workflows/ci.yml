@@ -124,7 +124,7 @@ jobs:
 
   e2e-tests:
     name: "🧪 E2E Instrumented Tests"
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 35
     needs: [build-and-test]
 
@@ -146,6 +146,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0777", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Run E2E instrumented tests (API 34)
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -153,6 +159,8 @@ jobs:
           arch: x86_64
           profile: pixel_7
           disable-animations: true
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: ./gradlew connectedDebugAndroidTest --console=plain --stacktrace
 
       - name: Upload E2E test results
