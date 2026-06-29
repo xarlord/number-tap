@@ -146,7 +146,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var gameState by remember { mutableStateOf(GameState()) }
     val engine = remember { GameEngine() }
     val context = LocalContext.current
-    var highScore by remember { mutableStateOf(loadHighScore(context)) }
+    var highScore by remember { mutableIntStateOf(loadHighScore(context)) }
     var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
     var soundEnabled by remember { mutableStateOf(loadSoundEnabled(context)) }
     var musicEnabled by remember { mutableStateOf(loadMusicEnabled(context)) }
