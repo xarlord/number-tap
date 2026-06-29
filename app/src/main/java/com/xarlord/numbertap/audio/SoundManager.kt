@@ -25,6 +25,9 @@ class SoundManager(context: Context) : SoundManagerProvider {
     private var gameOverSoundId: Int = 0
     private var milestoneSoundId: Int = 0
     private var comboBreakSoundId: Int = 0
+    // #257: @Volatile — these fields are accessed from the game-loop coroutine and
+    // DisposableEffect.onDispose, which may run on different threads.
+    @Volatile
     private var isReleased = false
     private val pendingDeleteFiles = mutableListOf<File>()
     private val totalSoundsToLoad = 6
@@ -32,7 +35,9 @@ class SoundManager(context: Context) : SoundManagerProvider {
     private val pitchSteps = AudioUtils.PITCH_STEPS
 
     // Background music state
+    @Volatile
     private var bgMusicTrack: AudioTrack? = null
+    @Volatile
     private var isMusicPlaying = false
 
     init {
