@@ -66,15 +66,15 @@ import com.xarlord.numbertap.data.ThemeStyle
 fun MenuScreen(
     highScore: Int,
     currentTheme: GameTheme,
+    onStartClick: () -> Unit,
+    modifier: Modifier = Modifier,
     isHardMode: Boolean = false,
     coins: Int = 0,
     streak: Int = 0,
-    onStartClick: () -> Unit,
     onTutorialClick: () -> Unit = {},
     onThemeChange: (GameTheme) -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    onHardModeToggle: (Boolean) -> Unit = {},
-    modifier: Modifier = Modifier
+    onHardModeToggle: (Boolean) -> Unit = {}
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
     val style = ThemeConfig.styleFor(currentTheme)
