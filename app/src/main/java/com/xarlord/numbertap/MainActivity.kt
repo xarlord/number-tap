@@ -577,5 +577,10 @@ private fun shareScore(context: Context, score: Int, highScore: Int) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    try {
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    } catch (e: android.content.ActivityNotFoundException) {
+        // No apps available to handle share - log and ignore (#261)
+        ActionLogger.logError("share_score_no_app", "No share app available")
+    }
 }
