@@ -79,6 +79,12 @@ class MainActivity : ComponentActivity() {
         // Check if a flexible update was downloaded and ready to install
         updateManager.checkForPendingInstall()
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up update listeners to prevent memory leaks (#262)
+        updateManager.cleanup()
+    }
 }
 
 sealed class Screen {
