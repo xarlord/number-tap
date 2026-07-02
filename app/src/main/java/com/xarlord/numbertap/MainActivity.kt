@@ -16,6 +16,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.CancellationException
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,6 +74,12 @@ class MainActivity : ComponentActivity() {
         updateManager.checkForUpdate()
 
         setContent { NumberTapApp(adManager) }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Track session end when app is backgrounded
+        AnalyticsTracker.sessionEnd()
     }
 
     override fun onResume() {
@@ -294,6 +302,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                     } else {
                         lastTickTime = now
                     }
+                } catch (e: CancellationException) {
+                    throw e  // Re-throw to allow proper cancellation
                 } catch (e: Exception) {
                     ActionLogger.logError("game_loop", e.message ?: "unknown")
                     lastTickTime = SystemClock.elapsedRealtime()
@@ -337,6 +347,10 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         ) {
             when (currentScreen) {
                 is Screen.Menu -> {
+                    // BackHandler: exit app when on menu screen
+                    BackHandler {
+                        (context as? Activity)?.finish()
+                    }
                     MenuScreen(
                     highScore = highScore,
                     currentTheme = selectedTheme,
@@ -369,7 +383,17 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 )
                 }
 
-                is Screen.Game -> GameScreen(
+                is Screen.Game -> {
+                    // BackHandler: pause game or go to menu
+                    BackHandler {
+                        if (gameState.isPaused) {
+                            soundManager.stopBGMusic()
+                            currentScreen = Screen.Menu
+                        } else {
+                            gameState = engine.pause(gameState)
+                        }
+                    }
+                    GameScreen(
                     gameState = gameState,
                     onTileTap = { row, col ->
                         try {
@@ -443,7 +467,13 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                     }
                 )
 
-                is Screen.GameOver -> GameOverScreen(
+                is Screen.GameOver -> {
+                    // BackHandler: go to menu from game over screen
+                    BackHandler {
+                        soundManager.stopBGMusic()
+                        currentScreen = Screen.Menu
+                    }
+                    GameOverScreen(
                     score = gameState.score,
                     highScore = gameState.highScore,
                     isNewHighScore = gameState.isNewHighScore,
@@ -505,7 +535,12 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                     }
                 )
 
-                is Screen.Settings -> SettingsScreen(
+                is Screen.Settings -> {
+                    // BackHandler: go to menu from settings screen
+                    BackHandler {
+                        currentScreen = Screen.Menu
+                    }
+                    SettingsScreen(
                     currentTheme = selectedTheme,
                     soundEnabled = soundEnabled,
                     musicEnabled = musicEnabled,
