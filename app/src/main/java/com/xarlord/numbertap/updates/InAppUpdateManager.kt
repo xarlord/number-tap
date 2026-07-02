@@ -6,6 +6,7 @@ import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.AppUpdateType
+import java.lang.ref.WeakReference
 
 /**
  * In-App Update manager using Google Play Core library.
@@ -16,14 +17,31 @@ import com.google.android.play.core.install.model.AppUpdateType
  * Issue #203: Notify users when a new Play Store version is available.
  */
 class InAppUpdateManager(
-    private val activity: Activity
+    activity: Activity
 ) {
     companion object {
         private const val TAG = "NumberTap:Update"
         private const val UPDATE_REQUEST_CODE = 7777
     }
 
-    private val appUpdateManager: AppUpdateManager = AppUpdateManagerFactory.create(activity)
+    // Use WeakReference to avoid memory leak (#270)
+    private val activityRef = WeakReference(activity)
+
+    private val appUpdateManager: AppUpdateManager by lazy {
+        val activity = activityRef.get()
+        if (activity != null) {
+            AppUpdateManagerFactory.create(activity)
+        } else {
+            throw IllegalStateException("Activity has been destroyed")
+        }
+    }
+
+    /**
+     * Get the Activity reference, or throw if it's been destroyed.
+     */
+    private fun requireActivity(): Activity {
+        return activityRef.get() ?: throw IllegalStateException("Activity has been destroyed")
+    }
 
     /**
      * Check for updates. If an update is available, start a flexible update
@@ -61,6 +79,7 @@ class InAppUpdateManager(
      */
     private fun startFlexibleUpdate(appUpdateInfo: AppUpdateInfo) {
         try {
+            val activity = requireActivity()
             appUpdateManager.startUpdateFlowForResult(
                 appUpdateInfo,
                 AppUpdateType.FLEXIBLE,
@@ -68,6 +87,8 @@ class InAppUpdateManager(
                 UPDATE_REQUEST_CODE
             )
             Log.d(TAG, "Flexible update flow started")
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "Activity destroyed, cannot start update: ${e.message}")
         } catch (e: Exception) {
             Log.w(TAG, "Failed to start update flow: ${e.message}")
         }
@@ -78,12 +99,15 @@ class InAppUpdateManager(
      */
     private fun resumeUpdate(appUpdateInfo: AppUpdateInfo) {
         try {
+            val activity = requireActivity()
             appUpdateManager.startUpdateFlowForResult(
                 appUpdateInfo,
                 AppUpdateType.FLEXIBLE,
                 activity,
                 UPDATE_REQUEST_CODE
             )
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "Activity destroyed, cannot resume update: ${e.message}")
         } catch (e: Exception) {
             Log.w(TAG, "Failed to resume update: ${e.message}")
         }

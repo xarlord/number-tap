@@ -146,7 +146,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var gameState by remember { mutableStateOf(GameState()) }
     val engine = remember { GameEngine() }
     val context = LocalContext.current
-    var highScore by remember { mutableStateOf(loadHighScore(context)) }
+    var highScore by remember { mutableIntStateOf(loadHighScore(context)) }
     var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
     var soundEnabled by remember { mutableStateOf(loadSoundEnabled(context)) }
     var musicEnabled by remember { mutableStateOf(loadMusicEnabled(context)) }
@@ -571,5 +571,10 @@ private fun shareScore(context: Context, score: Int, highScore: Int) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    try {
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    } catch (e: Exception) {
+        // No app can handle the share intent - silently fail
+        ActionLogger.logError("share_failed", "No app available to handle share: ${e.message}")
+    }
 }
