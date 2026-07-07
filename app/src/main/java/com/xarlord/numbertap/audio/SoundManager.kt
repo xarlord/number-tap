@@ -6,6 +6,7 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.SoundPool
 import java.io.File
+import kotlin.random.Random
 
 class SoundManager(context: Context) : SoundManagerProvider {
 
@@ -135,7 +136,7 @@ class SoundManager(context: Context) : SoundManagerProvider {
 
                 // Hi-hat on every beat
                 val hihat = if (beatPos < 0.05) {
-                    (Math.random() * 2 - 1) * 0.08
+                    (Random.nextFloat() * 2 - 1) * 0.08
                 } else 0.0
 
                 // Bass note
