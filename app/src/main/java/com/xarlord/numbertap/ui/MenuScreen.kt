@@ -201,7 +201,6 @@ fun MenuScreen(
                                 .background(colors.panelBackground.copy(alpha = 0.5f))
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Text("🪙", fontSize = 14.sp)
                             Text(
                                 stringResource(R.string.coins_display, coins),
                                 color = colors.textPrimary,
@@ -220,7 +219,6 @@ fun MenuScreen(
                                 .background(colors.panelBackground.copy(alpha = 0.5f))
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Text("🔥", fontSize = 14.sp)
                             Text(
                                 stringResource(R.string.streak_display, streak),
                                 color = colors.textPrimary,
