@@ -599,6 +599,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         // Banner ad at bottom — always visible across ALL screens
         BannerAd()
     } // end Column
+    } // end NumberTapApp
 }
 
 private fun shareScore(context: Context, score: Int, highScore: Int) {
