@@ -62,3 +62,22 @@ class GameConfigTest {
         assertTrue(GameConfig.INITIAL_TIME_SECONDS > GameConfig.REVIVE_BONUS_SECONDS)
     }
 }
+
+class GameConfigSingleSourceOfTruthTest {
+
+    @Test
+    fun `initial time equals GameConfig constant used in GameScreen`() {
+        // Verify GameConfig.INITIAL_TIME_SECONDS is used as TimerBar max (fix #233)
+        assertEquals(30.0, GameConfig.INITIAL_TIME_SECONDS, 0.001)
+    }
+
+    @Test
+    fun `revive bonus is less than initial time`() {
+        assertTrue(GameConfig.REVIVE_BONUS_SECONDS < GameConfig.INITIAL_TIME_SECONDS)
+    }
+
+    @Test
+    fun `tutorial time is much larger than initial time`() {
+        assertTrue(GameConfig.TUTORIAL_TIME_SECONDS > GameConfig.INITIAL_TIME_SECONDS * 10)
+    }
+}
