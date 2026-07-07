@@ -105,7 +105,12 @@ class AdManagerImplCoverageTest {
         every { MobileAds.initialize(any(), any<OnInitializationCompleteListener>()) } returns Unit
         val impl2 = AdManagerImpl(context)
         impl2.initialize()
-        assertFalse("isInitialized should stay false when callback doesn't fire", impl2.loadBanner())
+        // With initInProgress guard, loadBanner returns true during init even if callback
+        // hasn't fired yet (prevents double-init), but isInitialized is still false.
+        assertFalse("isInitialized should stay false when callback doesn't fire",
+            impl2.javaClass.getDeclaredField("isInitialized").let { f ->
+                f.isAccessible = true; f.get(impl2) as Boolean
+            })
     }
 
     @Test
