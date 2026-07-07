@@ -68,7 +68,7 @@ fun GameScreen(
             TopBar(gameState, colors, style, onPauseClick, urgentPulse)
 
             // Timer bar
-            TimerBar(gameState.timeRemaining, com.xarlord.numbertap.data.GameConfig.INITIAL_TIME_SECONDS, colors)
+            TimerBar(gameState.timeRemaining, 30.0, colors)
 
             // === CENTER: Game Grid (takes remaining space) ===
             Box(

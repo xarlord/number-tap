@@ -16,8 +16,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.activity.compose.BackHandler
-import kotlinx.coroutines.CancellationException
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -74,12 +72,6 @@ class MainActivity : ComponentActivity() {
         updateManager.checkForUpdate()
 
         setContent { NumberTapApp(adManager) }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Track session end when app is backgrounded
-        AnalyticsTracker.sessionEnd()
     }
 
     override fun onResume() {
@@ -154,7 +146,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var gameState by remember { mutableStateOf(GameState()) }
     val engine = remember { GameEngine() }
     val context = LocalContext.current
-    var highScore by remember { mutableIntStateOf(loadHighScore(context)) }
+    var highScore by remember { mutableStateOf(loadHighScore(context)) }
     var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
     var soundEnabled by remember { mutableStateOf(loadSoundEnabled(context)) }
     var musicEnabled by remember { mutableStateOf(loadMusicEnabled(context)) }
@@ -302,8 +294,6 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                     } else {
                         lastTickTime = now
                     }
-                } catch (e: CancellationException) {
-                    throw e  // Re-throw to allow proper cancellation
                 } catch (e: Exception) {
                     ActionLogger.logError("game_loop", e.message ?: "unknown")
                     lastTickTime = SystemClock.elapsedRealtime()
@@ -347,10 +337,6 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         ) {
             when (currentScreen) {
                 is Screen.Menu -> {
-                    // BackHandler: exit app when on menu screen
-                    BackHandler {
-                        (context as? Activity)?.finish()
-                    }
                     MenuScreen(
                     highScore = highScore,
                     currentTheme = selectedTheme,
@@ -383,17 +369,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 )
                 }
 
-                is Screen.Game -> {
-                    // BackHandler: pause game or go to menu
-                    BackHandler {
-                        if (gameState.isPaused) {
-                            soundManager.stopBGMusic()
-                            currentScreen = Screen.Menu
-                        } else {
-                            gameState = engine.pause(gameState)
-                        }
-                    }
-                    GameScreen(
+                is Screen.Game -> GameScreen(
                     gameState = gameState,
                     onTileTap = { row, col ->
                         try {
@@ -466,15 +442,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         currentScreen = Screen.Menu
                     }
                 )
-                }
 
-                is Screen.GameOver -> {
-                    // BackHandler: go to menu from game over screen
-                    BackHandler {
-                        soundManager.stopBGMusic()
-                        currentScreen = Screen.Menu
-                    }
-                    GameOverScreen(
+                is Screen.GameOver -> GameOverScreen(
                     score = gameState.score,
                     highScore = gameState.highScore,
                     isNewHighScore = gameState.isNewHighScore,
@@ -535,14 +504,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         }
                     }
                 )
-                }
 
-                is Screen.Settings -> {
-                    // BackHandler: go to menu from settings screen
-                    BackHandler {
-                        currentScreen = Screen.Menu
-                    }
-                    SettingsScreen(
+                is Screen.Settings -> SettingsScreen(
                     currentTheme = selectedTheme,
                     soundEnabled = soundEnabled,
                     musicEnabled = musicEnabled,
@@ -599,7 +562,6 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         // Banner ad at bottom — always visible across ALL screens
         BannerAd()
     } // end Column
-    } // end NumberTapApp
 }
 
 private fun shareScore(context: Context, score: Int, highScore: Int) {
@@ -609,10 +571,5 @@ private fun shareScore(context: Context, score: Int, highScore: Int) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    try {
-        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
-    } catch (e: Exception) {
-        // No app can handle the share intent - silently fail
-        ActionLogger.logError("share_failed", "No app available to handle share: ${e.message}")
-    }
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
 }

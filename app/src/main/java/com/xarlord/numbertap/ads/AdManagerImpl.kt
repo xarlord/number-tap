@@ -49,18 +49,15 @@ class AdManagerImpl(
     private var rewardedAd: RewardedAd? = null
     private var gameOverCount = 0
     private var isInitialized = false
-    private var initInProgress = false
 
     /**
      * Initialize the Mobile Ads SDK. Call once in Application.onCreate() or Activity.onCreate().
      */
     fun initialize() {
-        if (isInitialized || initInProgress) return
-        initInProgress = true
+        if (isInitialized) return
         MobileAds.initialize(appContext) {
             Log.d(TAG, "AdMob SDK initialized")
             isInitialized = true
-            initInProgress = false
             // #142: Auto-register emulator as test device in debug builds
             if (com.xarlord.numbertap.BuildConfig.DEBUG) {
                 val config = RequestConfiguration.Builder()
@@ -74,8 +71,8 @@ class AdManagerImpl(
 
     override fun loadBanner(): Boolean {
         // Banner is loaded inline in Compose via AndroidView + AdView
-        // This method confirms the SDK is initialized or initialization is in progress
-        return isInitialized || initInProgress
+        // This method confirms the SDK is initialized
+        return isInitialized
     }
 
     /**
