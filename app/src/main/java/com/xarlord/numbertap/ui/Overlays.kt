@@ -99,7 +99,7 @@ internal fun PauseOverlay(
                 fontFamily = style.bodyFontFamily,
                 modifier = Modifier
                     .semantics {
-                        contentDescription = "Go to main menu"
+                        contentDescription = stringResource(R.string.a11y_go_menu)
                         role = Role.Button
                     }
                     .clickable { onMenu() }
