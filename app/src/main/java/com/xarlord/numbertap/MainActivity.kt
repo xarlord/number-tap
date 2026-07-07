@@ -466,6 +466,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         currentScreen = Screen.Menu
                     }
                 )
+                }
 
                 is Screen.GameOver -> {
                     // BackHandler: go to menu from game over screen
@@ -534,6 +535,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         }
                     }
                 )
+                }
 
                 is Screen.Settings -> {
                     // BackHandler: go to menu from settings screen
