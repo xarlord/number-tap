@@ -371,3 +371,50 @@ class TileStateTest {
         assertEquals(TileState.TAPPED_WRONG, TileState.valueOf("TAPPED_WRONG"))
     }
 }
+
+class DifficultyConfigCleanupTest {
+
+    @Test
+    fun `resetDefaults restores all four tiers`() {
+        DifficultyConfig.tiers = emptyList()
+        DifficultyConfig.resetDefaults()
+        assertEquals(4, DifficultyConfig.tiers.size)
+        assertEquals("EASY", DifficultyConfig.tiers[0].label)
+        assertEquals("MEDIUM", DifficultyConfig.tiers[1].label)
+        assertEquals("HARD", DifficultyConfig.tiers[2].label)
+        assertEquals("INSANE", DifficultyConfig.tiers[3].label)
+    }
+
+    @Test
+    fun `tierForScore returns correct tier for each score range`() {
+        DifficultyConfig.resetDefaults()
+        assertEquals("EASY", DifficultyConfig.tierForScore(0).label)
+        assertEquals("EASY", DifficultyConfig.tierForScore(15).label)
+        assertEquals("MEDIUM", DifficultyConfig.tierForScore(16).label)
+        assertEquals("MEDIUM", DifficultyConfig.tierForScore(40).label)
+        assertEquals("HARD", DifficultyConfig.tierForScore(41).label)
+        assertEquals("HARD", DifficultyConfig.tierForScore(65).label)
+        assertEquals("INSANE", DifficultyConfig.tierForScore(66).label)
+        assertEquals("INSANE", DifficultyConfig.tierForScore(100).label)
+    }
+
+    @Test
+    fun `tierIndex is consistent with tierForScore`() {
+        DifficultyConfig.resetDefaults()
+        for (score in listOf(0, 5, 16, 25, 41, 55, 66, 80)) {
+            val tier = DifficultyConfig.tierForScore(score)
+            val index = DifficultyConfig.currentTierIndex(score)
+            assertEquals(tier, DifficultyConfig.tiers[index])
+        }
+    }
+
+    @Test
+    fun `gridSize getter computes correctly`() {
+        val tier4x4 = DifficultyTier(4, 4, 1.0, 1.5, "TEST4x4")
+        assertEquals(16, tier4x4.gridSize)
+        val tier5x5 = DifficultyTier(5, 5, 0.5, 3.0, "TEST5x5")
+        assertEquals(25, tier5x5.gridSize)
+        val tier3x3 = DifficultyTier(3, 3, 0.7, 2.0, "TEST3x3")
+        assertEquals(9, tier3x3.gridSize)
+    }
+}
