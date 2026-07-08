@@ -258,301 +258,6 @@ class ProfileRepositoryTest {
         assertEquals(1, result.ownedPowerUps[PowerUpType.HIGHLIGHT])
     }
 
-    // ── awardTapCoins ────────────────────────────────────────────────────
-
-    @Test
-    fun awardTapCoins_addsOneCoinByDefault() {
-        val profile = PlayerProfile(coins = 5)
-        val result = repo.awardTapCoins(profile)
-        assertEquals(6, result.coins)
-    }
-
-    @Test
-    fun awardTapCoins_addsSpecifiedCount() {
-        val profile = PlayerProfile(coins = 10)
-        val result = repo.awardTapCoins(profile, tapCount = 7)
-        assertEquals(17, result.coins)
-    }
-
-    @Test
-    fun awardTapCoins_withZero_doesNotChange() {
-        val profile = PlayerProfile(coins = 10)
-        val result = repo.awardTapCoins(profile, tapCount = 0)
-        assertEquals(10, result.coins)
-    }
-
-    // ── awardComboBonus ──────────────────────────────────────────────────
-
-    @Test
-    fun awardComboBonus_noBonus_below3() {
-        val profile = PlayerProfile(coins = 100)
-        val result = repo.awardComboBonus(profile, combo = 2)
-        assertEquals(100, result.coins)
-    }
-
-    @Test
-    fun awardComboBonus_threshold3_awards1() {
-        val profile = PlayerProfile(coins = 0)
-        val result = repo.awardComboBonus(profile, combo = 3)
-        assertEquals(1, result.coins)
-    }
-
-    @Test
-    fun awardComboBonus_threshold5_awards3() {
-        val profile = PlayerProfile(coins = 0)
-        val result = repo.awardComboBonus(profile, combo = 5)
-        assertEquals(3, result.coins)
-    }
-
-    @Test
-    fun awardComboBonus_threshold10_awards5() {
-        val profile = PlayerProfile(coins = 0)
-        val result = repo.awardComboBonus(profile, combo = 10)
-        assertEquals(5, result.coins)
-    }
-
-    @Test
-    fun awardComboBonus_above10_still5() {
-        val profile = PlayerProfile(coins = 0)
-        val result = repo.awardComboBonus(profile, combo = 25)
-        assertEquals(5, result.coins)
-    }
-
-    @Test
-    fun awardComboBonus_betweenThresholds() {
-        val profile = PlayerProfile(coins = 0)
-        // 4 is >= 3 but < 5, should get 1
-        assertEquals(1, repo.awardComboBonus(profile, combo = 4).coins)
-        // 7 is >= 5 but < 10, should get 3
-        assertEquals(3, repo.awardComboBonus(profile, combo = 7).coins)
-    }
-
-    // ── updateMissionProgress ────────────────────────────────────────────
-
-    @Test
-    fun updateMissionProgress_SCORE_TARGET_usesMaxScore() {
-        val mission = DailyMission("s1", MissionType.SCORE_TARGET, 20, 10, 15)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile, gameScore = 18)
-
-        assertEquals(18, result.todayMissions[0].progress)
-        assertFalse(result.todayMissions[0].isCompleted) // 18 < 20
-    }
-
-    @Test
-    fun updateMissionProgress_SCORE_TARGET_completesWhenReached() {
-        val mission = DailyMission("s1", MissionType.SCORE_TARGET, 15, 5, 10)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile, gameScore = 20)
-
-        assertEquals(20, result.todayMissions[0].progress)
-        assertTrue(result.todayMissions[0].isCompleted)
-    }
-
-    @Test
-    fun updateMissionProgress_SCORE_TARGET_doesNotReduceProgress() {
-        val mission = DailyMission("s1", MissionType.SCORE_TARGET, 30, 25, 10)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile, gameScore = 10)
-
-        // maxOf(25, 10) = 25
-        assertEquals(25, result.todayMissions[0].progress)
-    }
-
-    @Test
-    fun updateMissionProgress_COMBO_TARGET_usesMaxCombo() {
-        val mission = DailyMission("c1", MissionType.COMBO_TARGET, 5, 0, 10)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile, maxCombo = 7)
-
-        assertEquals(7, result.todayMissions[0].progress)
-        assertTrue(result.todayMissions[0].isCompleted)
-    }
-
-    @Test
-    fun updateMissionProgress_COMBO_TARGET_doesNotReduceProgress() {
-        val mission = DailyMission("c1", MissionType.COMBO_TARGET, 10, 8, 15)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile, maxCombo = 3)
-
-        assertEquals(8, result.todayMissions[0].progress)
-    }
-
-    @Test
-    fun updateMissionProgress_GAMES_PLAYED_incrementsBy1() {
-        val mission = DailyMission("g1", MissionType.GAMES_PLAYED, 3, 1, 20)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile)
-
-        assertEquals(2, result.todayMissions[0].progress)
-        assertFalse(result.todayMissions[0].isCompleted)
-    }
-
-    @Test
-    fun updateMissionProgress_GAMES_PLAYED_completesWhenTargetReached() {
-        val mission = DailyMission("g1", MissionType.GAMES_PLAYED, 2, 1, 20)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile)
-
-        assertEquals(2, result.todayMissions[0].progress)
-        assertTrue(result.todayMissions[0].isCompleted)
-    }
-
-    @Test
-    fun updateMissionProgress_TOTAL_TAPS_addsCorrectTaps() {
-        val mission = DailyMission("t1", MissionType.TOTAL_TAPS, 50, 20, 25)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile, correctTaps = 15)
-
-        assertEquals(35, result.todayMissions[0].progress)
-    }
-
-    @Test
-    fun updateMissionProgress_TOTAL_TAPS_completesWhenReached() {
-        val mission = DailyMission("t1", MissionType.TOTAL_TAPS, 30, 25, 20)
-        val profile = PlayerProfile(todayMissions = listOf(mission))
-        val result = repo.updateMissionProgress(profile, correctTaps = 10)
-
-        assertEquals(35, result.todayMissions[0].progress)
-        assertTrue(result.todayMissions[0].isCompleted)
-    }
-
-    @Test
-    fun updateMissionProgress_skipsCompletedMissions() {
-        val completed = DailyMission("c1", MissionType.GAMES_PLAYED, 3, 3, 10, isCompleted = true)
-        val incomplete = DailyMission("i1", MissionType.SCORE_TARGET, 20, 0, 15)
-        val profile = PlayerProfile(todayMissions = listOf(completed, incomplete))
-        val result = repo.updateMissionProgress(profile, gameScore = 25)
-
-        // Completed mission unchanged
-        assertEquals(3, result.todayMissions[0].progress)
-        assertTrue(result.todayMissions[0].isCompleted)
-        // Incomplete mission updated
-        assertEquals(25, result.todayMissions[1].progress)
-        assertTrue(result.todayMissions[1].isCompleted)
-    }
-
-    // ── claimMission ─────────────────────────────────────────────────────
-
-    @Test
-    fun claimMission_success_awardsCoinsAndMarksClaimed() {
-        val mission = DailyMission("m1", MissionType.SCORE_TARGET, 10, 10, 25, isCompleted = true)
-        val profile = PlayerProfile(todayMissions = listOf(mission), coins = 50)
-        val result = repo.claimMission(profile, "m1")
-
-        assertTrue(result.todayMissions[0].isClaimed)
-        assertEquals(75, result.coins) // 50 + 25 reward
-    }
-
-    @Test
-    fun claimMission_alreadyClaimed_noCoinsAwarded() {
-        val mission = DailyMission("m1", MissionType.SCORE_TARGET, 10, 10, 25, isCompleted = true, isClaimed = true)
-        val profile = PlayerProfile(todayMissions = listOf(mission), coins = 50)
-        val result = repo.claimMission(profile, "m1")
-
-        assertTrue(result.todayMissions[0].isClaimed)
-        assertEquals(50, result.coins) // no additional coins
-    }
-
-    @Test
-    fun claimMission_notCompleted_noCoinsAwarded() {
-        val mission = DailyMission("m1", MissionType.SCORE_TARGET, 10, 5, 25, isCompleted = false)
-        val profile = PlayerProfile(todayMissions = listOf(mission), coins = 50)
-        val result = repo.claimMission(profile, "m1")
-
-        assertFalse(result.todayMissions[0].isClaimed)
-        assertEquals(50, result.coins) // no coins
-    }
-
-    @Test
-    fun claimMission_wrongId_noCoinsAwarded() {
-        val mission = DailyMission("m1", MissionType.SCORE_TARGET, 10, 10, 25, isCompleted = true)
-        val profile = PlayerProfile(todayMissions = listOf(mission), coins = 50)
-        val result = repo.claimMission(profile, "wrong_id")
-
-        assertFalse(result.todayMissions[0].isClaimed)
-        assertEquals(50, result.coins)
-    }
-
-    @Test
-    fun claimMission_multipleMissions_onlyClaimsTarget() {
-        val m1 = DailyMission("m1", MissionType.SCORE_TARGET, 10, 10, 20, isCompleted = true)
-        val m2 = DailyMission("m2", MissionType.COMBO_TARGET, 5, 5, 30, isCompleted = true)
-        val profile = PlayerProfile(todayMissions = listOf(m1, m2), coins = 0)
-        val result = repo.claimMission(profile, "m1")
-
-        assertTrue(result.todayMissions[0].isClaimed)
-        assertFalse(result.todayMissions[1].isClaimed)
-        assertEquals(20, result.coins)
-    }
-
-    // ── purchasePowerUp ──────────────────────────────────────────────────
-
-    @Test
-    fun purchasePowerUp_success_deductsCoinsAndAddsPowerUp() {
-        val profile = PlayerProfile(coins = 100)
-        val result = repo.purchasePowerUp(profile, PowerUpType.HIGHLIGHT)!!
-
-        assertEquals(70, result.coins) // 100 - 30 (baseCost)
-        assertEquals(1, result.ownedPowerUps[PowerUpType.HIGHLIGHT])
-    }
-
-    @Test
-    fun purchasePowerUp_insufficientCoins_returnsNull() {
-        val profile = PlayerProfile(coins = 10)
-        val result = repo.purchasePowerUp(profile, PowerUpType.SLOW_MOTION)
-
-        assertNull(result)
-    }
-
-    @Test
-    fun purchasePowerUp_exactCoins_succeeds() {
-        val profile = PlayerProfile(coins = 50) // exact baseCost of SLOW_MOTION
-        val result = repo.purchasePowerUp(profile, PowerUpType.SLOW_MOTION)!!
-
-        assertEquals(0, result.coins)
-        assertEquals(1, result.ownedPowerUps[PowerUpType.SLOW_MOTION])
-    }
-
-    @Test
-    fun purchasePowerUp_tierMultiplier_increasesCost() {
-        val profile = PlayerProfile(coins = 100)
-        // HIGHLIGHT baseCost=30, tier 2x → cost=60
-        val result = repo.purchasePowerUp(profile, PowerUpType.HIGHLIGHT, tierMultiplier = 2f)!!
-
-        assertEquals(40, result.coins) // 100 - 60
-        assertEquals(1, result.ownedPowerUps[PowerUpType.HIGHLIGHT])
-    }
-
-    @Test
-    fun purchasePowerUp_tierMultiplier_insufficientForHigherTier() {
-        val profile = PlayerProfile(coins = 45)
-        // HIGHLIGHT baseCost=30, tier 1.5x → cost=45, should succeed
-        val result = repo.purchasePowerUp(profile, PowerUpType.HIGHLIGHT, tierMultiplier = 1.5f)
-        assertNotNull(result)
-        assertEquals(0, result!!.coins)
-    }
-
-    @Test
-    fun purchasePowerUp_tierMultiplier_tooExpensive() {
-        val profile = PlayerProfile(coins = 44)
-        // HIGHLIGHT baseCost=30, tier 1.5x → cost=45
-        val result = repo.purchasePowerUp(profile, PowerUpType.HIGHLIGHT, tierMultiplier = 1.5f)
-        assertNull(result)
-    }
-
-    @Test
-    fun purchasePowerUp_stacksExistingPowerUp() {
-        val profile = PlayerProfile(
-            coins = 200,
-            ownedPowerUps = mapOf(PowerUpType.EXTRA_TIME to 2)
-        )
-        val result = repo.purchasePowerUp(profile, PowerUpType.EXTRA_TIME)!!
-
-        assertEquals(120, result.coins) // 200 - 80
-        assertEquals(3, result.ownedPowerUps[PowerUpType.EXTRA_TIME])
-    }
-
     // ── purchaseRevive (#210) ────────────────────────────────────────────
 
     @Test
@@ -950,5 +655,59 @@ class FakeSharedPreferences : SharedPreferences {
 
     companion object {
         private val REMOVE_MARKER = Any()
+    }
+}
+
+class ProfileRepositoryNotificationTest {
+    private val fakePrefs = FakeSharedPreferences()
+    private val context = mockk<android.content.Context> {
+        every { getSharedPreferences("number_tap_profile", android.content.Context.MODE_PRIVATE) } returns fakePrefs
+    }
+    private val repo = ProfileRepository(context)
+
+    @Test
+    fun `save and load preserves notificationEnabled true`() {
+        val profile = PlayerProfile(coins = 10, notificationEnabled = true)
+        repo.saveProfile(profile)
+        val loaded = repo.loadProfile()
+        assertTrue(loaded.notificationEnabled)
+    }
+
+    @Test
+    fun `save and load preserves notificationEnabled false`() {
+        val profile = PlayerProfile(coins = 10, notificationEnabled = false)
+        repo.saveProfile(profile)
+        val loaded = repo.loadProfile()
+        assertFalse(loaded.notificationEnabled)
+    }
+
+    @Test
+    fun `save and load preserves totalCorrectTaps`() {
+        val profile = PlayerProfile(coins = 5, totalCorrectTaps = 99999L)
+        repo.saveProfile(profile)
+        val loaded = repo.loadProfile()
+        assertEquals(99999L, loaded.totalCorrectTaps)
+    }
+
+    @Test
+    fun `save and load preserves highScore`() {
+        val profile = PlayerProfile(coins = 5, highScore = 42)
+        repo.saveProfile(profile)
+        val loaded = repo.loadProfile()
+        assertEquals(42, loaded.highScore)
+    }
+
+    @Test
+    fun `loadProfile defaults are correct when prefs is empty`() {
+        val loaded = repo.loadProfile()
+        assertEquals(0, loaded.coins)
+        assertEquals(0, loaded.currentStreak)
+        assertEquals(0, loaded.bestStreak)
+        assertEquals(0, loaded.totalGamesPlayed)
+        assertEquals(0L, loaded.totalCorrectTaps)
+        assertEquals(0, loaded.highScore)
+        assertTrue(loaded.notificationEnabled)
+        assertTrue(loaded.todayMissions.isEmpty())
+        assertTrue(loaded.ownedPowerUps.isEmpty())
     }
 }

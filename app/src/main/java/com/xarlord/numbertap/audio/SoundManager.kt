@@ -6,6 +6,7 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.SoundPool
 import java.io.File
+import kotlin.random.Random
 
 class SoundManager(context: Context) : SoundManagerProvider {
 
@@ -25,6 +26,7 @@ class SoundManager(context: Context) : SoundManagerProvider {
     private var gameOverSoundId: Int = 0
     private var milestoneSoundId: Int = 0
     private var comboBreakSoundId: Int = 0
+    @Volatile
     private var isReleased = false
     private val pendingDeleteFiles = mutableListOf<File>()
     private val totalSoundsToLoad = 6
@@ -32,7 +34,9 @@ class SoundManager(context: Context) : SoundManagerProvider {
     private val pitchSteps = AudioUtils.PITCH_STEPS
 
     // Background music state
+    @Volatile
     private var bgMusicTrack: AudioTrack? = null
+    @Volatile
     private var isMusicPlaying = false
 
     init {
@@ -135,7 +139,7 @@ class SoundManager(context: Context) : SoundManagerProvider {
 
                 // Hi-hat on every beat
                 val hihat = if (beatPos < 0.05) {
-                    (Math.random() * 2 - 1) * 0.08
+                    (Random.nextDouble() * 2 - 1) * 0.08
                 } else 0.0
 
                 // Bass note
