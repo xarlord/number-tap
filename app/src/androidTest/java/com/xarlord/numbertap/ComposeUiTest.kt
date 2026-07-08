@@ -412,4 +412,86 @@ class ComposeUiTest {
         }
         composeTestRule.onNodeWithText("NUMBER TAP").assertIsDisplayed()
     }
+
+    // === Issue #212: duplicate stats icons (single emoji now) ===
+
+    @Test
+    fun menuScreen_coinsDisplay_singleEmoji() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 5, currentTheme = GameTheme.DEFAULT, coins = 27, onStartClick = {})
+        }
+        // coins_display renders "🪙 27" as a single node — no separate duplicate emoji
+        composeTestRule.onNodeWithText("🪙 27").assertIsDisplayed()
+    }
+
+    @Test
+    fun menuScreen_streakDisplay_singleEmoji() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 5, currentTheme = GameTheme.DEFAULT, streak = 3, onStartClick = {})
+        }
+        composeTestRule.onNodeWithText("🔥 3").assertIsDisplayed()
+    }
+
+    // === Issue #213: symmetric difficulty toggle ===
+
+    @Test
+    fun menuScreen_hardModeToggle_showsBothOptions() {
+        var hardMode = false
+        composeTestRule.setContent {
+            MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, isHardMode = hardMode,
+                onHardModeToggle = { hardMode = it }, onStartClick = {})
+        }
+        // Both NORMAL and HARD options should always be visible and clickable
+        composeTestRule.onNodeWithText("NORMAL").assertIsDisplayed().assertHasClickAction()
+        composeTestRule.onNodeWithText("HARD").assertIsDisplayed().assertHasClickAction()
+    }
+
+    // === Issue #214: theme selector shows checkmark on selected ===
+
+    @Test
+    fun menuScreen_selectedTheme_showsCheckmark() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, onStartClick = {})
+        }
+        // #214: the selected theme gets a ✓ prefix
+        composeTestRule.onNodeWithText("✓ Default").assertIsDisplayed()
+    }
+
+    @Test
+    fun menuScreen_unselectedTheme_noCheckmark() {
+        composeTestRule.setContent {
+            MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, onStartClick = {})
+        }
+        // Non-selected themes should NOT have the checkmark prefix
+        composeTestRule.onNodeWithText("Terminal").assertIsDisplayed()
+        composeTestRule.onNodeWithText("✓ Terminal").assertDoesNotExist()
+    }
+
+    // === Issue #215: GameOverScreen uses localized coin strings ===
+
+    @Test
+    fun gameOverScreen_showsLocalizedCoinBalance() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 10, highScore = 50, isNewHighScore = false,
+                isReviveEligible = false, currentTheme = GameTheme.DEFAULT,
+                coinBalance = 42, onPlayAgain = {}, onMenu = {}
+            )
+        }
+        // #215: coins_display "🪙 42" from string resource, not hardcoded duplicate
+        composeTestRule.onNodeWithText("🪙 42").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameOverScreen_showsLocalizedSpendCoinsButton() {
+        composeTestRule.setContent {
+            GameOverScreen(
+                score = 10, highScore = 50, isNewHighScore = false,
+                isReviveEligible = false, currentTheme = GameTheme.DEFAULT,
+                coinBalance = 100, onPlayAgain = {}, onMenu = {}
+            )
+        }
+        // #215: spend_coins_revive "Spend N Coins (+Ns)" from string resource
+        composeTestRule.onNodeWithText("Spend 50 Coins (+5s)").assertIsDisplayed()
+    }
 }

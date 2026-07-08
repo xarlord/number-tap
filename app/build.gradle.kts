@@ -77,7 +77,7 @@ android {
 
 dependencies {
     // Core library desugaring for java.time on API < 26
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     // AndroidX
     implementation(libs.core.ktx)
