@@ -143,6 +143,40 @@ class IssueFixTest {
     }
 
     // ============================================================
+    // #265: TimerBar uses GameConfig.INITIAL_TIME_SECONDS
+    // ============================================================
+
+    @Test
+    fun `#265 - INITIAL_TIME_SECONDS is 30`() {
+        assertEquals(30.0, GameConfig.INITIAL_TIME_SECONDS, 0.01)
+    }
+
+    @Test
+    fun `#265 - INITIAL_TIME_SECONDS is positive`() {
+        assertTrue("Initial time should be positive", GameConfig.INITIAL_TIME_SECONDS > 0)
+    }
+
+    @Test
+    fun `#265 - GameState initial timeRemaining matches INITIAL_TIME_SECONDS`() {
+        val state = GameState()
+        assertEquals("Initial timeRemaining should match INITIAL_TIME_SECONDS",
+            GameConfig.INITIAL_TIME_SECONDS, state.timeRemaining, 0.01)
+    }
+
+    // ============================================================
+    // #266: InAppUpdateManager cleanup (tested in MainActivity test)
+    // ============================================================
+    // Note: InAppUpdateManager cleanup is verified through MainActivity lifecycle tests
+    // This is primarily an integration concern tested in instrumented tests
+
+    // ============================================================
+    // #267: shareScore catches ActivityNotFoundException
+    // ============================================================
+    // Note: shareScore() error handling is verified through MainActivity integration tests
+    // The ActivityNotFoundException catch prevents crashes when no share apps are installed
+    // This is tested in instrumented tests due to Context/Intent requirements
+
+    // ============================================================
     // Helper: find the row/col of the target number
     // ============================================================
 

@@ -2,6 +2,7 @@ package com.xarlord.numbertap
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -78,6 +79,12 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // Check if a flexible update was downloaded and ready to install
         updateManager.checkForPendingInstall()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up in-app update listeners to prevent memory leak (#266)
+        updateManager.cleanup()
     }
 }
 
@@ -571,5 +578,10 @@ private fun shareScore(context: Context, score: Int, highScore: Int) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    try {
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser)))
+    } catch (e: ActivityNotFoundException) {
+        // No app can handle sharing - silently ignore (#267)
+        ActionLogger.logError("share_score", "No share app available")
+    }
 }
