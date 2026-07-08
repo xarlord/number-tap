@@ -70,6 +70,7 @@ internal fun PauseOverlay(
     onMenu: () -> Unit = {}
 ) {
     val pausedDesc = stringResource(R.string.a11y_paused)
+    val goMenuDesc = stringResource(R.string.a11y_go_menu)
 
     Box(
         modifier = Modifier
@@ -99,7 +100,7 @@ internal fun PauseOverlay(
                 fontFamily = style.bodyFontFamily,
                 modifier = Modifier
                     .semantics {
-                        contentDescription = "Go to main menu"
+                        contentDescription = goMenuDesc
                         role = Role.Button
                     }
                     .clickable { onMenu() }

@@ -293,4 +293,33 @@ class ActionLoggerTest {
         assertEquals(50, logger.actions[0].score)
         assertTrue(logger.actions[0].extra.contains("label=LEGENDARY"))
     }
+
+    // --- NoOpActionLogger coverage tests ---
+
+    @Test
+    fun `NoOpActionLogger all methods run without error`() {
+        val logger = NoOpActionLogger()
+        val action = GameAction(timestamp = 0L, type = ActionType.GAME_START, score = 0)
+        logger.log(action)
+        logger.logGameStart(0, 100)
+        logger.logTap(0, 0, 1, 1, true, 1, 30.0)
+        logger.logGameOver(42, 50, 0.0)
+        logger.logGridTransition(10, 4)
+        logger.logTutorialStart()
+        logger.logTutorialComplete(5)
+        logger.logPause(5, 15.0)
+        logger.logResume(5, 15.0)
+        logger.logRevive(5, 3.0)
+        logger.logScoreMilestone(10, "10")
+        logger.logShare(10)
+        logger.logTierAnnouncement(10, "bronze")
+        logger.logError("loc", "msg")
+        // All methods completed without exception
+    }
+
+    @Test
+    fun `NoOpActionLogger is assignable to ActionLoggerProvider`() {
+        val provider: ActionLoggerProvider = NoOpActionLogger()
+        assertNotNull(provider)
+    }
 }

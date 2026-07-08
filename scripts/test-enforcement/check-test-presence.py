@@ -39,6 +39,7 @@ EXCLUDE_PATTERNS = [
     "libs.versions.toml",
     "gradle.properties",
     "settings.gradle",
+    "Overlays.kt",   # Pure UI composables (no testable logic)
 ]
 
 

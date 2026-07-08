@@ -83,6 +83,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        // Track session end for analytics duration tracking (#290)
+        AnalyticsTracker.sessionEnd()
         // Clean up in-app update listeners to prevent memory leak (#266)
         updateManager.cleanup()
     }
@@ -153,7 +155,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
     var gameState by remember { mutableStateOf(GameState()) }
     val engine = remember { GameEngine() }
     val context = LocalContext.current
-    var highScore by remember { mutableStateOf(loadHighScore(context)) }
+    var highScore by remember { mutableIntStateOf(loadHighScore(context)) }
     var selectedTheme by remember { mutableStateOf(loadTheme(context)) }
     var soundEnabled by remember { mutableStateOf(loadSoundEnabled(context)) }
     var musicEnabled by remember { mutableStateOf(loadMusicEnabled(context)) }
