@@ -35,9 +35,9 @@ import com.xarlord.numbertap.data.ThemeConfig
 fun GameScreen(
     gameState: GameState,
     onTileTap: (row: Int, col: Int) -> Unit,
+    modifier: Modifier = Modifier,
     onPauseClick: () -> Unit = {},
-    onMenuClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onMenuClick: () -> Unit = {}
 ) {
     val theme = gameState.currentTheme
     val colors = ThemeConfig.colorsFor(theme)

@@ -70,11 +70,11 @@ fun MenuScreen(
     coins: Int = 0,
     streak: Int = 0,
     onStartClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onTutorialClick: () -> Unit = {},
     onThemeChange: (GameTheme) -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    onHardModeToggle: (Boolean) -> Unit = {},
-    modifier: Modifier = Modifier
+    onHardModeToggle: (Boolean) -> Unit = {}
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
     val style = ThemeConfig.styleFor(currentTheme)
@@ -193,15 +193,14 @@ fun MenuScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (coins > 0) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        // #212: coins_display already includes the 🪙 emoji — render a single
+                        // Text instead of a separate emoji glyph + string (was showing double emoji).
+                        Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(colors.panelBackground.copy(alpha = 0.5f))
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Text("🪙", fontSize = 14.sp)
                             Text(
                                 stringResource(R.string.coins_display, coins),
                                 color = colors.textPrimary,
@@ -212,15 +211,13 @@ fun MenuScreen(
                         }
                     }
                     if (streak > 0) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        // #212: streak_display already includes the 🔥 emoji — single Text only.
+                        Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(colors.panelBackground.copy(alpha = 0.5f))
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Text("🔥", fontSize = 14.sp)
                             Text(
                                 stringResource(R.string.streak_display, streak),
                                 color = colors.textPrimary,
@@ -273,35 +270,69 @@ fun MenuScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Normal / Hard mode toggle (#188)
+            // Normal / Hard mode toggle (#188, #213: symmetric capsule styling)
+            val modeNormalDesc = stringResource(R.string.mode_normal)
+            val modeHardDesc = stringResource(R.string.mode_hard)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(colors.panelBackground.copy(alpha = 0.5f))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.mode_normal),
-                    color = if (!isHardMode) colors.tileTarget else colors.textSecondary,
-                    fontSize = 13.sp,
-                    fontWeight = if (!isHardMode) FontWeight.Bold else FontWeight.Normal,
-                    fontFamily = style.bodyFontFamily,
+                // NORMAL toggle
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (!isHardMode) colors.tileTarget.copy(alpha = 0.15f) else Color.Transparent)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            if (!isHardMode) colors.tileTarget.copy(alpha = 0.18f) else Color.Transparent
+                        )
+                        .then(
+                            if (!isHardMode) Modifier.border(1.dp, colors.tileTarget, RoundedCornerShape(16.dp))
+                            else Modifier.border(1.dp, Color.Transparent, RoundedCornerShape(16.dp))
+                        )
+                        .semantics {
+                            contentDescription = modeNormalDesc
+                            role = Role.Button
+                        }
                         .clickable { onHardModeToggle(false) }
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                )
-                Text(
-                    stringResource(R.string.mode_hard),
-                    color = if (isHardMode) colors.failure else colors.textSecondary,
-                    fontSize = 13.sp,
-                    fontWeight = if (isHardMode) FontWeight.Bold else FontWeight.Normal,
-                    fontFamily = style.bodyFontFamily,
+                        .padding(horizontal = 18.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.mode_normal),
+                        color = if (!isHardMode) colors.tileTarget else colors.textSecondary,
+                        fontSize = 13.sp,
+                        fontWeight = if (!isHardMode) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = style.bodyFontFamily
+                    )
+                }
+                // HARD toggle — symmetric styling, uses failure color when active
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (isHardMode) colors.failure.copy(alpha = 0.15f) else Color.Transparent)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            if (isHardMode) colors.failure.copy(alpha = 0.18f) else Color.Transparent
+                        )
+                        .then(
+                            if (isHardMode) Modifier.border(1.dp, colors.failure, RoundedCornerShape(16.dp))
+                            else Modifier.border(1.dp, Color.Transparent, RoundedCornerShape(16.dp))
+                        )
+                        .semantics {
+                            contentDescription = modeHardDesc
+                            role = Role.Button
+                        }
                         .clickable { onHardModeToggle(true) }
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                )
+                        .padding(horizontal = 18.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.mode_hard),
+                        color = if (isHardMode) colors.failure else colors.textSecondary,
+                        fontSize = 13.sp,
+                        fontWeight = if (isHardMode) FontWeight.Bold else FontWeight.Normal,
+                        fontFamily = style.bodyFontFamily
+                    )
+                }
             }
             if (isHardMode) {
                 Text(
@@ -335,6 +366,7 @@ fun MenuScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .background(tc.background)
                             .then(
+                                // #214: thicker 2dp border on selected, subtle on others
                                 if (isSelected) Modifier.border(2.dp, tc.tileTarget, RoundedCornerShape(8.dp))
                                 else Modifier.border(1.dp, tc.panelBorder.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                             )
@@ -346,9 +378,10 @@ fun MenuScreen(
                             .padding(horizontal = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
+                        // #214: show a ✓ checkmark prefix on the selected theme for clarity
                         Text(
-                            theme.displayName,
-                            color = tc.textPrimary,
+                            if (isSelected) "✓ ${theme.displayName}" else theme.displayName,
+                            color = if (isSelected) tc.tileTarget else tc.textPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace
