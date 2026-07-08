@@ -51,14 +51,14 @@ fun SettingsScreen(
     currentTheme: GameTheme,
     soundEnabled: Boolean,
     musicEnabled: Boolean,
-    notificationsEnabled: Boolean = true,
     onThemeChange: (GameTheme) -> Unit,
     onSoundToggle: (Boolean) -> Unit,
     onMusicToggle: (Boolean) -> Unit,
-    onNotificationsToggle: (Boolean) -> Unit = {},
     onResetHighScore: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    notificationsEnabled: Boolean = true,
+    onNotificationsToggle: (Boolean) -> Unit = {}
 ) {
     val colors = ThemeConfig.colorsFor(currentTheme)
     val style = ThemeConfig.styleFor(currentTheme)
