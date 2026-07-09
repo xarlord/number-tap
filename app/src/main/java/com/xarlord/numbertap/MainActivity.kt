@@ -11,6 +11,7 @@ import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -303,6 +304,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                     } else {
                         lastTickTime = now
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e // Propagate cancellation — do not suppress structured concurrency (#274)
                 } catch (e: Exception) {
                     ActionLogger.logError("game_loop", e.message ?: "unknown")
                     lastTickTime = SystemClock.elapsedRealtime()
@@ -346,6 +349,8 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
         ) {
             when (currentScreen) {
                 is Screen.Menu -> {
+                    // #276: Hardware back button exits app from menu
+                    BackHandler { (context as? Activity)?.finish() }
                     MenuScreen(
                     highScore = highScore,
                     currentTheme = selectedTheme,
@@ -378,7 +383,17 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                 )
                 }
 
-                is Screen.Game -> GameScreen(
+                is Screen.Game -> {
+                    // #276: Hardware back button pauses/resumes game
+                    BackHandler {
+                        if (gameState.isPaused) {
+                            soundManager.stopBGMusic()
+                            currentScreen = Screen.Menu
+                        } else {
+                            gameState = engine.pause(gameState)
+                        }
+                    }
+                    GameScreen(
                     gameState = gameState,
                     onTileTap = { row, col ->
                         try {
@@ -451,8 +466,15 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         currentScreen = Screen.Menu
                     }
                 )
+                }
 
-                is Screen.GameOver -> GameOverScreen(
+                is Screen.GameOver -> {
+                    // #276: Hardware back button goes to menu from game over
+                    BackHandler {
+                        soundManager.stopBGMusic()
+                        currentScreen = Screen.Menu
+                    }
+                    GameOverScreen(
                     score = gameState.score,
                     highScore = gameState.highScore,
                     isNewHighScore = gameState.isNewHighScore,
@@ -513,8 +535,12 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         }
                     }
                 )
+                }
 
-                is Screen.Settings -> SettingsScreen(
+                is Screen.Settings -> {
+                    // #276: Hardware back button returns to menu from settings
+                    BackHandler { currentScreen = Screen.Menu }
+                    SettingsScreen(
                     currentTheme = selectedTheme,
                     soundEnabled = soundEnabled,
                     musicEnabled = musicEnabled,
@@ -566,6 +592,7 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                         currentScreen = Screen.Menu
                     }
                 )
+                }
             }
         } // end Box (content area)
         // Banner ad at bottom — always visible across ALL screens
