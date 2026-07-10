@@ -48,10 +48,11 @@ class AdManagerImpl(
     private var interstitialAd: InterstitialAd? = null
     private var rewardedAd: RewardedAd? = null
     private var gameOverCount = 0
-    private var isInitialized = false
+    @Volatile private var isInitialized = false
 
     /**
      * Initialize the Mobile Ads SDK. Call once in Application.onCreate() or Activity.onCreate().
+     * #277 fix: isInitialized is @Volatile to ensure visibility across threads.
      */
     fun initialize() {
         if (isInitialized) return
