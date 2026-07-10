@@ -21,8 +21,8 @@ android {
         applicationId = "com.xarlord.numbertap"
         minSdk = 24
         targetSdk = 36
-        versionCode = 9
-        versionName = "1.4.0"
+        versionCode = 10
+        versionName = "1.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -107,6 +107,10 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation(libs.app.update)
     implementation(libs.app.update.ktx)
+
+    // Force fragment version to satisfy Play Console deprecation warning
+    // (pulled transitively by work-runtime-ktx, play-services-ads)
+    implementation("androidx.fragment:fragment:1.8.6")
 }
 
 kover {
