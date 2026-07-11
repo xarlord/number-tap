@@ -124,7 +124,7 @@ jobs:
 
   e2e-tests:
     name: "🧪 E2E Instrumented Tests"
-    runs-on: macos-latest
+    runs-on: macos-13
     timeout-minutes: 35
     needs: [build-and-test]
 
@@ -153,6 +153,9 @@ jobs:
           arch: x86_64
           profile: pixel_7
           disable-animations: true
+          force-avd-creation: true
+          emulator-boot-timeout: 600
+          emulator-options: -no-snapshot-save -no-snapshot-load -no-window -noaudio -no-boot-anim -gpu swiftshader_indirect
           script: ./gradlew connectedDebugAndroidTest --console=plain --stacktrace
 
       - name: Upload E2E test results
