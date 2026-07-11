@@ -49,16 +49,19 @@ class AdManagerImpl(
     private var rewardedAd: RewardedAd? = null
     private var gameOverCount = 0
     @Volatile private var isInitialized = false
+    @Volatile private var isInitializing = false
 
     /**
      * Initialize the Mobile Ads SDK. Call once in Application.onCreate() or Activity.onCreate().
-     * #277 fix: isInitialized is @Volatile to ensure visibility across threads.
+     * #277 fix: Track initializing state to avoid double-init and early loadBanner() returns.
      */
     fun initialize() {
-        if (isInitialized) return
+        if (isInitialized || isInitializing) return
+        isInitializing = true
         MobileAds.initialize(appContext) {
             Log.d(TAG, "AdMob SDK initialized")
             isInitialized = true
+            isInitializing = false
             // #142: Auto-register emulator as test device in debug builds
             if (com.xarlord.numbertap.BuildConfig.DEBUG) {
                 val config = RequestConfiguration.Builder()
