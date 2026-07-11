@@ -31,7 +31,6 @@ class AdManagerImplTest {
     @Test
     fun `no-arg showInterstitial always returns false`() {
         val impl = AdManagerImpl(mockk(relaxed = true))
-        // No initialization needed — just testing the counter behavior
         val result = impl.showInterstitial()
         assertFalse("No-arg showInterstitial() should return false", result)
     }
@@ -39,42 +38,22 @@ class AdManagerImplTest {
     /**
      * #144: Calling no-arg showInterstitial() should not increment the counter,
      * so subsequent calls to the Activity overload still work correctly.
-     * We verify by calling no-arg multiple times, then checking that
-     * the Activity overload still increments from 0.
      */
     @Test
     fun `no-arg showInterstitial does not affect gameOverCount`() {
         val impl = AdManagerImpl(mockk(relaxed = true))
 
-        // Call no-arg version multiple times — should NOT count
-        repeat(5) {
-            impl.showInterstitial()
-        }
+        repeat(5) { impl.showInterstitial() }
 
-        // Now call Activity overload with a mock Activity — should start counting from 0
-        // Game over #1 (not a multiple of 3) → returns false
         val activity = mockk<android.app.Activity>(relaxed = true)
         val result1 = impl.showInterstitial(activity)
         assertFalse("Game over #1 should not show ad (frequency=3)", result1)
 
-        // Game over #2 → returns false
         val result2 = impl.showInterstitial(activity)
         assertFalse("Game over #2 should not show ad (frequency=3)", result2)
 
-        // Game over #3 → would show ad if one was loaded, but returns false (no ad loaded)
         val result3 = impl.showInterstitial(activity)
         assertFalse("Game over #3 with no ad loaded should return false", result3)
-
-        // Verify: if we'd called no-arg 5 times before, and they DID count,
-        // then the Activity calls would be at #6, #7, #8 — and #6 is divisible by 3
-        // So this test proves the no-arg calls are not counted
-    }
-
-    @Test
-    fun `no-arg showRewardedAd always returns false`() {
-        val impl = AdManagerImpl(mockk(relaxed = true))
-        val result = impl.showRewardedAd()
-        assertFalse("No-arg showRewardedAd() should return false", result)
     }
 
     @Test
@@ -117,5 +96,43 @@ class AdManagerImplTest {
         injectRewardedAd(impl, mockAd)
 
         assertTrue("isAdReady should return true when ad is loaded", impl.isAdReady())
+    }
+
+    /**
+     * #241: showRewardedAd() no-arg is a safe stub — returns false, no crash.
+     */
+    @Test
+    fun `no-arg showRewardedAd returns false with no ad loaded`() {
+        val impl = AdManagerImpl(mockk(relaxed = true))
+        assertFalse(impl.showRewardedAd())
+    }
+
+    @Test
+    fun `no-arg showRewardedAd returns false even with ad loaded`() {
+        val impl = AdManagerImpl(mockk(relaxed = true))
+        val mockAd = mockk<com.google.android.gms.ads.rewarded.RewardedAd>(relaxed = true)
+        injectRewardedAd(impl, mockAd)
+        assertFalse(impl.showRewardedAd())
+    }
+
+    /**
+     * #150: showRewardedWithCallbacks does not crash when ad is loaded.
+     */
+    @Test
+    fun `showRewardedWithCallbacks does not crash when ad is loaded`() {
+        val impl = AdManagerImpl(mockk(relaxed = true))
+        val activity = mockk<android.app.Activity>(relaxed = true)
+        val mockAd = mockk<com.google.android.gms.ads.rewarded.RewardedAd>(relaxed = true)
+        injectRewardedAd(impl, mockAd)
+
+        var rewardCalled = false
+        var failureCalled = false
+        impl.showRewardedWithCallbacks(
+            activity,
+            onReward = { rewardCalled = true },
+            onFailure = { failureCalled = true }
+        )
+        // ad.show() is relaxed mock — callbacks won't fire, but no crash
+        assertFalse("onFailure should not be called when ad is loaded", failureCalled)
     }
 }

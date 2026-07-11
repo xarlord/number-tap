@@ -681,4 +681,36 @@ class GameEngineTest {
         }
         return null
     }
+
+    // === pause / resume / revive guard clauses ===
+
+    @Test
+    fun `pause returns unchanged when not playing`() {
+        val notPlaying = state.copy(isPlaying = false)
+        assertEquals(notPlaying, engine.pause(notPlaying))
+    }
+
+    @Test
+    fun `pause returns unchanged when game over`() {
+        val gameOver = state.copy(isGameOver = true)
+        assertEquals(gameOver, engine.pause(gameOver))
+    }
+
+    @Test
+    fun `resume returns unchanged when not paused`() {
+        val notPaused = state.copy(isPaused = false)
+        assertEquals(notPaused, engine.resume(notPaused))
+    }
+
+    @Test
+    fun `revive returns unchanged when still playing`() {
+        val playing = state.copy(isPlaying = true, isGameOver = false)
+        assertEquals(playing, engine.revive(playing))
+    }
+
+    @Test
+    fun `revive returns unchanged when not game over`() {
+        val notGameOver = state.copy(isGameOver = false)
+        assertEquals(notGameOver, engine.revive(notGameOver))
+    }
 }
