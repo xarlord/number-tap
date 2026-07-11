@@ -192,23 +192,8 @@ class AdManagerImpl(
      * @param activity Activity context for full-screen ad display
      * @return true if ad was shown, false if no ad ready
      */
-    @Deprecated(
-        message = "Use showRewardedWithCallbacks(activity, onReward, onFailure) to handle reward outcomes. " +
-            "This method silently discards the reward (issue #153).",
-        replaceWith = ReplaceWith("showRewardedWithCallbacks(activity, onReward = {}, onFailure = {})")
-    )
-    fun showRewardedAd(activity: Activity): Boolean {
-        val ad = rewardedAd
-        if (ad != null) {
-            ad.show(activity) { rewardItem ->
-                Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
-            }
-            Log.d(TAG, "Showing rewarded ad")
-            return true
-        }
-        Log.d(TAG, "No rewarded ad ready")
-        return false
-    }
+    // #241: Removed deprecated showRewardedAd(activity) — dead code, never called in production.
+    // Use showRewardedWithCallbacks(activity, onReward, onFailure) instead.
 
     override fun isAdReady(): Boolean = rewardedAd != null
 

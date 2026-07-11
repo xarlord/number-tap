@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Number Tap</string>
-    <string name="game_over_title">Game Over</string>
     <string name="play_again">Play Again</string>
-    <string name="start_game">Start</string>
-    <string name="high_score_label">Best</string>
-    <string name="score_label">Score</string>
-    <string name="time_label">Time</string>
-    <string name="target_label">Find</string>
 
     <!-- Game Screen -->
     <string name="score_format">SCORE: %1$04d</string>
@@ -66,12 +60,6 @@
     <string name="share_text">Number Tap - The Ordered Grid\n\nScore: %1$d\nPersonal Best: %2$d\n\nCan you beat my score?</string>
     <string name="share_chooser">Share Score</string>
 
-    <!-- Theme names -->
-    <string name="theme_terminal">Terminal</string>
-    <string name="theme_chalkboard">Chalkboard</string>
-    <string name="theme_matrix">Matrix</string>
-    <string name="theme_default">Default</string>
-
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_sound">Sound Effects</string>
@@ -87,7 +75,6 @@
     <string name="settings_back">Back</string>
     <string name="settings_cancel">Cancel</string>
     <string name="settings_confirm">Reset</string>
-    <string name="settings_disabled">Disabled</string>
     <string name="settings_button">⚙ Settings</string>
 
     <!-- Accessibility -->
@@ -122,8 +109,17 @@
     <string name="notif_near_achievement_body">Only %1$d points away from your high score!</string>
 
     <!-- Retention: Profile (#89) -->
-    <string name="coins_display">🪙 %1$d</string>
-    <string name="streak_display">🔥 %1$d</string>
+    <!-- #255: Use <plurals> for quantity-dependent strings -->
+    <plurals name="coins_display">
+        <item quantity="zero">🪙 0</item>
+        <item quantity="one">🪙 %1$d</item>
+        <item quantity="other">🪙 %1$d</item>
+    </plurals>
+    <plurals name="streak_display">
+        <item quantity="zero">🔥 0</item>
+        <item quantity="one">🔥 %1$d</item>
+        <item quantity="other">🔥 %1$d</item>
+    </plurals>
     <string name="missions_title">DAILY MISSIONS</string>
     <string name="mission_progress">%1$d / %2$d</string>
     <string name="mission_claim">CLAIM %1$d 🪙</string>
@@ -136,17 +132,11 @@
     <string name="powerup_buy">BUY %1$d 🪙</string>
     <string name="powerup_owned">x%1$d</string>
     <string name="powerup_locked">🔒 Unlock @ %1$d</string>
-    <string name="daily_login_reward">+%1$d 🪙 Day %2$d streak!</string>
     <string name="settings_notifications">Notifications</string>
     <string name="a11y_notifications_toggle">Notifications %1$s</string>
     <string name="daily_login_popup_title">Daily Reward!</string>
     <string name="daily_login_popup_body">+%1$d coins for your %2$d-day streak!</string>
     <string name="daily_login_popup_dismiss">Nice!</string>
-
-    <!-- Ads (#90) -->
-    <string name="ad_loading">Loading ad…</string>
-    <string name="ad_not_ready">Ad not ready yet. Try again later.</string>
-    <string name="revive_watch_ad">Watch Ad for +5s</string>
 
     <!-- Coin spend (#206) -->
     <string name="spend_coins_revive">Spend %1$d Coins (+%2$ds)</string>
