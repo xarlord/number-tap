@@ -24,6 +24,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 30
           running-workflow-name: auto-merge
+          allowed-conclusions: success,skipped,failure
 
       - name: Auto-merge PR
         env:
