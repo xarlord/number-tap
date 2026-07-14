@@ -10,6 +10,7 @@ import com.xarlord.numbertap.ui.MenuScreen
 import com.xarlord.numbertap.ui.GameScreen
 import com.xarlord.numbertap.ui.GameOverScreen
 import com.xarlord.numbertap.ui.SettingsScreen
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -101,6 +102,30 @@ class ComposeUiTest {
             GameScreen(gameState = GameState(targetNumber = 5, isPlaying = true), onTileTap = { _, _ -> })
         }
         composeTestRule.onNodeWithText("5", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun tutorialInstruction_isAboveTargetHint_withoutOverlap() {
+        composeTestRule.setContent {
+            GameScreen(
+                gameState = GameState(targetNumber = 1, isPlaying = true, isTutorial = true),
+                onTileTap = { _, _ -> }
+            )
+        }
+
+        val instructionBounds = composeTestRule
+            .onNodeWithText("Tap the numbers in order!")
+            .fetchSemanticsNode()
+            .boundsInRoot
+        val targetBounds = composeTestRule
+            .onNodeWithContentDescription("Find number 1")
+            .fetchSemanticsNode()
+            .boundsInRoot
+
+        assertTrue(
+            "Tutorial instruction must finish above the target hint",
+            instructionBounds.bottom <= targetBounds.top
+        )
     }
 
     @Test

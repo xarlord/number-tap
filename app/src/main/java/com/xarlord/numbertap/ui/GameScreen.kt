@@ -82,6 +82,21 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    if (gameState.isTutorial) {
+                        Text(
+                            when {
+                                gameState.score < 2 -> strTutorialTapOrder
+                                gameState.score < 4 -> strTutorialKeepGoing
+                                else -> strTutorialAlmost
+                            },
+                            color = colors.textSecondary,
+                            fontSize = 14.sp,
+                            fontFamily = style.bodyFontFamily,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
                     // Target hint
                     TargetHint(
                         targetNumber = gameState.targetNumber,
@@ -110,21 +125,6 @@ fun GameScreen(
                 }
 
 
-
-                // Tutorial overlay
-                if (gameState.isTutorial) {
-                    Text(
-                        when {
-                            gameState.score < 2 -> strTutorialTapOrder
-                            gameState.score < 4 -> strTutorialKeepGoing
-                            else -> strTutorialAlmost
-                        },
-                        color = colors.textSecondary,
-                        fontSize = 14.sp,
-                        fontFamily = style.bodyFontFamily,
-                        modifier = Modifier.offset(y = (-120).dp)
-                    )
-                }
             }
 
             // === BOTTOM: Stats Panel (fixed height) ===
