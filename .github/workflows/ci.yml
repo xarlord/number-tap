@@ -124,7 +124,8 @@ jobs:
 
   e2e-tests:
     name: "🧪 E2E Instrumented Tests"
-    runs-on: macos-latest
+    # Pin the Intel runner: Android's x86_64 emulator image is stable here; macos-latest is ARM64.
+    runs-on: macos-13
     timeout-minutes: 35
     needs: [build-and-test]
 
@@ -150,8 +151,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
-          # macos-latest runs on Apple Silicon; the ARM image is required for native QEMU execution.
-          arch: arm64-v8a
+          arch: x86_64
           profile: pixel_7
           disable-animations: true
           script: ./gradlew connectedDebugAndroidTest --console=plain --stacktrace
