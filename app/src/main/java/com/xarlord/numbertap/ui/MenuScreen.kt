@@ -10,6 +10,8 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -126,6 +128,7 @@ fun MenuScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -166,25 +169,23 @@ fun MenuScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            if (highScore > 0) {
-                // High score badge with subtle background
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(colors.tileTarget.copy(alpha = 0.1f))
-                        .border(1.dp, colors.tileTarget.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 20.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.best_display, highScore),
-                        color = colors.tileTarget,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = style.tileFontFamily
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
+            // Best score remains visible for new players too, so the score goal is clear from the first launch.
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.tileTarget.copy(alpha = 0.1f))
+                    .border(1.dp, colors.tileTarget.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    stringResource(R.string.best_display, highScore),
+                    color = colors.tileTarget,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = style.tileFontFamily
+                )
             }
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Coin and streak display
             if (coins > 0 || streak > 0) {
