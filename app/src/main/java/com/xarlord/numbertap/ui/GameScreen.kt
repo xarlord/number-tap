@@ -71,6 +71,25 @@ fun GameScreen(
             // Timer bar
             TimerBar(gameState.timeRemaining, GameConfig.INITIAL_TIME_SECONDS, colors)
 
+            // Keep tutorial copy outside the centered grid column. This reserves real vertical
+            // space above gameplay on tall and compact devices instead of letting the grid crowd it.
+            if (gameState.isTutorial) {
+                Text(
+                    when {
+                        gameState.score < 2 -> strTutorialTapOrder
+                        gameState.score < 4 -> strTutorialKeepGoing
+                        else -> strTutorialAlmost
+                    },
+                    color = colors.textSecondary,
+                    fontSize = 14.sp,
+                    fontFamily = style.bodyFontFamily,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp, bottom = 8.dp)
+                )
+            }
+
             // === CENTER: Game Grid (takes remaining space) ===
             Box(
                 modifier = Modifier
@@ -82,21 +101,6 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    if (gameState.isTutorial) {
-                        Text(
-                            when {
-                                gameState.score < 2 -> strTutorialTapOrder
-                                gameState.score < 4 -> strTutorialKeepGoing
-                                else -> strTutorialAlmost
-                            },
-                            color = colors.textSecondary,
-                            fontSize = 14.sp,
-                            fontFamily = style.bodyFontFamily,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
-
                     // Target hint
                     TargetHint(
                         targetNumber = gameState.targetNumber,

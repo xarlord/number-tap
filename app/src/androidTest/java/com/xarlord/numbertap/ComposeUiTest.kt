@@ -6,6 +6,7 @@ import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
+import com.xarlord.numbertap.game.GameEngine
 import com.xarlord.numbertap.ui.MenuScreen
 import com.xarlord.numbertap.ui.GameScreen
 import com.xarlord.numbertap.ui.GameOverScreen
@@ -106,9 +107,10 @@ class ComposeUiTest {
 
     @Test
     fun tutorialInstruction_isAboveTargetHint_withoutOverlap() {
+        val tutorialState = GameEngine().startTutorial(highScore = 0)
         composeTestRule.setContent {
             GameScreen(
-                gameState = GameState(targetNumber = 1, isPlaying = true, isTutorial = true),
+                gameState = tutorialState,
                 onTileTap = { _, _ -> }
             )
         }
