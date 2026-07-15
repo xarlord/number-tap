@@ -29,10 +29,12 @@ class MainActivityInstrumentedTest {
 
     @Test
     fun menuScreen_showsThemeSelector() {
-        composeTestRule.onNodeWithText("Terminal").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Chalkboard").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Matrix").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Default").assertIsDisplayed()
+        for (theme in listOf("Terminal", "Chalkboard", "Matrix", "Default")) {
+            composeTestRule
+                .onNodeWithContentDescription("Select $theme theme")
+                .performScrollTo()
+                .assertIsDisplayed()
+        }
     }
 
     @Test
@@ -50,7 +52,10 @@ class MainActivityInstrumentedTest {
     @Test
     fun menuScreen_allThemeButtonsAreClickable() {
         for (theme in listOf("Terminal", "Chalkboard", "Matrix", "Default")) {
-            composeTestRule.onNodeWithText(theme).assertHasClickAction()
+            composeTestRule
+                .onNodeWithContentDescription("Select $theme theme")
+                .performScrollTo()
+                .assertHasClickAction()
         }
     }
 

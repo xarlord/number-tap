@@ -191,9 +191,9 @@ class GameJourneyE2ETest {
     }
 
     @Test
-    fun journey_reviveEligible_whenScoreAboveThreshold() {
-        var state = engine.startNewGame(highScore = 100)
-        // Tap a few correct tiles to get score above threshold
+    fun journey_reviveEligible_whenScoreMeetsHighScoreThreshold() {
+        // Eligibility requires score >= 90% of high score. Match the stored best after 3 taps.
+        var state = engine.startNewGame(highScore = 3)
         repeat(3) {
             val target = state.targetNumber
             var found = false
