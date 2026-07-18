@@ -29,10 +29,12 @@ class MainActivityInstrumentedTest {
 
     @Test
     fun menuScreen_showsThemeSelector() {
-        composeTestRule.onNodeWithText("Terminal").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Chalkboard").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Matrix").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Default").assertIsDisplayed()
+        for (theme in listOf("Terminal", "Chalkboard", "Matrix", "Default")) {
+            composeTestRule
+                .onNodeWithContentDescription("Select $theme theme")
+                .performScrollTo()
+                .assertIsDisplayed()
+        }
     }
 
     @Test
@@ -43,14 +45,17 @@ class MainActivityInstrumentedTest {
 
     @Test
     fun menuScreen_showsHighScore() {
-        // Should show BEST label (value depends on persisted score)
-        composeTestRule.onNodeWithText("START").assertIsDisplayed()
+        // The value depends on persisted state; verify the menu remains reachable.
+        composeTestRule.onNodeWithText("START").performScrollTo().assertIsDisplayed()
     }
 
     @Test
     fun menuScreen_allThemeButtonsAreClickable() {
         for (theme in listOf("Terminal", "Chalkboard", "Matrix", "Default")) {
-            composeTestRule.onNodeWithText(theme).assertHasClickAction()
+            composeTestRule
+                .onNodeWithContentDescription("Select $theme theme")
+                .performScrollTo()
+                .assertHasClickAction()
         }
     }
 
@@ -59,7 +64,7 @@ class MainActivityInstrumentedTest {
     // ============================================================
 
     @Test
-    fun `#266 - MainActivity survives recreate (cleanup test)`() {
+    fun mainActivity_survivesRecreate_cleanupTest() {
         // Verify the activity can be recreated without crashing
         // This tests that onDestroy cleanup doesn't cause issues
         composeTestRule.activityRule.scenario.recreate()
@@ -71,7 +76,7 @@ class MainActivityInstrumentedTest {
     // ============================================================
 
     @Test
-    fun `#267 - shareScore function exists and is callable`() {
+    fun shareScoreFunction_existsAndIsCallable() {
         // Test that shareScore is accessible and doesn't crash when called
         // The actual exception handling is verified by manual testing on devices
         // without share apps, but we can verify the function is wired correctly
