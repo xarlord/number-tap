@@ -29,10 +29,12 @@ class MainActivityInstrumentedTest {
 
     @Test
     fun menuScreen_showsThemeSelector() {
-        composeTestRule.onNodeWithText("Terminal").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Chalkboard").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Matrix").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Default").assertIsDisplayed()
+        for (theme in listOf("Terminal", "Chalkboard", "Matrix", "Default")) {
+            composeTestRule
+                .onNodeWithContentDescription("Select $theme theme")
+                .performScrollTo()
+                .assertIsDisplayed()
+        }
     }
 
     @Test
@@ -43,14 +45,17 @@ class MainActivityInstrumentedTest {
 
     @Test
     fun menuScreen_showsHighScore() {
-        // Should show BEST label (value depends on persisted score)
-        composeTestRule.onNodeWithText("START").assertIsDisplayed()
+        // The value depends on persisted state; verify the menu remains reachable.
+        composeTestRule.onNodeWithText("START").performScrollTo().assertIsDisplayed()
     }
 
     @Test
     fun menuScreen_allThemeButtonsAreClickable() {
         for (theme in listOf("Terminal", "Chalkboard", "Matrix", "Default")) {
-            composeTestRule.onNodeWithText(theme).assertHasClickAction()
+            composeTestRule
+                .onNodeWithContentDescription("Select $theme theme")
+                .performScrollTo()
+                .assertHasClickAction()
         }
     }
 

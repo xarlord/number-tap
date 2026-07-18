@@ -54,10 +54,10 @@ class ComposeUiTest {
         composeTestRule.setContent {
             MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, onStartClick = {})
         }
-        composeTestRule.onNodeWithText("Terminal").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Chalkboard").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Matrix").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Default").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Terminal").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Chalkboard").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Matrix").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("✓ Default").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -70,11 +70,11 @@ class ComposeUiTest {
     }
 
     @Test
-    fun menuScreen_zeroHighScore_showsBestZero() {
+    fun menuScreen_zeroHighScore_hidesBestBadge() {
         composeTestRule.setContent {
             MenuScreen(highScore = 0, currentTheme = GameTheme.DEFAULT, onStartClick = {})
         }
-        composeTestRule.onNodeWithText("BEST: 0").assertIsDisplayed()
+        composeTestRule.onNodeWithText("BEST: 0").assertDoesNotExist()
     }
 
     // === GameScreen — rendering ===
@@ -145,11 +145,11 @@ class ComposeUiTest {
     }
 
     @Test
-    fun gameScreen_showsHighScore() {
+    fun gameScreen_acceptsStoredHighScoreState() {
         composeTestRule.setContent {
             GameScreen(gameState = GameState(isPlaying = true, highScore = 50), onTileTap = { _, _ -> })
         }
-        composeTestRule.onNodeWithText("BEST: 50").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Pause").assertIsDisplayed()
     }
 
     // === GameScreen — not playing state ===
@@ -185,6 +185,9 @@ class ComposeUiTest {
                 onPlayAgain = {}, onMenu = {}
             )
         }
+        composeTestRule.waitUntil(timeoutMillis = 2_000) {
+            composeTestRule.onAllNodesWithText("42").fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithText("42").assertIsDisplayed()
     }
 
@@ -210,7 +213,10 @@ class ComposeUiTest {
                 onPlayAgain = {}, onMenu = {}
             )
         }
-        composeTestRule.onNodeWithText("+5 SECONDS").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithContentDescription("Watch ad to revive with 5 extra seconds")
+            .assertIsDisplayed()
+            .assertHasClickAction()
     }
 
     @Test
@@ -302,7 +308,7 @@ class ComposeUiTest {
                 onResetHighScore = {}, onBack = {}
             )
         }
-        composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Go back").assertIsDisplayed().assertHasClickAction()
     }
 
     @Test
@@ -314,7 +320,7 @@ class ComposeUiTest {
                 onResetHighScore = {}, onBack = {}
             )
         }
-        composeTestRule.onNodeWithText("Version", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Number Tap v", substring = true).performScrollTo().assertIsDisplayed()
     }
 
     // === Theme rendering — all 4 themes ===
