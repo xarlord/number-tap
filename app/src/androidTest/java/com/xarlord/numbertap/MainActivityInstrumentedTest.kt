@@ -59,7 +59,7 @@ class MainActivityInstrumentedTest {
     // ============================================================
 
     @Test
-    fun `#266 - MainActivity survives recreate (cleanup test)`() {
+    fun mainActivity_survivesRecreate_cleanupTest() {
         // Verify the activity can be recreated without crashing
         // This tests that onDestroy cleanup doesn't cause issues
         composeTestRule.activityRule.scenario.recreate()
@@ -71,7 +71,7 @@ class MainActivityInstrumentedTest {
     // ============================================================
 
     @Test
-    fun `#267 - shareScore function exists and is callable`() {
+    fun shareScoreFunction_existsAndIsCallable() {
         // Test that shareScore is accessible and doesn't crash when called
         // The actual exception handling is verified by manual testing on devices
         // without share apps, but we can verify the function is wired correctly

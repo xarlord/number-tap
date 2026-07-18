@@ -84,6 +84,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Verify protected-branch workflow safety
+        run: python scripts/test-enforcement/test_workflow_safety.py
+
       - name: Check test presence for changed files
         run: |
           python scripts/test-enforcement/check-test-presence.py \
@@ -124,8 +127,9 @@ jobs:
 
   e2e-tests:
     name: "🧪 E2E Instrumented Tests"
-    runs-on: macos-latest
-    timeout-minutes: 35
+    # Ubuntu is the supported GitHub-hosted runner for hardware-accelerated Android emulators.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: [build-and-test]
 
     steps:
@@ -146,20 +150,69 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Enable KVM and verify acceleration
+        run: |
+          mkdir -p ci-artifacts/emulator
+          echo "KVM setup on $(uname -a)" | tee ci-artifacts/emulator/kvm.txt
+          echo "Runner: ${RUNNER_NAME:-unknown}" | tee -a ci-artifacts/emulator/kvm.txt
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          if test -e /dev/kvm; then
+            stat -c 'KVM device: %A %U %G %n' /dev/kvm | tee -a ci-artifacts/emulator/kvm.txt
+            awk '/(vmx|svm)/ { flags++ } END { print "CPU virtualization flag count:", flags + 0 }' /proc/cpuinfo | tee -a ci-artifacts/emulator/kvm.txt
+          else
+            echo "KVM device /dev/kvm is unavailable" | tee -a ci-artifacts/emulator/kvm.txt
+            exit 1
+          fi
+
       - name: Run E2E instrumented tests (API 34)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
+          target: google_apis
           arch: x86_64
           profile: pixel_7
+          force-avd-creation: true
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-linux-hw-accel: false
           disable-animations: true
           script: ./gradlew connectedDebugAndroidTest --console=plain --stacktrace
 
-      - name: Upload E2E test results
+      - name: Capture emulator diagnostics
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p ci-artifacts/emulator
+
+          capture_command() {
+            local output_file="$1"
+            shift
+            if timeout 30s "$@" >"$output_file" 2>&1; then
+              return 0
+            fi
+            printf '\\n[diagnostic command failed or timed out]\\n' >>"$output_file"
+          }
+
+          capture_command ci-artifacts/emulator/adb-devices.txt adb devices -l
+          if timeout 30s adb devices 2>/dev/null | awk 'NR > 1 && $2 == "device" { found = 1 } END { exit(found ? 0 : 1) }'; then
+            capture_command ci-artifacts/emulator/getprop.txt adb shell getprop
+            capture_command ci-artifacts/emulator/dumpsys-activity.txt adb shell dumpsys activity activities
+            capture_command ci-artifacts/emulator/dumpsys-window.txt adb shell dumpsys window
+            capture_command ci-artifacts/emulator/logcat.txt adb logcat -d -t 2000
+          else
+            printf 'No ready ADB device was available for emulator diagnostics.\\n' > ci-artifacts/emulator/diagnostic-status.txt
+          fi
+
+      - name: Upload E2E failure artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-test-results
+          if-no-files-found: warn
+          retention-days: 7
           path: |
             app/build/reports/androidTest/
             app/build/outputs/androidTest-results/
+            ci-artifacts/emulator/
