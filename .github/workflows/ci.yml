@@ -84,6 +84,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Verify protected-branch workflow safety
+        run: python scripts/test-enforcement/test_workflow_safety.py
+
       - name: Check test presence for changed files
         run: |
           python scripts/test-enforcement/check-test-presence.py \
