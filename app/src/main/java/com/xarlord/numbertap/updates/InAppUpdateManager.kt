@@ -2,6 +2,7 @@ package com.xarlord.numbertap.updates
 
 import android.app.Activity
 import android.util.Log
+import java.lang.ref.WeakReference
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -16,14 +17,18 @@ import com.google.android.play.core.install.model.AppUpdateType
  * Issue #203: Notify users when a new Play Store version is available.
  */
 class InAppUpdateManager(
-    private val activity: Activity
+    activity: Activity
 ) {
     companion object {
         private const val TAG = "NumberTap:Update"
         private const val UPDATE_REQUEST_CODE = 7777
     }
 
+    private val activityRef = WeakReference(activity)
     private val appUpdateManager: AppUpdateManager = AppUpdateManagerFactory.create(activity)
+
+    private fun requireActivity(): Activity =
+        activityRef.get() ?: throw IllegalStateException("Activity has been destroyed")
 
     /**
      * Check for updates. If an update is available, start a flexible update
@@ -64,7 +69,7 @@ class InAppUpdateManager(
             appUpdateManager.startUpdateFlowForResult(
                 appUpdateInfo,
                 AppUpdateType.FLEXIBLE,
-                activity,
+                requireActivity(),
                 UPDATE_REQUEST_CODE
             )
             Log.d(TAG, "Flexible update flow started")
@@ -81,7 +86,7 @@ class InAppUpdateManager(
             appUpdateManager.startUpdateFlowForResult(
                 appUpdateInfo,
                 AppUpdateType.FLEXIBLE,
-                activity,
+                requireActivity(),
                 UPDATE_REQUEST_CODE
             )
         } catch (e: Exception) {
