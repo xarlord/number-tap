@@ -38,6 +38,23 @@ class WorkflowSafetyTest(unittest.TestCase):
         ]
         self.assertEqual([], offenders, f"failed checks allowed in: {offenders}")
 
+    def test_workflows_do_not_use_legacy_javascript_action_majors(self) -> None:
+        legacy_references = (
+            "actions/checkout@v4",
+            "actions/setup-python@v5",
+            "actions/setup-java@v4",
+            "actions/upload-artifact@v4",
+            "gradle/actions/setup-gradle@v4",
+            "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24",
+        )
+        offenders = [
+            (str(path.relative_to(REPOSITORY_ROOT)), reference)
+            for path, source in self.workflow_sources()
+            for reference in legacy_references
+            if reference in source
+        ]
+        self.assertEqual([], offenders, f"legacy JavaScript action references found: {offenders}")
+
 
 if __name__ == "__main__":
     unittest.main()
