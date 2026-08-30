@@ -1,15 +1,20 @@
 package com.xarlord.numbertap
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.Tile
 import com.xarlord.numbertap.data.TileState
+import com.xarlord.numbertap.game.GameEngine
 import com.xarlord.numbertap.ui.MenuScreen
 import com.xarlord.numbertap.ui.GameScreen
 import com.xarlord.numbertap.ui.GameOverScreen
 import com.xarlord.numbertap.ui.SettingsScreen
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -160,6 +165,28 @@ class ComposeUiTest {
             GameScreen(gameState = GameState(isPlaying = false), onTileTap = { _, _ -> })
         }
         composeTestRule.onNodeWithText("SCORE: 0000").assertIsDisplayed()
+    }
+
+    @Test
+    fun gameScreen_tutorialInstructionFlowsBeforeTargetHintAtCompactViewport() {
+        composeTestRule.setContent {
+            GameScreen(
+                gameState = GameEngine().startTutorial(highScore = 0),
+                onTileTap = { _, _ -> },
+                modifier = Modifier.size(360.dp, 640.dp)
+            )
+        }
+
+        val tutorialBounds = composeTestRule
+            .onNodeWithText("Tap the numbers in order!")
+            .fetchSemanticsNode()
+            .boundsInRoot
+        val targetHintBounds = composeTestRule
+            .onNodeWithContentDescription("Find number 1")
+            .fetchSemanticsNode()
+            .boundsInRoot
+
+        assertTrue("Tutorial instruction overlaps target hint: tutorial=$tutorialBounds, target=$targetHintBounds", tutorialBounds.bottom <= targetHintBounds.top)
     }
 
     // === GameOverScreen ===
