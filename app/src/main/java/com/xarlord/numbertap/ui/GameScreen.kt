@@ -71,6 +71,23 @@ fun GameScreen(
             // Timer bar
             TimerBar(gameState.timeRemaining, GameConfig.INITIAL_TIME_SECONDS, colors)
 
+            if (gameState.isTutorial) {
+                Text(
+                    when {
+                        gameState.score < 2 -> strTutorialTapOrder
+                        gameState.score < 4 -> strTutorialKeepGoing
+                        else -> strTutorialAlmost
+                    },
+                    color = colors.textSecondary,
+                    fontSize = 14.sp,
+                    fontFamily = style.bodyFontFamily,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
+            }
+
             // === CENTER: Game Grid (takes remaining space) ===
             Box(
                 modifier = Modifier
@@ -109,22 +126,6 @@ fun GameScreen(
                     )
                 }
 
-
-
-                // Tutorial overlay
-                if (gameState.isTutorial) {
-                    Text(
-                        when {
-                            gameState.score < 2 -> strTutorialTapOrder
-                            gameState.score < 4 -> strTutorialKeepGoing
-                            else -> strTutorialAlmost
-                        },
-                        color = colors.textSecondary,
-                        fontSize = 14.sp,
-                        fontFamily = style.bodyFontFamily,
-                        modifier = Modifier.offset(y = (-120).dp)
-                    )
-                }
             }
 
             // === BOTTOM: Stats Panel (fixed height) ===
