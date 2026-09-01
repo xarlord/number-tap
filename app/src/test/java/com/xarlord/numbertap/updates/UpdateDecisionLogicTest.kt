@@ -3,7 +3,10 @@ package com.xarlord.numbertap.updates
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 /**
  * Unit tests for the pure update-decision logic extracted from
@@ -96,5 +99,26 @@ class UpdateDecisionLogicTest {
     @Test
     fun unknownStatus_doesNotTriggerInstallPrompt() {
         assertEquals(false, shouldShowInstallPrompt(9999))
+    }
+
+    @Test
+    fun updateManager_usesActivityResultLauncherOverload() {
+        val source = sequenceOf(
+            File("src/main/java/com/xarlord/numbertap/updates/InAppUpdateManager.kt"),
+            File("app/src/main/java/com/xarlord/numbertap/updates/InAppUpdateManager.kt")
+        ).first { it.isFile }.readText()
+
+        assertTrue(
+            "The supported in-app update API requires ActivityResultLauncher",
+            "ActivityResultLauncher<IntentSenderRequest>" in source
+        )
+        assertTrue(
+            "Flexible updates must be configured with AppUpdateOptions",
+            "AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE)" in source
+        )
+        assertFalse(
+            "The request-code overload is deprecated and must not remain",
+            "UPDATE_REQUEST_CODE" in source
+        )
     }
 }

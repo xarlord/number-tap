@@ -56,13 +56,24 @@ import kotlinx.coroutines.isActive
 class MainActivity : ComponentActivity() {
 
     // Reused across lifecycle — avoids creating a new AppUpdateManager each onResume (#201)
-    private val updateManager by lazy { InAppUpdateManager(this) }
+    private lateinit var updateManager: InAppUpdateManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Default to portrait but allow rotation (fixes Play Store orientation restriction finding)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         NotificationScheduler.createChannel(this)
+
+        val updateFlowLauncher = registerForActivityResult(
+            ActivityResultContracts.StartIntentSenderForResult()
+        ) { result ->
+            when (result.resultCode) {
+                Activity.RESULT_OK -> Unit
+                Activity.RESULT_CANCELED -> android.util.Log.d("NumberTap:Update", "Update flow canceled")
+                else -> android.util.Log.w("NumberTap:Update", "Update flow failed: ${result.resultCode}")
+            }
+        }
+        updateManager = InAppUpdateManager(this, updateFlowLauncher)
 
         // Initialize AdMob SDK
         val adManager = AdManagerImpl(this)

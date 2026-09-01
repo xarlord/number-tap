@@ -2,9 +2,12 @@ package com.xarlord.numbertap.updates
 
 import android.app.Activity
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
 import com.google.android.play.core.install.model.AppUpdateType
 
 /**
@@ -16,11 +19,11 @@ import com.google.android.play.core.install.model.AppUpdateType
  * Issue #203: Notify users when a new Play Store version is available.
  */
 class InAppUpdateManager(
-    private val activity: Activity
+    activity: Activity,
+    private val updateFlowLauncher: ActivityResultLauncher<IntentSenderRequest>
 ) {
     companion object {
         private const val TAG = "NumberTap:Update"
-        private const val UPDATE_REQUEST_CODE = 7777
     }
 
     private val appUpdateManager: AppUpdateManager = AppUpdateManagerFactory.create(activity)
@@ -61,12 +64,7 @@ class InAppUpdateManager(
      */
     private fun startFlexibleUpdate(appUpdateInfo: AppUpdateInfo) {
         try {
-            appUpdateManager.startUpdateFlowForResult(
-                appUpdateInfo,
-                AppUpdateType.FLEXIBLE,
-                activity,
-                UPDATE_REQUEST_CODE
-            )
+            launchFlexibleUpdate(appUpdateInfo)
             Log.d(TAG, "Flexible update flow started")
         } catch (e: Exception) {
             Log.w(TAG, "Failed to start update flow: ${e.message}")
@@ -78,15 +76,15 @@ class InAppUpdateManager(
      */
     private fun resumeUpdate(appUpdateInfo: AppUpdateInfo) {
         try {
-            appUpdateManager.startUpdateFlowForResult(
-                appUpdateInfo,
-                AppUpdateType.FLEXIBLE,
-                activity,
-                UPDATE_REQUEST_CODE
-            )
+            launchFlexibleUpdate(appUpdateInfo)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to resume update: ${e.message}")
         }
+    }
+
+    private fun launchFlexibleUpdate(appUpdateInfo: AppUpdateInfo) {
+        val options = AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build()
+        appUpdateManager.startUpdateFlowForResult(appUpdateInfo, updateFlowLauncher, options)
     }
 
     /**
