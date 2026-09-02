@@ -26,20 +26,8 @@ object DifficultyConfig {
         DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
     )
 
-    /** Starting countdown time in seconds */
-    var startingTime: Double = 30.0
-
-    /** Timer tick interval in milliseconds */
-    var tickIntervalMs: Long = 16L
-
-    /** Revive bonus seconds */
-    var reviveBonusSeconds: Double = 5.0
-
-    /** Revive eligibility threshold (% of high score) */
-    var reviveEligibilityThreshold: Double = 0.9
-
-    /** Combo streak window in milliseconds */
-    var comboWindowMs: Long = 500L
+    // #239: Removed unused fields (startingTime, tickIntervalMs, reviveBonusSeconds,
+    // reviveEligibilityThreshold, comboWindowMs) — GameConfig is the single source of truth.
 
     fun tierForScore(score: Int): DifficultyTier {
         return tiers.last { score >= it.scoreThreshold }
@@ -57,10 +45,5 @@ object DifficultyConfig {
             DifficultyTier(5, 5, 0.5, 3.0, "HARD", scoreThreshold = 41, isChaosMode = true),
             DifficultyTier(5, 5, 0.4, 3.5, "INSANE", scoreThreshold = 66, isChaosMode = true)
         )
-        startingTime = 30.0
-        tickIntervalMs = 16L
-        reviveBonusSeconds = 5.0
-        reviveEligibilityThreshold = 0.9
-        comboWindowMs = 500L
     }
 }

@@ -259,6 +259,39 @@ class RetentionLogicTest {
         assertEquals(1, RetentionLogic.calculateStreak(0, "", "2026-01-15", "2026-01-14"))
     }
 
+    @Test
+    fun `purchasePowerUp with tier multiplier deducts correctly`() {
+        val (coins, ups) = RetentionLogic.purchasePowerUp(100, emptyMap(), PowerUpType.HIGHLIGHT, tierMultiplier = 2f)!!
+        assertEquals(40, coins) // 100 - 30*2
+        assertEquals(1, ups[PowerUpType.HIGHLIGHT])
+    }
+
+    @Test
+    fun `purchasePowerUp with tier multiplier returns null if insufficient`() {
+        assertNull(RetentionLogic.purchasePowerUp(50, emptyMap(), PowerUpType.HIGHLIGHT, tierMultiplier = 2f))
+    }
+
+    @Test
+    fun `updateMissionProgress combo mission tracks max combo`() {
+        val missions = listOf(DailyMission("m1", MissionType.COMBO_TARGET, 10, 3, 30))
+        val result = RetentionLogic.updateMissionProgress(missions, maxCombo = 5)
+        assertEquals(5, result[0].progress) // max, not sum
+    }
+
+    @Test
+    fun `updateMissionProgress total taps increments`() {
+        val missions = listOf(DailyMission("m1", MissionType.TOTAL_TAPS, 50, 10, 30))
+        val result = RetentionLogic.updateMissionProgress(missions, correctTaps = 25)
+        assertEquals(35, result[0].progress)
+    }
+
+    @Test
+    fun `updateMissionProgress skips already completed missions`() {
+        val missions = listOf(DailyMission("m1", MissionType.SCORE_TARGET, 10, 10, 30, isCompleted = true))
+        val result = RetentionLogic.updateMissionProgress(missions, gameScore = 50)
+        assertEquals(10, result[0].progress) // unchanged
+    }
+
     // === PlayerProfile defaults ===
 
     @Test

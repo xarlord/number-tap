@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -68,11 +69,11 @@ import com.xarlord.numbertap.data.ThemeStyle
 fun MenuScreen(
     highScore: Int,
     currentTheme: GameTheme,
+    onStartClick: () -> Unit,
+    modifier: Modifier = Modifier,
     isHardMode: Boolean = false,
     coins: Int = 0,
     streak: Int = 0,
-    onStartClick: () -> Unit,
-    modifier: Modifier = Modifier,
     onTutorialClick: () -> Unit = {},
     onThemeChange: (GameTheme) -> Unit = {},
     onSettingsClick: () -> Unit = {},
@@ -205,7 +206,7 @@ fun MenuScreen(
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                stringResource(R.string.coins_display, coins),
+                                pluralStringResource(R.plurals.coins_display, coins, coins),
                                 color = colors.textPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
@@ -222,7 +223,7 @@ fun MenuScreen(
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                stringResource(R.string.streak_display, streak),
+                                pluralStringResource(R.plurals.streak_display, streak, streak),
                                 color = colors.textPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
