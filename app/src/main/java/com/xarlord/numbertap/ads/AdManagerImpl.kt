@@ -13,6 +13,8 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.xarlord.numbertap.analytics.AnalyticsEvent
+import com.xarlord.numbertap.analytics.AnalyticsTracker
 
 /**
  * Real AdMob implementation — banner, interstitial, rewarded ads.
@@ -29,7 +31,8 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
  * Accepts Activity parameter at show-time for full-screen ads.
  */
 class AdManagerImpl(
-    context: Context
+    context: Context,
+    private val rewardedReloadOverride: (() -> Unit)? = null
 ) : AdManager {
 
     private val appContext: Context = context.applicationContext
@@ -47,6 +50,8 @@ class AdManagerImpl(
 
     private var interstitialAd: InterstitialAd? = null
     private var rewardedAd: RewardedAd? = null
+    @Volatile private var pendingRewardFailure: (() -> Unit)? = null
+    @Volatile private var isRewardedShowing = false
     private var gameOverCount = 0
     @Volatile private var isInitialized = false
 
@@ -89,18 +94,7 @@ class AdManagerImpl(
                 override fun onAdLoaded(ad: InterstitialAd) {
                     interstitialAd = ad
                     Log.d(TAG, "Interstitial ad loaded")
-                    ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                        override fun onAdDismissedFullScreenContent() {
-                            interstitialAd = null
-                            preloadInterstitial() // Preload next
-                            Log.d(TAG, "Interstitial dismissed")
-                        }
-                        override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                            interstitialAd = null
-                            preloadInterstitial()
-                            Log.w(TAG, "Interstitial show failed: ${error.message}")
-                        }
-                    }
+                    ad.fullScreenContentCallback = createInterstitialFullScreenCallback()
                 }
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     interstitialAd = null
@@ -108,6 +102,24 @@ class AdManagerImpl(
                 }
             }
         )
+    }
+
+    internal fun createInterstitialFullScreenCallback() = object : FullScreenContentCallback() {
+        override fun onAdShowedFullScreenContent() {
+            AnalyticsTracker.track(AnalyticsEvent.AD_INTERSTITIAL_SHOWN)
+        }
+
+        override fun onAdDismissedFullScreenContent() {
+            interstitialAd = null
+            preloadInterstitial() // Preload next
+            Log.d(TAG, "Interstitial dismissed")
+        }
+
+        override fun onAdFailedToShowFullScreenContent(error: AdError) {
+            interstitialAd = null
+            preloadInterstitial()
+            Log.w(TAG, "Interstitial show failed: ${error.message}")
+        }
     }
 
     /**
@@ -149,29 +161,57 @@ class AdManagerImpl(
             appContext,
             REWARDED_AD_UNIT_ID,
             adRequest,
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: RewardedAd) {
-                    rewardedAd = ad
-                    Log.d(TAG, "Rewarded ad loaded")
-                    ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                        override fun onAdDismissedFullScreenContent() {
-                            rewardedAd = null
-                            preloadRewarded() // Preload next
-                            Log.d(TAG, "Rewarded ad dismissed")
-                        }
-                        override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                            rewardedAd = null
-                            preloadRewarded()
-                            Log.w(TAG, "Rewarded show failed: ${error.message}")
-                        }
-                    }
-                }
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    rewardedAd = null
-                    Log.w(TAG, "Rewarded load failed: ${error.message}")
-                }
-            }
+            createRewardedLoadCallback()
         )
+    }
+
+    private fun reloadRewarded() {
+        rewardedReloadOverride?.invoke() ?: preloadRewarded()
+    }
+
+    internal fun createRewardedLoadCallback() = object : RewardedAdLoadCallback() {
+        override fun onAdLoaded(ad: RewardedAd) {
+            rewardedAd = ad
+            Log.d(TAG, "Rewarded ad loaded")
+            ad.fullScreenContentCallback = createRewardedFullScreenCallback()
+        }
+
+        override fun onAdFailedToLoad(error: LoadAdError) {
+            rewardedAd = null
+            AnalyticsTracker.track(
+                AnalyticsEvent.AD_REWARDED_FAILED,
+                mapOf("failure_stage" to "load")
+            )
+            Log.w(TAG, "Rewarded load failed: ${error.message}")
+        }
+    }
+
+    internal fun createRewardedFullScreenCallback() = object : FullScreenContentCallback() {
+        override fun onAdShowedFullScreenContent() {
+            AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_SHOWN)
+        }
+
+        override fun onAdDismissedFullScreenContent() {
+            rewardedAd = null
+            pendingRewardFailure = null
+            isRewardedShowing = false
+            reloadRewarded() // Preload next
+            Log.d(TAG, "Rewarded ad dismissed")
+        }
+
+        override fun onAdFailedToShowFullScreenContent(error: AdError) {
+            rewardedAd = null
+            AnalyticsTracker.track(
+                AnalyticsEvent.AD_REWARDED_FAILED,
+                mapOf("failure_stage" to "show")
+            )
+            val failure = pendingRewardFailure
+            pendingRewardFailure = null
+            isRewardedShowing = false
+            failure?.invoke()
+            reloadRewarded()
+            Log.w(TAG, "Rewarded show failed: ${error.message}")
+        }
     }
 
     override fun showRewardedAd(): Boolean {
@@ -197,15 +237,39 @@ class AdManagerImpl(
             "This method silently discards the reward (issue #153).",
         replaceWith = ReplaceWith("showRewardedWithCallbacks(activity, onReward = {}, onFailure = {})")
     )
+    @Synchronized
     fun showRewardedAd(activity: Activity): Boolean {
+        if (isRewardedShowing) {
+            AnalyticsTracker.track(
+                AnalyticsEvent.AD_REWARDED_FAILED,
+                mapOf("failure_stage" to "already_showing")
+            )
+            return false
+        }
         val ad = rewardedAd
         if (ad != null) {
-            ad.show(activity) { rewardItem ->
-                Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
+            isRewardedShowing = true
+            return try {
+                ad.show(activity) { rewardItem ->
+                    AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_EARNED)
+                    Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
+                }
+                Log.d(TAG, "Showing rewarded ad")
+                true
+            } catch (error: RuntimeException) {
+                isRewardedShowing = false
+                AnalyticsTracker.track(
+                    AnalyticsEvent.AD_REWARDED_FAILED,
+                    mapOf("failure_stage" to "show")
+                )
+                Log.w(TAG, "Rewarded show failed synchronously", error)
+                false
             }
-            Log.d(TAG, "Showing rewarded ad")
-            return true
         }
+        AnalyticsTracker.track(
+            AnalyticsEvent.AD_REWARDED_FAILED,
+            mapOf("failure_stage" to "not_ready")
+        )
         Log.d(TAG, "No rewarded ad ready")
         return false
     }
@@ -218,19 +282,47 @@ class AdManagerImpl(
      * Note: showRewardedAd(activity) does NOT delegate here — it has its own
      * ad.show() call. Use THIS method when you need to know the reward outcome.
      */
+    @Synchronized
     fun showRewardedWithCallbacks(
         activity: Activity,
         onReward: () -> Unit,
         onFailure: () -> Unit
     ) {
+        if (isRewardedShowing) {
+            AnalyticsTracker.track(
+                AnalyticsEvent.AD_REWARDED_FAILED,
+                mapOf("failure_stage" to "already_showing")
+            )
+            onFailure()
+            return
+        }
         val ad = rewardedAd
         if (ad != null) {
-            ad.show(activity) { rewardItem ->
-                Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
-                onReward()
+            pendingRewardFailure = onFailure
+            isRewardedShowing = true
+            try {
+                ad.show(activity) { rewardItem ->
+                    AnalyticsTracker.track(AnalyticsEvent.AD_REWARDED_EARNED)
+                    pendingRewardFailure = null
+                    Log.d(TAG, "Reward earned: ${rewardItem.amount} ${rewardItem.type}")
+                    onReward()
+                }
+                Log.d(TAG, "Showing rewarded ad")
+            } catch (error: RuntimeException) {
+                pendingRewardFailure = null
+                isRewardedShowing = false
+                AnalyticsTracker.track(
+                    AnalyticsEvent.AD_REWARDED_FAILED,
+                    mapOf("failure_stage" to "show")
+                )
+                Log.w(TAG, "Rewarded show failed synchronously", error)
+                onFailure()
             }
-            Log.d(TAG, "Showing rewarded ad")
         } else {
+            AnalyticsTracker.track(
+                AnalyticsEvent.AD_REWARDED_FAILED,
+                mapOf("failure_stage" to "not_ready")
+            )
             Log.d(TAG, "No rewarded ad ready for revive")
             onFailure()
         }
