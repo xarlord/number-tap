@@ -32,6 +32,8 @@ import androidx.core.content.ContextCompat
 import com.xarlord.numbertap.ads.AdManagerImpl
 import com.xarlord.numbertap.ads.BannerAd
 import com.xarlord.numbertap.analytics.AnalyticsTracker
+import com.xarlord.numbertap.analytics.isReviveApplied
+import com.xarlord.numbertap.analytics.trackReviveIfApplied
 import com.xarlord.numbertap.data.GameState
 import com.xarlord.numbertap.data.GameTheme
 import com.xarlord.numbertap.data.TileState
@@ -513,11 +515,16 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             adManager.showRewardedWithCallbacks(
                                 activity = context,
                                 onReward = {
-                                    gameState = engine.revive(gameState)
-                                    lastTickTime = SystemClock.elapsedRealtime()
-                                    if (musicEnabled) soundManager.startBGMusic()
-                                    currentScreen = Screen.Game
-                                    ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                                    val beforeRevive = gameState
+                                    val revived = engine.revive(beforeRevive)
+                                    if (isReviveApplied(beforeRevive, revived)) {
+                                        gameState = revived
+                                        trackReviveIfApplied(beforeRevive, revived, "rewarded_ad")
+                                        lastTickTime = SystemClock.elapsedRealtime()
+                                        if (musicEnabled) soundManager.startBGMusic()
+                                        currentScreen = Screen.Game
+                                        ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                                    }
                                 },
                                 onFailure = {
                                     ActionLogger.logError("revive_failed", "Ad not ready")
@@ -525,24 +532,36 @@ fun NumberTapApp(adManager: com.xarlord.numbertap.ads.AdManager) {
                             )
                         } else {
                             // Stub fallback — just revive without ad
-                            gameState = engine.revive(gameState)
-                            lastTickTime = SystemClock.elapsedRealtime()
-                            if (musicEnabled) soundManager.startBGMusic()
-                            currentScreen = Screen.Game
+                            val beforeRevive = gameState
+                            val revived = engine.revive(beforeRevive)
+                            if (isReviveApplied(beforeRevive, revived)) {
+                                gameState = revived
+                                trackReviveIfApplied(beforeRevive, revived, "fallback")
+                                lastTickTime = SystemClock.elapsedRealtime()
+                                if (musicEnabled) soundManager.startBGMusic()
+                                currentScreen = Screen.Game
+                            }
                         }
                     },
                     onSpendCoins = {
                         // #206/#211: Spend coins for revive via the tested repository method
                         val cost = com.xarlord.numbertap.data.GameConfig.COIN_COST_FOR_REVIVE
-                        val updated = profileRepository.purchaseRevive(playerProfile, cost)
-                        if (updated != null) {
-                            playerProfile = updated
-                            profileRepository.saveProfile(playerProfile)
-                            gameState = engine.revive(gameState)
-                            lastTickTime = SystemClock.elapsedRealtime()
-                            if (musicEnabled) soundManager.startBGMusic()
-                            currentScreen = Screen.Game
-                            ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                        val beforeRevive = gameState
+                        if (beforeRevive.isGameOver && !beforeRevive.isPlaying) {
+                            val updated = profileRepository.purchaseRevive(playerProfile, cost)
+                            if (updated != null) {
+                                val revived = engine.revive(beforeRevive)
+                                if (isReviveApplied(beforeRevive, revived)) {
+                                    playerProfile = updated
+                                    profileRepository.saveProfile(playerProfile)
+                                    gameState = revived
+                                    trackReviveIfApplied(beforeRevive, revived, "coins")
+                                    lastTickTime = SystemClock.elapsedRealtime()
+                                    if (musicEnabled) soundManager.startBGMusic()
+                                    currentScreen = Screen.Game
+                                    ActionLogger.logRevive(gameState.score, gameState.timeRemaining)
+                                }
+                            }
                         }
                     }
                 )

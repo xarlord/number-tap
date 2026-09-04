@@ -1,6 +1,7 @@
 package com.xarlord.numbertap.analytics
 
 import android.util.Log
+import com.xarlord.numbertap.data.GameState
 import org.json.JSONObject
 
 /**
@@ -79,6 +80,25 @@ object AnalyticsTracker {
     /** Convenience: track daily login. */
     fun dailyLogin(streak: Int, coinsAwarded: Int) =
         track(AnalyticsEvent.DAILY_LOGIN, mapOf("streak" to streak, "coinsAwarded" to coinsAwarded))
+}
+
+internal fun isReviveApplied(before: GameState, after: GameState): Boolean =
+    !before.isPlaying && before.isGameOver && after.isPlaying && !after.isGameOver
+
+/** Records a revive only when a game-over state actually transitions back to play. */
+internal fun trackReviveIfApplied(
+    before: GameState,
+    after: GameState,
+    source: String,
+    track: (AnalyticsEvent, Map<String, Any>) -> Unit = { event, params ->
+        AnalyticsTracker.track(event, params)
+    }
+): Boolean {
+    val applied = isReviveApplied(before, after)
+    if (applied) {
+        track(AnalyticsEvent.REVIVE_USED, mapOf("revive_source" to source))
+    }
+    return applied
 }
 
 /**
